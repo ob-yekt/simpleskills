@@ -1,0 +1,52 @@
+{
+	"schemaVersion": 1,
+	"id": "simpleskills",
+	"version": "${version}",
+	"name": "simpleskills",
+	"description": "Adds simple skills to Minecraft.",
+	"authors": [
+		"Ob'yekt"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/simpleskills/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.github.ob_yekt.simpleskills.SimpleSkillsMod"
+		],
+		"client": [
+			"com.github.ob_yekt.simpleskills.SimpleskillsClient"
+		],
+		"fabric-datagen": [
+			"com.github.ob_yekt.simpleskills.SimpleskillsDataGenerator"
+		],
+		"cardinal-components-entity": [
+			"com.github.ob_yekt.simpleskills.SimpleSkillsComponents"
+		]
+	},
+	"mixins": [
+		"simpleskills.mixins.json",
+		{
+			"config": "simpleskills.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	},
+	"custom": {
+		"cardinal-components": [
+			"simpleskills:player_skill"
+		]
+	}
+}
