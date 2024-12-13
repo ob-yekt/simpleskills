@@ -11,6 +11,8 @@ public class HudRenderer {
     private static int cachedMiningXP = 0;
     private static int cachedWoodcuttingLevel = 0;
     private static int cachedWoodcuttingXP = 0;
+    private static int cachedExcavatingLevel = 0;
+    private static int cachedExcavatingXP = 0;
 
     public static void registerHud() {
         // Update skill data on each client tick
@@ -22,6 +24,8 @@ public class HudRenderer {
                     cachedMiningXP = skillComponent.getLevel("Mining");
                     cachedWoodcuttingLevel = skillComponent.getSkillLevel("Woodcutting");
                     cachedWoodcuttingXP = skillComponent.getLevel("Woodcutting");
+                    cachedExcavatingLevel = skillComponent.getSkillLevel("Excavating");
+                    cachedExcavatingXP = skillComponent.getLevel("Excavating");
                 }
             }
         });
@@ -41,6 +45,11 @@ public class HudRenderer {
             // Render Woodcutting stats
             String woodcuttingText = String.format("Woodcutting - Level: %d XP: %d/100", cachedWoodcuttingLevel, cachedWoodcuttingXP);
             drawContext.drawText(client.textRenderer, woodcuttingText, x, y, 0xFFFFFF, false);
+            y += 12; // Move to the next line
+
+            // Render Excavating stats
+            String excavatingText = String.format("Excavating - Level: %d XP: %d/100", cachedExcavatingLevel, cachedExcavatingXP);
+            drawContext.drawText(client.textRenderer, excavatingText, x, y, 0xFFFFFF, false);
         });
     }
 }

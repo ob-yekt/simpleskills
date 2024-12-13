@@ -9,6 +9,7 @@ public class SkillRegistry {
     public static void registerSkills() {
         skills.put("Mining", new MiningSkill());
         skills.put("Woodcutting", new WoodcuttingSkill());
+        skills.put("Excavating", new ExcavatingSkill());
     }
 
     public static Skill getSkill(String name) {

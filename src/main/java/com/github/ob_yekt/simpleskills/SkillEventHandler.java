@@ -16,6 +16,7 @@ public class SkillEventHandler {
                 PlayerSkillComponent skillComponent = SimpleSkillsComponents.getSkillComponent(player);
 
                 // Track XP gains depending on block type broken
+
                 if (state.getBlock() == Blocks.STONE) {
                     // Add XP to Mining skill
                     skillComponent.addXp("Mining", 10);
@@ -31,6 +32,12 @@ public class SkillEventHandler {
                     player.sendMessage(Text.literal("Woodcutting XP: " + skillComponent.getLevel
                             ("Woodcutting")
                             + "/100 | Level: " + skillComponent.getSkillLevel("Woodcutting")), true);
+
+                } else if (state.getBlock() == Blocks.DIRT || state.getBlock() == Blocks.SAND || state.getBlock() == Blocks.GRASS_BLOCK) {
+                    // Add XP to Excavating
+                    skillComponent.addXp("Excavating", 10);
+                    player.sendMessage(Text.literal("Excavating XP: " + skillComponent.getLevel("Excavating")
+                            + "/100 | Level: " + skillComponent.getSkillLevel("Excavating")), true);
                 }
             }
         });

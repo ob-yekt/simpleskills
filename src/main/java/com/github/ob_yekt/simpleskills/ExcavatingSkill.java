@@ -1,10 +1,10 @@
 package com.github.ob_yekt.simpleskills;
 
-public class MiningSkill extends Skill {
+public class ExcavatingSkill extends Skill {
     private int xp = 0;
 
-    public MiningSkill() {
-        super("Woodcutting");
+    public ExcavatingSkill() {
+        super("Excavating");
     }
 
     @Override
