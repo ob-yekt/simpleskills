@@ -1,0 +1,19 @@
+{
+  "minecraft:wooden_pickaxe": {"skill": "Mining", "level": 0},
+  "minecraft:stone_pickaxe": {"skill": "Mining", "level": 10},
+  "minecraft:iron_pickaxe": {"skill": "Mining", "level": 15},
+  "minecraft:diamond_pickaxe": {"skill": "Mining", "level": 25},
+  "minecraft:netherite_pickaxe": {"skill": "Mining", "level": 30},
+
+  "minecraft:wooden_axe": {"skill": "Woodcutting", "level": 0},
+  "minecraft:stone_axe": {"skill": "Woodcutting", "level": 10},
+  "minecraft:iron_axe": {"skill": "Woodcutting", "level": 15},
+  "minecraft:diamond_axe": {"skill": "Woodcutting", "level": 25},
+  "minecraft:netherite_axe": {"skill": "Woodcutting", "level": 30},
+
+  "minecraft:wooden_shovel": {"skill": "Excavating", "level": 0},
+  "minecraft:stone_shovel": {"skill": "Excavating", "level": 10},
+  "minecraft:iron_shovel": {"skill": "Excavating", "level": 15},
+  "minecraft:diamond_shovel": {"skill": "Excavating", "level": 25},
+  "minecraft:netherite_shovel": {"skill": "Excavating", "level": 30}
+}
