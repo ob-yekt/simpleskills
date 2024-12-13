@@ -9,4 +9,10 @@ public interface PlayerSkillComponent extends Component {
     void addXp(String skill, int xp); // Add this method
     int getLevel(String skill);      // Add this method if missing
 
+    void addSkillChangeListener(SkillChangeListener listener);
+
+    @FunctionalInterface
+    interface SkillChangeListener {
+        void onSkillChange(String skillName, int level, int xp);
+    }
 }

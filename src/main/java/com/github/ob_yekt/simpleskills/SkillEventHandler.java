@@ -20,13 +20,17 @@ public class SkillEventHandler {
                     // Add XP to Mining skill
                     skillComponent.addXp("Mining", 10);
                     // Send player feedback
-                    player.sendMessage(Text.literal("Mining Level: " + skillComponent.getLevel("Mining")), true);
+                    player.sendMessage(Text.literal("Mining XP: " + skillComponent.getLevel
+                            ("Mining")
+                            + "/100 | Level: " + skillComponent.getSkillLevel("Mining")), true);
 
                 } else if (state.getBlock() == Blocks.OAK_LOG) {
                     // Add XP to Woodcutting skill
                     skillComponent.addXp("Woodcutting", 10);
                     // Send player feedback
-                    player.sendMessage(Text.literal("Woodcutting Level: " + skillComponent.getLevel("Woodcutting")), true);
+                    player.sendMessage(Text.literal("Woodcutting XP: " + skillComponent.getLevel
+                            ("Woodcutting")
+                            + "/100 | Level: " + skillComponent.getSkillLevel("Woodcutting")), true);
                 }
             }
         });

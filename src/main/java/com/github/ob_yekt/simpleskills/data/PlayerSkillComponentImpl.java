@@ -3,14 +3,20 @@ package com.github.ob_yekt.simpleskills.data;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class PlayerSkillComponentImpl implements PlayerSkillComponent {
+import com.github.ob_yekt.simpleskills.SimpleSkillsComponents;
+
+public class PlayerSkillComponentImpl implements PlayerSkillComponent, AutoSyncedComponent {
     private final PlayerEntity player;
     private final Map<String, Integer> skillLevels = new HashMap<>();
     private final Map<String, Integer> skillXp = new HashMap<>();
+    private final List<SkillChangeListener> listeners = new ArrayList<>();
 
     public PlayerSkillComponentImpl(PlayerEntity player) {
         this.player = player;
@@ -24,6 +30,10 @@ public class PlayerSkillComponentImpl implements PlayerSkillComponent {
     @Override
     public void setSkillLevel(String skill, int level) {
         skillLevels.put(skill, level);
+        notifyListeners(skill);
+
+        // Synchronize this component to the client
+        SimpleSkillsComponents.PLAYER_SKILL.sync(player);
     }
 
     @Override
@@ -37,11 +47,28 @@ public class PlayerSkillComponentImpl implements PlayerSkillComponent {
             currentXp %= 100;
         }
         skillXp.put(skill, currentXp);
+        notifyListeners(skill);
+
+        // Synchronize this component to the client
+        SimpleSkillsComponents.PLAYER_SKILL.sync(player);
     }
 
     @Override
     public int getLevel(String skill) {
-        return skillLevels.getOrDefault(skill, 0);
+        return skillXp.getOrDefault(skill, 0);
+    }
+
+    @Override
+    public void addSkillChangeListener(SkillChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    private void notifyListeners(String skill) {
+        int level = getSkillLevel(skill);
+        int xp = skillXp.getOrDefault(skill, 0);
+        for (SkillChangeListener listener : listeners) {
+            listener.onSkillChange(skill, level, xp);
+        }
     }
 
     @Override

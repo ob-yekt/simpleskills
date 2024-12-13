@@ -5,6 +5,7 @@ import com.github.ob_yekt.simpleskills.data.PlayerSkillComponentImpl;
 
 import org.ladysnake.cca.api.v3.component.ComponentKey;
 import org.ladysnake.cca.api.v3.component.ComponentRegistry;
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
@@ -16,7 +17,7 @@ public class SimpleSkillsComponents implements EntityComponentInitializer {
     // Create a unique key for the skill component
     public static final ComponentKey<PlayerSkillComponent> PLAYER_SKILL =
             ComponentRegistry.getOrCreate(
-                    Identifier.of(SimpleSkillsMod.MOD_ID, "player_skill"), // Correct constructor usage
+                    Identifier.of(SimpleSkillsMod.MOD_ID, "player_skill"),
                     PlayerSkillComponent.class
             );
 
@@ -27,6 +28,6 @@ public class SimpleSkillsComponents implements EntityComponentInitializer {
     }
 
     public static PlayerSkillComponent getSkillComponent(PlayerEntity player) {
-        return PLAYER_SKILL.get(player); // Directly access the component key
+        return PLAYER_SKILL.get(player);
     }
 }
