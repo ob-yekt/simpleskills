@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "simpleskills",
+	"version": "${version}",
+	"name": "simpleskills",
+	"description": "Adds Runescape-esque skills to Minecraft",
+	"authors": [
+		"Ob'yekt"
+	],
+	"contact": {
+		"homepage": "https://steamcommunity.com/id/obyekt/"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/simpleskills/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.github.ob_yekt.simpleskills.Simpleskills"
+		],
+		"client": [
+			"com.github.ob_yekt.simpleskills.SimpleskillsClient"
+		]
+	},
+	"mixins": [
+		"simpleskills.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.17.2",
+		"minecraft": "1.21.9-alpha.25.35.a",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

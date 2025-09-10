@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:fishing",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "quality": -2,
+          "value": "simpleskills:fishing/simpleskills_fishing_grandmaster_junk",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:loot_table",
+          "conditions": [
+            {
+              "condition": "minecraft:entity_properties",
+              "entity": "this",
+              "predicate": {
+                "type_specific": {
+                  "type": "minecraft:fishing_hook",
+                  "in_open_water": true
+                }
+              }
+            }
+          ],
+          "quality": 2,
+          "value": "simpleskills:fishing/simpleskills_fishing_grandmaster_treasure",
+          "weight": 15
+        },
+        {
+          "type": "minecraft:loot_table",
+          "quality": -1,
+          "value": "simpleskills:fishing/simpleskills_fishing_grandmaster_fish",
+          "weight": 79
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_grandmaster"
+}

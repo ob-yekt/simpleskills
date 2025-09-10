@@ -1,0 +1,30 @@
+{
+  "required": true,
+  "package": "com.github.ob_yekt.simpleskills.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AgilityXPMixin",
+    "AlchemyXPMixin",
+    "ArmorRestrictionMixin",
+    "EnchantingScreenHandlerMixin",
+    "HoeItemMixin",
+    "InventoryCheckMixin",
+    "ServerPlayerEntityMixin",
+    "ShovelItemMixin",
+    "SMITHING.AnvilScreenHandlerMixin",
+    "COOKING.CookingXPMixin",
+    "COOKING.FurnaceScreenHandlerMixin",
+    "CRAFTING.AbstractCraftingScreenHandlerAccessor",
+    "CRAFTING.CraftingResultSlotMixin",
+    "CRAFTING.CraftingScreenHandlerMixin",
+    "SMITHING.SmithingScreenHandlerMixin",
+    "FISHING.FishingBobberEntityAccessor",
+    "FISHING.FishingBobberEntityMixin",
+    "LORE.CraftingResultInventoryMixin",
+    "LORE.PlayerInventoryMixin",
+    "LORE.SimpleInventoryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
