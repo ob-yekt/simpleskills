@@ -27,10 +27,10 @@ public abstract class AgilityXPMixin {
 
     static {
         COOLDOWN_TICKS.put("fall_damage", 20L);
-        COOLDOWN_TICKS.put("jump", 20L);
-        COOLDOWN_TICKS.put("swim", 25L);
-        COOLDOWN_TICKS.put("sprint", 20L);
-        COOLDOWN_TICKS.put("sneak", 20L);
+        COOLDOWN_TICKS.put("jump", 40L);
+        COOLDOWN_TICKS.put("swim", 40L);
+        COOLDOWN_TICKS.put("sprint", 40L);
+        COOLDOWN_TICKS.put("sneak", 40L);
     }
 
     // Helper method to check and update cooldown for a specific action
