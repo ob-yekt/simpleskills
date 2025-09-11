@@ -7,12 +7,14 @@ import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 
 public class Keybinds {
-    public static final String KEY_CATEGORY = "key.categories.simpleskills";
+    // Define the custom category using Category.method_74699
+    public static final KeyBinding.Category KEY_CATEGORY = KeyBinding.Category.method_74699("simpleskills");
+
     public static final KeyBinding TOGGLE_HUD_KEY = new KeyBinding(
             "key.simpleskills.toggle_hud",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_H, // Changed to H key
-            KEY_CATEGORY
+            KEY_CATEGORY // Use the Category instance instead of a String
     );
 
     public static void register() {

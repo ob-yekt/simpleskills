@@ -372,7 +372,7 @@ public class EventHandlers {
                     newPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.").formatted(Formatting.YELLOW), false);
                     if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
                             ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
-                        Objects.requireNonNull(newPlayer.getEntityWorld().getServer()).getPlayerManager().broadcast(
+                        Objects.requireNonNull(newPlayer.getServer()).getPlayerManager().broadcast(
                                 Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f.",
                                         newPlayer.getName().getString(), totalLevels)), false);
                     }
@@ -474,7 +474,7 @@ public class EventHandlers {
 
     private static boolean hasSilkTouch(ServerPlayerEntity player) {
         ItemStack toolStack = player.getEquippedStack(EquipmentSlot.MAINHAND);
-        var enchantmentRegistry = Objects.requireNonNull(player.getEntityWorld().getServer())
+        var enchantmentRegistry = Objects.requireNonNull(player.getServer())
                 .getRegistryManager()
                 .getOrThrow(RegistryKeys.ENCHANTMENT);
         RegistryEntry<Enchantment> silkTouchEntry = enchantmentRegistry

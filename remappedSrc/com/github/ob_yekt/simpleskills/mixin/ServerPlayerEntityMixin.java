@@ -47,7 +47,7 @@ public class ServerPlayerEntityMixin {
 
             if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
                     ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
-                Objects.requireNonNull(player.getEntityWorld().getServer()).getPlayerManager().broadcast(
+                Objects.requireNonNull(player.getServer()).getPlayerManager().broadcast(
                         Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f.",
                                 player.getName().getString(), totalLevels)), false);
             }

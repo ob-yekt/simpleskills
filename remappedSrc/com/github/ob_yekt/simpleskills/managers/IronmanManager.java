@@ -57,7 +57,7 @@ public class IronmanManager {
 
     public static void assignPlayerToIronmanTeam(ServerPlayerEntity player) {
         if (player == null) return;
-        ServerScoreboard scoreboard = Objects.requireNonNull(player.getEntityWorld().getServer()).getScoreboard();
+        ServerScoreboard scoreboard = Objects.requireNonNull(player.getServer()).getScoreboard();
         createIronmanTeam(scoreboard);
         Team ironmanTeam = scoreboard.getTeam(IRONMAN_TEAM_NAME);
         if (ironmanTeam != null) {
@@ -68,7 +68,7 @@ public class IronmanManager {
 
     public static void removePlayerFromIronmanTeam(ServerPlayerEntity player) {
         if (player == null) return;
-        ServerScoreboard scoreboard = Objects.requireNonNull(player.getEntityWorld().getServer()).getScoreboard();
+        ServerScoreboard scoreboard = Objects.requireNonNull(player.getServer()).getScoreboard();
         Team ironmanTeam = scoreboard.getTeam(IRONMAN_TEAM_NAME);
         if (ironmanTeam != null) {
             scoreboard.removeScoreHolderFromTeam(player.getNameForScoreboard(), ironmanTeam);
