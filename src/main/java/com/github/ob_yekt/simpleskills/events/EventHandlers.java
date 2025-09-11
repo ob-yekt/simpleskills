@@ -9,7 +9,9 @@ import com.github.ob_yekt.simpleskills.managers.AttributeManager;
 import com.github.ob_yekt.simpleskills.managers.IronmanManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
+
 import com.google.gson.JsonObject;
+
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
@@ -17,13 +19,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EquipmentSlot;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
@@ -36,6 +37,8 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -67,32 +70,42 @@ public class EventHandlers {
             }
 
             String blockTranslationKey = state.getBlock().getTranslationKey();
-            String toolId = "minecraft:air"; // Default to air if no item
+            String toolId = "minecraft:air"; // Default if empty hand
             ItemStack mainHandStack = serverPlayer.getMainHandStack();
             if (!mainHandStack.isEmpty()) {
-                toolId = Registries.ITEM.getId(mainHandStack.getItem()).toString(); // Correct way to get "minecraft:netherite_shovel", etc.
+                toolId = Registries.ITEM.getId(mainHandStack.getItem()).toString();
             }
-            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
 
+            // --- 1) Check tool requirement first ---
+            SkillRequirement requirement = ConfigManager.getToolRequirement(toolId);
+            if (requirement != null) {
+                Skills requiredSkill = requirement.getSkill();
+                int requiredLevel = requirement.getLevel();
+
+                int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), requiredSkill);
+                if (playerLevel < requiredLevel) {
+                    serverPlayer.sendMessage(Text.literal(String.format(
+                            "§6[simpleskills]§f You need %s level %d to use this tool!",
+                            requiredSkill.getDisplayName(), requiredLevel
+                    )), true);
+                    return false; // Block breaking canceled
+                }
+            }
+
+            // --- 2) Then check if block itself has a skill requirement ---
+            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
             if (relevantSkill != null) {
                 if (isCrop(blockTranslationKey)) {
-                    return true; // Crops don't have tool requirements
+                    return true; // Crops bypass tool requirement
                 }
 
-                SkillRequirement requirement = ConfigManager.getToolRequirement(toolId);
-                if (requirement != null && requirement.getSkill() == relevantSkill) {
-                    int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), relevantSkill);
-                    if (playerLevel < requirement.getLevel()) {
-                        serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to break this block with your tool!",
-                                relevantSkill.getDisplayName(), requirement.getLevel())), true);
-                        return false;
-                    }
-                }
+                // Optional: You could still keep block-specific restrictions here if needed
             }
+
             return true;
         });
 
-        // AFTER block break event
+        // AFTER block break event (unchanged)
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
             if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
                 return;
@@ -230,10 +243,12 @@ public class EventHandlers {
                 return true;
             }
 
-            JsonObject config = ConfigManager.getFeatureConfig();
-            float xpPerDamageSlaying = config.get("slaying_xp_per_damage") != null ? config.get("slaying_xp_per_damage").getAsFloat() : 10.0f;
-            float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 10.0f;
+            JsonObject config = ConfigManager.getCombatConfig();
+            float xpPerDamageSlaying = config.get("slaying_xp_per_damage") != null ? config.get("slaying_xp_per_damage").getAsFloat() : 100.0f;
+            float xpPerDamageRanged = config.get("ranged_xp_per_damage") != null ? config.get("ranged_xp_per_damage").getAsFloat() : 100.0f; // Fixed key name
+            float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 100.0f;
             float minDamageSlaying = config.get("slaying_min_damage_threshold") != null ? config.get("slaying_min_damage_threshold").getAsFloat() : 2.0f;
+            float minDamageRanged = config.get("ranged_min_damage_threshold") != null ? config.get("ranged_min_damage_threshold").getAsFloat() : 2.0f; // Fixed key name
             float minDamageDefense = config.get("defense_min_damage_threshold") != null ? config.get("defense_min_damage_threshold").getAsFloat() : 2.0f;
             float armorMultiplierPerPiece = config.get("defense_xp_armor_multiplier_per_piece") != null ? config.get("defense_xp_armor_multiplier_per_piece").getAsFloat() : 0.25f;
             float shieldXPMultiplier = config.get("defense_shield_xp_multiplier") != null ? config.get("defense_shield_xp_multiplier").getAsFloat() : 0.3f;
@@ -242,20 +257,31 @@ public class EventHandlers {
             if (entity instanceof LivingEntity target && !(target instanceof PlayerEntity) && !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
                 ServerPlayerEntity attacker = null;
                 Skills skill = null;
+                float xpMultiplier = 0.0f;
+                float minDamage = 0.0f;
+                int xp = 0;
 
+                // Melee (Slaying) attack
                 if (source.getAttacker() instanceof ServerPlayerEntity) {
                     attacker = (ServerPlayerEntity) source.getAttacker();
                     ItemStack weapon = attacker.getMainHandStack();
                     String weaponId = weapon.isEmpty() ? "minecraft:empty" : Registries.ITEM.getId(weapon.getItem()).toString();
                     SkillRequirement requirement = ConfigManager.getWeaponRequirement(weaponId);
                     skill = (requirement != null && requirement.getSkill() == Skills.RANGED) ? Skills.RANGED : Skills.SLAYING;
-                } else if (source.getSource() instanceof ProjectileEntity projectile && projectile.getOwner() instanceof ServerPlayerEntity) {
+                    xpMultiplier = (skill == Skills.RANGED) ? xpPerDamageRanged : xpPerDamageSlaying;
+                    minDamage = (skill == Skills.RANGED) ? minDamageRanged : minDamageSlaying;
+                    xp = (int) (amount * xpMultiplier);
+                }
+                // Ranged attack
+                else if (source.getSource() instanceof ProjectileEntity projectile && projectile.getOwner() instanceof ServerPlayerEntity) {
                     attacker = (ServerPlayerEntity) projectile.getOwner();
                     skill = Skills.RANGED;
+                    xpMultiplier = xpPerDamageRanged;
+                    minDamage = minDamageRanged;
+                    xp = (int) (amount * xpMultiplier);
                 }
 
-                if (attacker != null && amount >= minDamageSlaying) {
-                    int xp = (int) (amount * xpPerDamageSlaying);
+                if (attacker != null && amount >= minDamage) {
                     XPManager.addXPWithNotification(attacker, skill, xp);
                     Simpleskills.LOGGER.debug("Granted {} XP in {} to {} for dealing {} damage to {}", xp, skill.getId(), attacker.getName().getString(), amount, target.getType().toString());
                 }
@@ -415,16 +441,23 @@ public class EventHandlers {
                 ServerWorld serverWorld = (ServerWorld) world;
                 serverWorld.spawnParticles(
                         net.minecraft.particle.ParticleTypes.SOUL_FIRE_FLAME,
-                        hitResult.getBlockPos().getX() + 0.5,
+                        hitResult.getBlockPos().getX() + 0.4,
                         hitResult.getBlockPos().getY() + 1.0,
                         hitResult.getBlockPos().getZ() + 0.5,
+                        20, 0.2, 0.2, 0.2, 0.05
+                );
+                serverWorld.spawnParticles(
+                        net.minecraft.particle.ParticleTypes.COPPER_FIRE_FLAME,
+                        hitResult.getBlockPos().getX() + 0.5,
+                        hitResult.getBlockPos().getY() + 1.0,
+                        hitResult.getBlockPos().getZ() + 0.4,
                         20, 0.2, 0.2, 0.2, 0.05
                 );
                 serverWorld.playSound(
                         null,
                         hitResult.getBlockPos(),
-                        net.minecraft.sound.SoundEvents.BLOCK_CANDLE_EXTINGUISH,
-                        net.minecraft.sound.SoundCategory.BLOCKS,
+                        SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
+                        SoundCategory.BLOCKS,
                         1.0f,
                         1.0f
                 );

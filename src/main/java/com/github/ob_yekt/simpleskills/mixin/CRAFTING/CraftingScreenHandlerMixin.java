@@ -83,34 +83,11 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
         if (slotIndex == 0 && player instanceof ServerPlayerEntity serverPlayer) {
             int movedCount = itemStack.getCount() - (itemStack2.isEmpty() ? 0 : itemStack2.getCount());
             if (movedCount > 0) {
-                ItemStack movedStack = itemStack.copy();
+                ItemStack movedStack = itemStack.copy(); // Use itemStack for consistency with crafted item
                 movedStack.setCount(movedCount);
                 grantCraftingXP(serverPlayer, movedStack);
-            }
-
-            int level = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.CRAFTING);
-            float recoveryChance = getRecoveryChance(level);
-            if (recoveryChance <= 0) return;
-
-            for (int i = 0; i < 9; i++) {
-                ItemStack original = originalInputs[i];
-                ItemStack current = craftingInventory.getStack(i);
-                if (!original.isEmpty() && current.getCount() < original.getCount()) {
-                    if (serverPlayer.getRandom().nextFloat() < recoveryChance) {
-                        ItemStack recovered = original.copy();
-                        recovered.setCount(1);
-                        if (!serverPlayer.getInventory().insertStack(recovered)) {
-                            serverPlayer.dropItem(recovered, false);
-                        }
-                        Simpleskills.LOGGER.debug(
-                                "Recovered {} for player {} (lvl {}, chance {})",
-                                recovered.getItem().getTranslationKey(),
-                                serverPlayer.getName().getString(),
-                                level,
-                                recoveryChance
-                        );
-                    }
-                }
+                // Use itemStack for blacklist check to ensure we're checking the crafted item
+                applyMaterialRecovery(serverPlayer, itemStack);
             }
         }
     }
@@ -137,19 +114,14 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
-        // Get existing lore, if any
         LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
         List<Text> currentLore = new ArrayList<>(currentLoreComponent.lines());
 
-        // Create the new crafting lore with colored tier
         Text craftingLore = Text.literal("Crafted by " + player.getName().getString() +
                         " (" + tierInfo.name() + " Crafter)")
                 .setStyle(Style.EMPTY.withItalic(false).withColor(tierInfo.color()));
 
-        // Add the new lore at the beginning of the list
         currentLore.addFirst(craftingLore);
-
-        // Set the combined lore back to the stack
         stack.set(DataComponentTypes.LORE, new LoreComponent(currentLore));
     }
 
@@ -175,20 +147,61 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
     }
 
     @Unique
+    private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
+        // Check if the output item is blacklisted
+        String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
+
+        // Enhanced debug logging
+        Simpleskills.LOGGER.info("=== MATERIAL RECOVERY DEBUG (Shift-Click) ===");
+        Simpleskills.LOGGER.info("Player: {}", player.getName().getString());
+        Simpleskills.LOGGER.info("Output item: {}", itemId);
+        Simpleskills.LOGGER.info("Is blacklisted: {}", ConfigManager.isRecipeBlacklisted(itemId));
+
+        if (ConfigManager.isRecipeBlacklisted(itemId)) {
+            Simpleskills.LOGGER.info("Skipping material recovery for blacklisted item: {}", itemId);
+            return;
+        }
+
+        Simpleskills.LOGGER.info("Proceeding with recovery check for: {}", itemId);
+
+        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
+        float recoveryChance = getRecoveryChance(level);
+        Simpleskills.LOGGER.info("Recovery chance: {} for level {}", recoveryChance, level);
+        if (recoveryChance <= 0) {
+            Simpleskills.LOGGER.info("No recovery possible (chance <= 0)");
+            return;
+        }
+
+        for (int i = 0; i < 9; i++) {
+            ItemStack original = originalInputs[i];
+            ItemStack current = craftingInventory.getStack(i);
+            Simpleskills.LOGGER.info("Slot {}: Original count: {}, Current count: {}", i, original.getCount(), current.getCount());
+            if (!original.isEmpty() && current.getCount() < original.getCount()) {
+                if (player.getRandom().nextFloat() < recoveryChance) {
+                    ItemStack recovered = original.copy();
+                    recovered.setCount(1);
+                    if (!player.getInventory().insertStack(recovered)) {
+                        player.dropItem(recovered, false);
+                    }
+                    Simpleskills.LOGGER.info(
+                            "Recovered {} for player {} (lvl {}, chance {})",
+                            recovered.getItem().getTranslationKey(),
+                            player.getName().getString(),
+                            level,
+                            recoveryChance
+                    );
+                }
+            }
+        }
+    }
+
+    @Unique
     private float getDurabilityMultiplier(int level) {
-        if (level >= 99) return 1.20f;
-        else if (level >= 75) return 1.15f;
-        else if (level >= 50) return 1.10f;
-        else if (level >= 25) return 1.05f;
-        else return 1.0f;
+        return ConfigManager.getCraftingDurabilityMultiplier(level);
     }
 
     @Unique
     private float getRecoveryChance(int level) {
-        if (level >= 99) return 0.25f;
-        else if (level >= 75) return 0.15f;
-        else if (level >= 50) return 0.10f;
-        else if (level >= 25) return 0.05f;
-        else return 0.0f;
+        return ConfigManager.getCraftingRecoveryChance(level);
     }
 }

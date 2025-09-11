@@ -11,6 +11,7 @@ import net.minecraft.component.type.FoodComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.AbstractFurnaceScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -40,6 +41,11 @@ public abstract class FurnaceScreenHandlerMixin {
     )
     private void onQuickMoveBeforeInsert(PlayerEntity player, int slotIndex, CallbackInfoReturnable<ItemStack> cir, @Local(ordinal = 0) ItemStack itemStack, @Local Slot slot, @Local(ordinal = 1) ItemStack itemStack2) {
         if (slotIndex == 2 && player instanceof ServerPlayerEntity serverPlayer) {
+            // Skip if stack is empty or represents air
+            if (itemStack2.isEmpty() || Registries.ITEM.getId(itemStack2.getItem()).toString().equals("minecraft:air")) {
+                Simpleskills.LOGGER.debug("Skipping onQuickMoveBeforeInsert for empty or air stack: {}", itemStack2);
+                return;
+            }
             applyCookingLore(itemStack2, serverPlayer);
             applyCookingScaling(itemStack2, serverPlayer);
         }
@@ -56,6 +62,11 @@ public abstract class FurnaceScreenHandlerMixin {
     )
     private void onQuickMoveAfterTransfer(PlayerEntity player, int slotIndex, CallbackInfoReturnable<ItemStack> cir, @Local(ordinal = 0) ItemStack itemStack, @Local Slot slot, @Local(ordinal = 1) ItemStack itemStack2) {
         if (slotIndex == 2 && player instanceof ServerPlayerEntity serverPlayer) {
+            // Skip if itemStack is empty or represents air
+            if (itemStack.isEmpty() || Registries.ITEM.getId(itemStack.getItem()).toString().equals("minecraft:air")) {
+                Simpleskills.LOGGER.debug("Skipping onQuickMoveAfterTransfer for empty or air stack: {}", itemStack);
+                return;
+            }
             int movedCount = itemStack.getCount() - (itemStack2.isEmpty() ? 0 : itemStack2.getCount());
             if (movedCount > 0) {
                 ItemStack movedStack = itemStack.copy();
@@ -67,7 +78,7 @@ public abstract class FurnaceScreenHandlerMixin {
 
     @Unique
     private void grantCookingXP(ServerPlayerEntity player, ItemStack stack) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         String itemKey = stack.getItem().getTranslationKey();
         int xpPerItem = ConfigManager.getCookingXP(itemKey, Skills.COOKING);
         if (xpPerItem <= 0) return;
@@ -83,7 +94,7 @@ public abstract class FurnaceScreenHandlerMixin {
 
     @Unique
     private void applyCookingLore(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
@@ -105,7 +116,7 @@ public abstract class FurnaceScreenHandlerMixin {
 
     @Unique
     private void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
         float multiplier = getMultiplier(level);
 

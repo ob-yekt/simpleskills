@@ -2,6 +2,7 @@ package com.github.ob_yekt.simpleskills.mixin.SMITHING;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
+import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.LoreManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import net.minecraft.component.DataComponentTypes;
@@ -93,19 +94,6 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
     }
 
     @Unique
-    private boolean isNetheriteTool(Item item) {
-        return item == Items.NETHERITE_PICKAXE ||
-                item == Items.NETHERITE_AXE ||
-                item == Items.NETHERITE_SHOVEL ||
-                item == Items.NETHERITE_HOE ||
-                item == Items.NETHERITE_SWORD ||
-                item == Items.NETHERITE_HELMET ||
-                item == Items.NETHERITE_CHESTPLATE ||
-                item == Items.NETHERITE_LEGGINGS ||
-                item == Items.NETHERITE_BOOTS;
-    }
-
-    @Unique
     private ItemStack applySmithingDurabilityScaling(ItemStack stack, ServerPlayerEntity player) {
         if (stack.isEmpty() || stack.get(DataComponentTypes.MAX_DAMAGE) == null) {
             Simpleskills.LOGGER.debug("applySmithingDurabilityScaling: Empty stack or no MAX_DAMAGE for {}", stack.getItem());
@@ -139,7 +127,7 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
 
         // Get the smithing level and multiplier
         int smithingLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.SMITHING);
-        float smithingMultiplier = getDurabilityMultiplier(smithingLevel);
+        float smithingMultiplier = ConfigManager.getSmithingMultiplier(smithingLevel);
 
         // Calculate the new durability: (vanilla Netherite durability + crafting bonus) * smithing multiplier
         int newMax = Math.max(1, Math.round((vanillaNetheriteDurability + craftingBonus) * smithingMultiplier));
@@ -192,15 +180,6 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         if (netheriteItem == Items.NETHERITE_LEGGINGS) return Items.DIAMOND_LEGGINGS;
         if (netheriteItem == Items.NETHERITE_BOOTS) return Items.DIAMOND_BOOTS;
         return null;
-    }
-
-    @Unique
-    private float getDurabilityMultiplier(int level) {
-        if (level >= 99) return 1.20f;
-        else if (level >= 75) return 1.15f;
-        else if (level >= 50) return 1.10f;
-        else if (level >= 25) return 1.05f;
-        else return 1.0f;
     }
 
     @Unique

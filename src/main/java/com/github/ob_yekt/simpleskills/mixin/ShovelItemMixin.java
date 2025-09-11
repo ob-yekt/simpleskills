@@ -61,7 +61,7 @@ public class ShovelItemMixin {
                 // Check if the block was actually converted to a dirt path
                 if (world.getBlockState(context.getBlockPos()).isOf(Blocks.DIRT_PATH)) {
                     int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.EXCAVATING);
-                    XPManager.addXPWithNotification(player, Skills.EXCAVATING, xp);
+                    XPManager.addXPWithNotification(player, Skills.EXCAVATING, xp/5);
                     Simpleskills.LOGGER.debug("Granted {} Excavation XP to {} for creating path from {}",
                             xp, player.getName().getString(), blockTranslationKey);
                 }

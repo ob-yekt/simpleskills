@@ -11,18 +11,19 @@
     "InventoryCheckMixin",
     "ServerPlayerEntityMixin",
     "ShovelItemMixin",
-    "SMITHING.AnvilScreenHandlerMixin",
     "COOKING.CookingXPMixin",
     "COOKING.FurnaceScreenHandlerMixin",
     "CRAFTING.AbstractCraftingScreenHandlerAccessor",
     "CRAFTING.CraftingResultSlotMixin",
     "CRAFTING.CraftingScreenHandlerMixin",
-    "SMITHING.SmithingScreenHandlerMixin",
     "FISHING.FishingBobberEntityAccessor",
     "FISHING.FishingBobberEntityMixin",
     "LORE.CraftingResultInventoryMixin",
     "LORE.PlayerInventoryMixin",
-    "LORE.SimpleInventoryMixin"
+    "LORE.SimpleInventoryMixin",
+    "SMITHING.AnvilScreenHandlerMixin",
+    "SMITHING.ForgingScreenHandlerMixin",
+    "SMITHING.SmithingScreenHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

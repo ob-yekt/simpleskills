@@ -5,10 +5,12 @@ import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
+
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.screen.ForgingScreenHandler;
 import net.minecraft.screen.Property;
@@ -26,6 +28,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
 import org.objectweb.asm.Opcodes;
 
 @Mixin(AnvilScreenHandler.class)
@@ -35,13 +38,12 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
     private Property levelCost;
 
     @Shadow
-    public abstract int getLevelCost();
-
-    @Shadow
     private int repairItemUsage;
 
-    @Shadow
-    private boolean keepSecondSlot;
+    @Unique
+    public int getDurabilityRepaired() {
+        return this.durabilityRepaired;
+    }
 
     // Store durability repaired for XP calculation
     @Unique
@@ -55,7 +57,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
     private static ForgingSlotsManager getForgingSlotsManager() {
         return ForgingSlotsManager.builder()
                 .input(0, 27, 47, stack -> true)
-                .input(1, 76, 47, stack -> true)
+                .input(1, 76, 47, stack -> stack.getCount() <= 1) // Fixed: return boolean, limit to 1 item
                 .output(2, 134, 47)
                 .build();
     }
@@ -112,9 +114,19 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
         ItemStack materialStack = materialSlot.getStack();
         ItemStack outputStack = outputSlot.getStack();
 
+        // Skip if any stack is empty or air
+        if (inputStack.isEmpty() || materialStack.isEmpty() || outputStack.isEmpty() ||
+                Registries.ITEM.getId(inputStack.getItem()).toString().equals("minecraft:air") ||
+                Registries.ITEM.getId(materialStack.getItem()).toString().equals("minecraft:air") ||
+                Registries.ITEM.getId(outputStack.getItem()).toString().equals("minecraft:air")) {
+            Simpleskills.LOGGER.debug("Skipping scaleMaterialRepair for empty or air stack: input={}, material={}, output={}",
+                    inputStack, materialStack, outputStack);
+            this.durabilityRepaired = 0;
+            return;
+        }
+
         // Only for material repair (repairItemUsage > 0 after vanilla loop)
-        if (this.repairItemUsage <= 0 || outputStack.isEmpty() || inputStack.isEmpty() || materialStack.isEmpty() ||
-                !inputStack.isDamageable() || !inputStack.canRepairWith(materialStack)) {
+        if (this.repairItemUsage <= 0 || !inputStack.isDamageable() || !inputStack.canRepairWith(materialStack)) {
             this.durabilityRepaired = 0;
             return;
         }
@@ -129,12 +141,12 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
         int baseRepairPerMaterial = Math.round(maxDamage * 0.25f);
         // Scale repair amount based on smithing level
         int repairPerMaterial = Math.round(baseRepairPerMaterial * repairFraction);
-        int availableMaterials = materialStack.getCount();
+        int availableMaterials = Math.min(materialStack.getCount(), 1); // Limit to 1 material
 
         // Calculate total durability to repair
         int newRepaired = Math.min(inputDamage, availableMaterials * repairPerMaterial);
         int newDamage = inputDamage - newRepaired;
-        // Calculate material usage based on durability repaired
+        // Calculate material usage (should be 1 due to slot limit)
         int newUsage = (newRepaired >= inputDamage)
                 ? (int) Math.ceil((double) inputDamage / repairPerMaterial)
                 : availableMaterials;
@@ -148,16 +160,11 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
         this.repairItemUsage = newUsage;
         outputSlot.setStack(outputStack);
 
-        // Set level cost to 0 for material repairs
+        // Set level cost to 1 for material repairs
         this.levelCost.set(1);
 
         // Determine tier name for logging
-        String tierName;
-        if (playerSmithingLevel >= 99) tierName = "Grandmaster";
-        else if (playerSmithingLevel >= 75) tierName = "Expert";
-        else if (playerSmithingLevel >= 50) tierName = "Artisan";
-        else if (playerSmithingLevel >= 25) tierName = "Journeyman";
-        else tierName = "Novice";
+        String tierName = getTierName(playerSmithingLevel);
 
         Simpleskills.LOGGER.debug(
                 "Scaled material repair for player {} ({} lvl {}): efficiency {}%, usage {} -> {}, damage {} -> {}, durabilityRepaired {}, cost -> 1",
@@ -179,7 +186,11 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
         ItemStack materialStack = materialSlot.getStack();
         ItemStack outputStack = outputSlot.getStack();
 
-        if (outputStack.isEmpty()) return;
+        // Skip if output is empty or air
+        if (outputStack.isEmpty() || Registries.ITEM.getId(outputStack.getItem()).toString().equals("minecraft:air")) {
+            Simpleskills.LOGGER.debug("Skipping handleEnchantRequirementsAndRepairCost for empty or air output: {}", outputStack);
+            return;
+        }
 
         // ================================
         // 1. Enchantment requirement check
@@ -200,7 +211,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
             if (requirement != null && enchantmentLevel >= requirement.getEnchantmentLevel()
                     && playerEnchantingLevel < requirement.getLevel()) {
                 hasRestrictedEnchantment = true;
-                serverPlayer.sendMessage(Text.literal("§6[simpleskills]§f You need ENCHANTING level "
+                serverPlayer.sendMessage(Text.literal("Â§6[simpleskills]Â§f You need ENCHANTING level "
                         + requirement.getLevel() + " to apply " + enchantmentId.getPath()
                         + " level " + enchantmentLevel + "!"), true);
                 break;
@@ -217,6 +228,8 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
         // 2. Smithing repair scaling with new tier system
         // ================================
         if (this.repairItemUsage > 0 && !inputStack.isEmpty() && !materialStack.isEmpty()
+                && !Registries.ITEM.getId(inputStack.getItem()).toString().equals("minecraft:air")
+                && !Registries.ITEM.getId(materialStack.getItem()).toString().equals("minecraft:air")
                 && inputStack.isDamageable() && inputStack.canRepairWith(materialStack)) {
 
             int smithingLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.SMITHING);
@@ -240,12 +253,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
             this.levelCost.set(1);
 
             // Determine tier name for logging
-            String tierName;
-            if (smithingLevel >= 99) tierName = "Grandmaster";
-            else if (smithingLevel >= 75) tierName = "Expert";
-            else if (smithingLevel >= 50) tierName = "Artisan";
-            else if (smithingLevel >= 25) tierName = "Journeyman";
-            else tierName = "Novice";
+            String tierName = getTierName(smithingLevel);
 
             Simpleskills.LOGGER.debug(
                     "Scaled material repair for {} ({} lvl {}): efficiency {}%, repaired {}, usage {}, damage {} -> {}",
@@ -256,22 +264,38 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
     }
 
     @Inject(method = "onTakeOutput", at = @At("HEAD"))
-    private void onTakeOutputHead(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+    private void onTakeOutput(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
         if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
 
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) {
+            Simpleskills.LOGGER.debug("Skipping onTakeOutput for empty or air stack: {}", stack);
+            return;
+        }
+
+        grantXPForAnvilAction(serverPlayer, stack);
+    }
+
+    @Unique
+    private void grantXPForAnvilAction(ServerPlayerEntity serverPlayer, ItemStack stack) {
         AnvilScreenHandler handler = (AnvilScreenHandler) (Object) this;
         ItemStack input1 = handler.getSlot(0).getStack();
         ItemStack input2 = handler.getSlot(1).getStack();
 
+        // Skip if inputs are empty or air
+        if (input1.isEmpty() || input2.isEmpty() ||
+                Registries.ITEM.getId(input1.getItem()).toString().equals("minecraft:air") ||
+                Registries.ITEM.getId(input2.getItem()).toString().equals("minecraft:air")) {
+            Simpleskills.LOGGER.debug("Skipping grantXPForAnvilAction for empty or air inputs: input1={}, input2={}", input1, input2);
+            return;
+        }
+
         // Detect material repair
-        boolean isMaterialRepair = !input1.isEmpty() && !input2.isEmpty() &&
-                input1.getItem() == stack.getItem() &&
+        boolean isMaterialRepair = input1.getItem() == stack.getItem() &&
                 input1.getDamage() > stack.getDamage() &&
                 this.repairItemUsage > 0;
 
         // Detect enchantment combining
-        boolean isEnchantCombining = !input1.isEmpty() && !input2.isEmpty() &&
-                input2.contains(DataComponentTypes.STORED_ENCHANTMENTS) &&
+        boolean isEnchantCombining = input2.contains(DataComponentTypes.STORED_ENCHANTMENTS) &&
                 !stack.getEnchantments().getEnchantments().isEmpty();
 
         if (isMaterialRepair) {
@@ -292,7 +316,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
             float xpMultiplier = ConfigManager.getSmithingXP(action, Skills.SMITHING);
             int playerSmithingLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.SMITHING);
             float skillScaling = 0.5f + 1.5f * (playerSmithingLevel / 99.0f);
-            int smithingXP = Math.round(this.durabilityRepaired * xpMultiplier * skillScaling*10);
+            int smithingXP = Math.round(this.durabilityRepaired * xpMultiplier * skillScaling * 10);
             if (smithingXP > 0) {
                 XPManager.addXPWithNotification(serverPlayer, Skills.SMITHING, smithingXP);
                 Simpleskills.LOGGER.debug(
@@ -306,7 +330,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
             // Grant enchanting XP based on vanilla level cost
             int enchantingXP = this.levelCost.get();
             if (enchantingXP > 1) {
-                XPManager.addXPWithNotification(serverPlayer, Skills.ENCHANTING, enchantingXP*100);
+                XPManager.addXPWithNotification(serverPlayer, Skills.ENCHANTING, enchantingXP * 100);
                 Simpleskills.LOGGER.debug(
                         "Granted {} Enchanting XP for combining enchantments by player {} (level {})",
                         enchantingXP, serverPlayer.getName().getString(),
@@ -314,5 +338,14 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
                 );
             }
         }
+    }
+
+    @Unique
+    private String getTierName(int smithingLevel) {
+        if (smithingLevel >= 99) return "Grandmaster";
+        else if (smithingLevel >= 75) return "Expert";
+        else if (smithingLevel >= 50) return "Artisan";
+        else if (smithingLevel >= 25) return "Journeyman";
+        else return "Novice";
     }
 }

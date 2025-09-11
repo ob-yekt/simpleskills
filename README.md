@@ -1,220 +1,233 @@
-# simpleskills
+# 🌟 **simpleskills**: Level Up Your Minecraft Adventure!
 
-**Simpleskills** is a Fabric mod introducing a familiar RPG-style skilling system to Minecraft, enhancing gameplay with meaningful progression.  
-Master skills like Woodcutting, Alchemy, Slaying, and more. Unlock tools, armor, weapons, and bonuses as you level up, creating a rewarding sense of achievement.
+Welcome to ****simpleskills****, the ultimate server-side Fabric mod that transforms Minecraft into an epic RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds thrilling progression with 15 unique skills, unlockable gear, and competitive leaderboards. Feel the rush of mastering Woodcutting, Slaying, Alchemy, and more, as you climb to level 99 and dominate the server!
 
-- 🎮 Works in **multiplayer and singleplayer**.
-- 🌐 **Server-side only** — players do not need to install the mod to join.
-- ⚔️ Designed for a **multiplayer experience** with long-term progression.
-- 🧾 Detailed commands that allow for adjusting configs without restarts and other admin functions.
-- ⚙️ **Highly configurable** with JSON config files to adjust XP, unlock tiers, prayer sacrifices, and more.
+**Why **simpleskills**?**
+- 🎮 **Seamless Fun**: Works flawlessly out-of-the-box in multiplayer - no client mods needed!
+- ⚔️ **Epic Progression**: Unlock powerful tools, armor, and bonuses as you level up.
+- 🏆 **Bragging Rights**: Compete on leaderboards and show off your skills!
+- 🛠 **Your World, Your Rules**: Fully customizable to craft the perfect experience for your server.
+- 🛠 **Singleplayer Support**: Prefer to play on your own? Toggle the skill HUD with H, rebind in options.
 
----
-
-## 📜 Features
-
-- **15 core skills** with meaningful progression.
-- **Unlock tiers** for tools & armor.
-- **Lore text** on items shows requirements (e.g., *“Requires level 50 Smithing”*).
-- **Prayer system** with sacrifices for long-term buffs.
-- **Adjusted XP equations** for balanced leveling.
-- **Ironman mode** for hardcore players.
-- **Extensive config options** — every skill, XP value, and unlock can be customized.
+Ready to embark on a journey of mastery and glory? Let’s dive in!
 
 ---
 
-## 🏆 Leaderboards
+## 🎮 What Makes **simpleskills** Awesome?
 
-Compete with your friends and other players!  
-Simpleskills includes a **built-in leaderboard system** that tracks both **individual skills** and **total level** across the entire server.
+**simpleskills** brings RPG-style depth to Minecraft with features designed to keep you and your friends hooked:
+- **15 Unique Skills**: From Mining to Prayer, each skill offers rewarding progression and tangible benefits.
+- **Toggle HUD**: Skills are shown in the **Tab Menu**. Easily toggle the hud with `/simpleskills togglehud`
+- **Gear Unlocks**: Earn the right to wield Diamond, Netherite, and more as you level up.
+- **Ironman Mode**: Crave a challenge? Test your skills with hardcore restrictions and epic stakes.
+- **Leaderboards**: Battle for the top spot in individual skills or overall mastery.
+- **Customizable Everything**: Tweak XP rates, unlock tiers, and more with easy JSON configs.
+- **Feels Like Vanilla+**: The mod is designed to be unintrusive and intuitive without overreach - simple!
 
-- Accessible with `/simpleskills leaderboard <skill|total>`
-- Shows the **top 5 players** per skill or total level.
-
-Example commands:
-- `/simpleskills leaderboard mining` → Top 5 miners on the server.
-- `/simpleskills leaderboard total` → Overall top 5 players by combined level.
-
-Leaderboards encourage **friendly competition** and make long-term progression feel rewarding.  
-Perfect for survival servers, SMPs, and communities that want a clear “**endgame**” challenge.
+Perfect for casual SMPs, hardcore survival servers, streamers, lets-players, or solo adventurers who want a richer Minecraft experience.
 
 ---
 
-## ⚔️ Ironman Mode
-A hardcore playstyle with:
-- Death announcements with total level reached of the dead player (configurable).
-- Reduced HP (configurable).
-- Reduced XP gain (configurable).
-- On death, lose:
-  - All vanilla XP.
-  - All simpleskills XP.
-  - All items.
+## 🛠 Skills to Master
+
+Unleash your potential with **15 core skills** that make every action in Minecraft feel rewarding:
+
+1. **Mining**: Break stone and ores to level up and unlock better tools.
+2. **Woodcutting**: Chop trees to become a lumberjack legend.
+3. **Excavating**: Shovel dirt, sand, and gravel to dig your way to greatness.
+4. **Farming**: Till soil and harvest crops to feed your empire.
+5. **Fishing**: Reel in fish, treasures, and XP with faster and increasingly better catches as you level.
+6. **Defense**: Take hits in armor to equip better gear.
+7. **Slaying**: Slay mobs with melee weapons to become a feared warrior.
+8. **Ranged**: Master bows and crossbows for pinpoint precision.
+9. **Enchanting**: Craft epic gear with level-locked enchantments like Mending.
+10. **Alchemy**: Brew potions with boosted durations as you rise through tiers.
+11. **Smithing**: Repair and upgrade gear with unmatched efficiency.
+12. **Cooking**: Cook meals that restore more hunger and saturation.
+13. **Crafting**: Craft durable tools and armor with a chance to refund materials on (almost) any recipe.
+14. **Agility**: Run, jump, and swim faster with every level.
+15. **Prayer**: Sacrifice rare items for long-term buffs like Haste or Invisibility.
+
+**Each skill is a journey, which one will you max out first?**
 
 ---
 
-## 🔓 Default Unlock Tiers for Armor and Tools
+## 🏆 Compete and Conquer with Leaderboards
 
-| Material         | Required Level |
-|------------------|----------------|
-| Leather / Wood   | 0              |
-| Gold             | 5              |
-| Copper           | 25             |
-| Chainmail (armor)| 35             |
-| Iron             | 50             |
-| Diamond          | 75             |
-| Netherite        | 99             |
+Nothing fuels fun like a little friendly competition! **simpleskills**’ **built-in leaderboard system** lets you:
+- Track your rank in **individual skills** or **total level**.
+- Show off your progress with commands like `/simpleskills leaderboard alchemy`.
+- Celebrate the **top 5 players** in each skill or total level mastery.
+- The mod doesn't stop at 99! Leaderboards continue to track XP after hitting max level.
+
+Perfect for SMPs and communities, leaderboards create a vibrant “endgame” where players strive to be the best. Who’s ready to claim the #1 spot?
 
 ---
 
-## 🛠 Skills Overview
+## ⚔️ Ironman Mode: The Ultimate Challenge
 
-### Mining
-- XP gained from **breaking stone & ores**.
+Think you’ve got what it takes to be a legend? **Ironman Mode** cranks up the intensity:
+- **High Stakes**: Lose *everything* on death, including items and XP.
+- **Customizable Hardcore Tweaks**: Reduced HP (-50%) and XP gain (0.2x)
+- **Epic Bragging Rights**: Red skull icon shows everyone you’re embarking on an Ironman journey.
+- **Death Announcements**: Share your total level with the server when you fall (optional).
 
-### Woodcutting
-- XP gained from **chopping logs**.
+Perfect for players who crave a brutal, rewarding challenge or want to stand out in their community.
 
-### Excavating
-- XP gained from **shoveling dirt, sand, gravel, etc.**
+---
 
-### Farming
-- XP gained from:
-  - **Tilling soil**
-  - **Harvesting mature crops**
+## 🔓 Gear Progression: Earn Your Power
+
+Unlock tools and armor as you level up, with fully customizable tiers:
+
+| Armor Material | Required Level |  
+|----------------|----------------|  
+| Leather        | 0              |  
+| Gold           | 5              |  
+| Copper         | 25             |  
+| Chainmail      | 35             |  
+| Iron           | 50             |  
+| Diamond        | 75             |  
+| Netherite      | 99             |  
+
+
+| Tool Material | Required Level |  
+|---------------|----------------|  
+| Wood          | 0              |  
+| Gold          | 5              |  
+| Stone         | 15             |  
+| Copper        | 25             |
+| Iron          | 50             |  
+| Diamond       | 75             |  
+| Netherite     | 99             |  
+
+| Tool Material | Required Level |  
+|---------------|----------------|  
+| Mace          | 80             |  
+| Crossbow      | 0              |  
+| Bow           | 50             |  
+| Trident       | 99             |  
+
+
+Affected gear comes with **lore text** (e.g., *“Requires level 50 Defense”*), keeping things intuitive for players.
+
+---
+
+## 🎣 Skill Highlights: Your Path to Mastery
+
+Here’s a taste of what each skill offers:
 
 ### Fishing
-- **+0.5% faster catch per level** (up to +49.5% at 99).
-- Custom **loot tables** by tier:
+- **Faster Catches**: +0.5% speed per level (up to +49.5% at 99).
+- **Custom Loot Tables**: Unlock better treasures as you level:
 
-| Tier        | Fish | Junk | Treasure                |
-|-------------|------|------|-------------------------|
-| Novice      | 80%  | 20%  | 0%                      |
-| Journeyman  | 80%  | 15%  | 5% (bows, rods, saddles, shells, tags) |
-| Artisan     | 80%  | 13%  | 7% (enchanted bows/rods, saddles, shells, tags) |
-| Expert      | 85%  | 5%   | 10% (enchanted books, bows, rods, saddles, shells, tags) |
-| Grandmaster | 79%  | 1%   | 15% (enchanted trident, books, bows, rods, saddles, shells, tags) |
-
----
-
-### Defense
-- XP gained from **taking damage** while wearing armor.
-
-### Slaying
-- XP gained from **killing mobs** with melee weapons.
-
-### Ranged
-- XP gained from **bow/crossbow combat**.
+| Tier            | Fish | Junk | Treasure                     |  
+|-----------------|------|------|-----------------------------|  
+| Novice (1–24)   | 80%  | 20%  | None                        |  
+| Journeyman (25–49) | 80%  | 15%  | 5% (Bows, Rods, Saddles)   |  
+| Artisan (50–74) | 80%  | 13%  | 7% (Enchanted Gear)         |  
+| Expert (75–98)  | 85%  | 5%   | 10% (Books, Tridents)       |  
+| Grandmaster (99)| 79%  | 1%   | 15% (Rare Enchanted Items)  |  
 
 ### Enchanting
-- XP gained from:
-  - Using the **enchanting table**.
-  - Combining books/items at the **anvil**.
+Lock powerful enchantments to specific levels, defaulted to:
+- Fortune III: Level 25
+- Protection IV: Level 50
+- Efficiency V: Level 75
+- Mending: Level 99
+
+No more rushing and cycling trades for Mending villagers, you have to earn it! You can also offer your enchanting services to other players.
 
 ### Alchemy
-- Potion **duration bonuses** by tier:
-  - Novice (1–24): ×1.00
-  - Journeyman (25–49): ×1.25
-  - Artisan (50–74): ×1.50
-  - Expert (75–98): ×1.75
-  - Grandmaster (99): ×2.00
-
-- XP gained from **brewing potions**.
-
-### Smithing
-**Repairs**
-- Repairs cost **no materials**, efficiency scales with level:
-  - Novice: 20–30%
-  - Journeyman: 35–45%
-  - Artisan: 50–60%
-  - Expert: 65–75%
-  - Grandmaster: 100%
-
-**Upgrades**
-- Diamond → Netherite upgrades grant **extra durability**, stacking with Crafting bonuses.
-  - Novice: ×1.00
-  - Journeyman: ×1.05
-  - Artisan: ×1.10
-  - Expert: ×1.15
-  - Grandmaster: ×1.20
-
-### Cooking
-- Food saturation & hunger restored scale by tier:
-  - Novice: ×0.875
-  - Journeyman: ×1.00
-  - Artisan: ×1.125
-  - Expert: ×1.25
-  - Grandmaster: ×1.375
-
-- XP gained from **cooking foods in furnaces/cookers**.
+Brew potions with boosted durations, defaulted to:
+- Novice (1–24): 1x duration
+- Journeyman (25–49): 1.25x duration
+- Artisan (50–74): 1.50x duration
+- Expert (75–98): 1.75x duration
+- Grandmaster (99): 3x duration
 
 ### Crafting
-- Crafting skill improves durability & may **refund ingredients**:
-  - Novice: 0% refund, normal durability
-  - Journeyman: 5% refund, +5% durability
-  - Artisan: 10% refund, +10% durability
-  - Expert: 15% refund, +15% durability
-  - Grandmaster: 25% refund, +20% durability
+Tools and armor crafted by players enjoy boosts to durability based on tier. All crafted items are signed by the player and their rank, signifying the extent of the durability increase. Crafting increases your change to get recover ingredients on successful craft of (almost) any recipe.
+- Novice (1–24): 0% durability bonus, 0% recovery chance
+- Journeyman (25–49): 5% durability bonus, 2.5% recovery chance
+- Artisan (50–74): 10% durability bonus, 5% recovery chance
+- Expert (75–98): 15% durability bonus, 7.5% recovery chance
+- Grandmaster (99): 25% durability bonus, 15% recovery chance
 
-- XP gained from crafting **tools & armor (durability items)**.
 
-### Agility
-- Grants **+0.1% movement speed per level** (max +9.9% at 99).
-- XP gained from **running, jumping, falling, swimming**.
+### Smithing
+Tools and armor are repaired at higher rates. All upgraded Netherite items are signed by the player and their rank, signifying the extent of the durability increase. 
+
+The Smithing bonus stacks with the Crafting bonus: a Grandmaster Crafted Pickaxe upgraded by a Grandmaster Smith will have the highest durability.
+- Novice (1–24): 0% durability bonus for gear upgraded to Netherite
+- Journeyman (25–49): 5% durability bonus for gear upgraded to Netherite
+- Artisan (50–74): 7.5% durability bonus for gear upgraded to Netherite
+- Expert (75–98): 10% durability bonus for gear upgraded to Netherite
+- Grandmaster (99): 20% durability bonus for gear upgraded to Netherite
 
 ### Prayer
-Sacrifice valuable items by right clicking a lit candle for **long-term buffs**.
+Sacrifice rare items for powerful buffs:
 
-#### 📖 Default Sacrifice List
+| Item                        | Level | Effect                  | Duration | Name                          | Effect Level |
+|-----------------------------|-------|-------------------------|----------|-------------------------------|--------------|
+| 🐇 Rabbit Foot              | 0     | minecraft:luck          | 144000   | Prayer I: Luck                | 1            |
+| 💠 Blue Orchid              | 0     | minecraft:absorption     | 144000   | Prayer I: Absorption          | 3            |
+| ✨ Glow Ink Sac             | 0     | minecraft:dolphins_grace | 144000   | Prayer I: Dolphin's Grace     | 1            |
+| 🌊 Heart of the Sea         | 25    | minecraft:conduit_power  | 288000   | Prayer II: Conduit Power      | 1            |
+| 🍏 Golden Apple             | 25    | minecraft:health_boost   | 288000   | Prayer II: Health Boost       | 1            |
+| 🐚 Nautilus Shell           | 25    | minecraft:water_breathing| 288000   | Prayer II: Water Breathing    | 1            |
+| 🦇 Phantom Membrane         | 50    | minecraft:slow_falling   | 432000   | Prayer III: Slow Falling      | 1            |
+| 💎 Diamond                  | 50    | minecraft:speed          | 432000   | Prayer II: Speed              | 2            |
+| 🐐 Goat Horn                | 50    | minecraft:jump_boost     | 432000   | Prayer III: Jump Boost        | 2            |
+| 🌿 Pitcher Plant            | 75    | minecraft:strength       | 576000   | Prayer IV: Strength           | 2            |
+| 🍎 Enchanted Golden Apple   | 75    | minecraft:resistance     | 576000   | Prayer IV: Resistance         | 2            |
+| ☠️ Wither Skeleton Skull    | 75    | minecraft:fire_resistance| 576000   | Prayer IV: Fire Resistance    | 1            |
+| 🏵️ Torchflower             | 99    | minecraft:night_vision   | 864000   | Prayer V: Night Vision        | 1            |
+| 🏆 Totem of Undying         | 99    | minecraft:invisibility    | 864000   | Prayer V: Invisibility        | 1            |
+| ⭐ Nether Star               | 99    | minecraft:haste          | 864000   | Prayer V: Haste 2             | 2            |
 
-| Item                          | Level | Duration | Buff              | Effect Level | Name                      |
-|-------------------------------|-------|----------|------------------|--------------|---------------------------|
-| 🐇 Rabbit Foot                | 0     | 2h       | Luck             | I            | Prayer I: Luck            |
-| 🌸 Lily of the Valley         | 0     | 2h       | Absorption       | I            | Prayer I: Absorption      |
-| ✨ Glow Ink Sac               | 0     | 2h       | Dolphin’s Grace  | I            | Prayer I: Dolphin’s Grace |
-| 🌊 Heart of the Sea           | 50    | 4h       | Conduit Power    | I            | Prayer III: Conduit Power |
-| 🍏 Golden Apple               | 50    | 4h       | Health Boost     | I            | Prayer III: Health Boost  |
-| 🐚 Nautilus Shell             | 25    | 4h       | Water Breathing  | I            | Prayer II: Water Breathing|
-| 💧 Ghast Tear                 | 50    | 6h       | Slow Falling     | I            | Prayer III: Slow Falling  |
-| 💎 Diamond                    | 25    | 6h       | Speed            | II           | Prayer II: Speed          |
-| 🐐 Goat Horn                  | 25    | 6h       | Jump Boost       | II           | Prayer II: Jump Boost     |
-| 🦇 Phantom Membrane           | 75    | 8h       | Strength         | II           | Prayer IV: Strength       |
-| 🎼 Echo Shard                 | 75    | 8h       | Resistance       | II           | Prayer IV: Resistance     |
-| ☠️ Wither Skeleton Skull      | 75    | 8h       | Fire Resistance  | I            | Prayer IV: Fire Resistance|
-| 🍎 Enchanted Golden Apple     | 99    | 12h      | Night Vision     | I            | Prayer V: Night Vision    |
-| 🏆 Totem of Undying           | 99    | 12h      | Invisibility     | I            | Prayer V: Invisibility    |
-| ⭐ Nether Star                 | 99    | 12h      | Haste            | II           | Prayer V: Haste II        |
-
----
-
-## 💻 Commands
-
-The `/simpleskills` root command provides multiple subcommands:
-
-- `/simpleskills togglehud` → Toggle the skills HUD visibility.
-- `/simpleskills ironman enable` → Enable Ironman mode until death.
-- `/simpleskills query <username> <skill|total>` → Query a skill level or total level.
-- `/simpleskills leaderboard <skill|total>` → Show top 5 leaderboard for a skill or total levels.
-- `/simpleskills ironman disable` → Disable Ironman mode (admin only).
-- `/simpleskills reload` → Reload configs (admin only).
-- `/simpleskills reset <username>` → Reset all skills (resetting other players is admin only).
-- `/simpleskills addxp <username> <skill> <amount>` → Add XP to a skill (admin only).
-- `/simpleskills setlevel <username> <skill> <level>` → Set a player’s skill level (admin only).
-
+Fully customizable: create your own sacrifices and effects!
 
 ---
 
-## ⚙️ Customization
-Simpleskills is built to be **fully customizable**.
+## 💻 Commands: Take Control
 
-- All XP values, unlock levels, loot tables, and prayer sacrifices are stored in **JSON config files** located in 'server_root'\config\simpleskills.
-- Server owners can **rebalance progression**, adjust skill unlocks, or even add/remove sacrifices.
-- Ironman mode difficulty is adjustable.
-
-This makes the mod flexible for both casual RPG servers and hardcore long-term survival worlds.
+**simpleskills** gives your players and admins full control with intuitive commands:
+- `/simpleskills togglehud`: Show or hide the skills HUD.
+- `/simpleskills ironman enable`: Embrace the Ironman challenge.
+- `/simpleskills reset`: Set all skills to 0.
+- `/simpleskills leaderboard <skill|total>`: Check the top 5 players.
+- `/simpleskills query <username> <skill|total>`: See anyone’s progress.
+- **Admin Commands**:
+  - `/simpleskills reload`: Update configs without restarting.
+  - `/simpleskills reset <username>`: Wipe a player’s skills.
+  - `/simpleskills addxp <username> <skill> <amount>`: Directly add skill XP.
+  - `/simpleskills setlevel <username> <skill> <level>`: Set skill levels.
 
 ---
 
-## 🔧 Other Changes
-- Removed **Classes & Perks** system (will be split into optional mod in the future).
-- Removed all attribute bonuses **except Agility (movement speed)**.
-- Item **lore text** now shows requirements (e.g., *“Requires level 50 Smithing”*).
+## ⚙️ Make It Yours: Total Customization
+
+**simpleskills** is built for *your* vision. Tweak every detail with JSON configs:
+- Adjust **XP rates** and **unlock levels**.
+- Customize **loot tables**, **prayer sacrifices**, and **Ironman difficulty**.
+- Create a casual RPG vibe or a hardcore grind fest—your choice!
+
+Configs live in `server_root\config\simpleskills`, making it easy to craft the perfect experience for your community.
+
+---
+
+## 🚀 Get Started Today!
+
+Ready to level up your Minecraft server? **simpleskills** is your ticket to a deeper, more rewarding gameplay experience. Whether you’re a server owner looking to spice up your SMP or a player hungry for progression, this mod has it all.
+
+1. **Download** **simpleskills**: Grab it from [Modrinth](https://modrinth.com/mod/simpleskills).
+2. **Install**: Drop it into your server’s `mods` folder, or `\AppData\Roaming\.minecraft\mods` for singleplayer ([Fabric API](https://modrinth.com/mod/fabric-api) required for either option).
+2.1 **Customize**: Tweak configs to match your server’s vibe, or just try it out-of-the-box.
+3. **Play**: Jump in and start leveling up!
+
+Join the countless players already mastering their skills and dominating leaderboards. Don’t miss out, bring **simpleskills** to your server and let your community thrive!
+
+**Questions?** You can message me on Discord: **obyekt**, or check out the [GitHub](https://github.com/ob-yekt/simpleskills).
+
+## Level up your world with simpleskills.

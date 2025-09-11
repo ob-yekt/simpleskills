@@ -33,21 +33,23 @@ public class XPManager {
     }
 
     /// Updated XP LOGIC with refined curve
-    public static int getExperienceForLevel(int level) {
-        if (level <= 1) return 0;
-        double a = 0.65;
-        double b = 3.5;
-        return (int) Math.floor(a * (Math.pow(level, b) - 1));
-    }
-
-    // Inverse method to find the level for a given XP amount
-    public static int getLevelForExperience(int experience) {
-        int level = 1;
-        while (level < MAX_LEVEL && getExperienceForLevel(level + 1) <= experience) {
-            level++;
+        public static int getExperienceForLevel(int level) {
+            if (level <= 1) return 0;
+            double a = 1.164;
+            double b = 3.5;
+            double s = 2.75;
+            return (int) Math.floor(a * (Math.pow(level + s, b) - Math.pow(1 + s, b)));
         }
-        return level;
-    }
+
+        // Inverse method to find the level for a given XP amount
+        public static int getLevelForExperience(int experience) {
+            int level = 1;
+            while (level < MAX_LEVEL && getExperienceForLevel(level + 1) <= experience) {
+                level++;
+            }
+            return level;
+        }
+
 
     // Get a player's skill level
     public static int getSkillLevel(String playerUuid, Skills skill) {
@@ -115,7 +117,7 @@ public class XPManager {
         }
 
         if (newLevel > currentLevel) {
-            ServerWorld serverWorld = (ServerWorld) player.getEntityWorld();
+            ServerWorld serverWorld = player.getEntityWorld();
             String levelUpMessage;
             if (newLevel == MAX_LEVEL) {
                 levelUpMessage = "§6[simpleskills]§f Congratulations! You have reached max level in " + skill.getDisplayName() + "!";

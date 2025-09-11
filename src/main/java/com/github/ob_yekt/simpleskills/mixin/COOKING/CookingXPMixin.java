@@ -10,6 +10,7 @@ import net.minecraft.component.type.FoodComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.screen.slot.FurnaceOutputSlot;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Style;
@@ -32,6 +33,11 @@ public abstract class CookingXPMixin {
     @Inject(method = "onTakeItem", at = @At("HEAD"))
     private void onTakeItem(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
+            // Skip if stack is empty or represents air
+            if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) {
+                Simpleskills.LOGGER.debug("Skipping onTakeItem for empty or air stack: {}", stack);
+                return;
+            }
             grantCookingXP(serverPlayer, stack);
             applyCookingLore(stack, serverPlayer);
             applyCookingScaling(stack, serverPlayer);
@@ -40,7 +46,7 @@ public abstract class CookingXPMixin {
 
     @Unique
     private void grantCookingXP(ServerPlayerEntity player, ItemStack stack) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         String itemKey = stack.getItem().getTranslationKey();
         int xpPerItem = ConfigManager.getCookingXP(itemKey, Skills.COOKING);
         if (xpPerItem <= 0) return;
@@ -56,7 +62,7 @@ public abstract class CookingXPMixin {
 
     @Unique
     private void applyCookingLore(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
@@ -78,7 +84,7 @@ public abstract class CookingXPMixin {
 
     @Unique
     private void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty()) return;
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
         float multiplier = getMultiplier(level);
 
