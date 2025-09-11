@@ -54,7 +54,7 @@ public abstract class AgilityXPMixin {
         if (source == player.getDamageSources().fall() && cir.getReturnValue() && canAwardXP(player, "fall_damage")) {
             // Scale XP based on damage taken (e.g., 5 XP per heart of damage)
             int xp = (int)(amount * ConfigManager.getAgilityXP("fall_damage", Skills.AGILITY) / 2);
-            XPManager.addXPWithNotification(player, Skills.AGILITY, xp);
+            XPManager.addXPSilent(player, Skills.AGILITY, xp);
             Simpleskills.LOGGER.debug("Granted {} Agility XP for fall damage ({} hearts) to player {}",
                     xp, amount / 2, player.getName().getString());
         }
@@ -66,7 +66,7 @@ public abstract class AgilityXPMixin {
         ServerPlayerEntity player = (ServerPlayerEntity)(Object)this;
         if (canAwardXP(player, "jump")) {
             int xp = ConfigManager.getAgilityXP("jump", Skills.AGILITY);
-            XPManager.addXPWithNotification(player, Skills.AGILITY, xp);
+            XPManager.addXPSilent(player, Skills.AGILITY, xp);
             Simpleskills.LOGGER.debug("Granted {} Agility XP for jumping to player {}",
                     xp, player.getName().getString());
         }
@@ -79,7 +79,7 @@ public abstract class AgilityXPMixin {
         // Swimming XP
         if (player.isSwimming() && canAwardXP(player, "swim")) {
             int xp = ConfigManager.getAgilityXP("swim", Skills.AGILITY);
-            XPManager.addXPWithNotification(player, Skills.AGILITY, xp);
+            XPManager.addXPSilent(player, Skills.AGILITY, xp);
             Simpleskills.LOGGER.debug("Granted {} Agility XP for swimming to player {}",
                     xp, player.getName().getString());
         }
@@ -87,7 +87,7 @@ public abstract class AgilityXPMixin {
         // Sprinting XP
         if (player.isSprinting() && canAwardXP(player, "sprint")) {
             int xp = ConfigManager.getAgilityXP("sprint", Skills.AGILITY);
-            XPManager.addXPWithNotification(player, Skills.AGILITY, xp);
+            XPManager.addXPSilent(player, Skills.AGILITY, xp);
             Simpleskills.LOGGER.debug("Granted {} Agility XP for sprinting to player {}",
                     xp, player.getName().getString());
         }
@@ -95,7 +95,7 @@ public abstract class AgilityXPMixin {
         // Sneaking XP (optional: continuous like swimming/sprinting)
         if (player.isSneaking() && canAwardXP(player, "sneak")) {
             int xp = ConfigManager.getAgilityXP("sneak", Skills.AGILITY);
-            XPManager.addXPWithNotification(player, Skills.AGILITY, xp);
+            XPManager.addXPSilent(player, Skills.AGILITY, xp);
             Simpleskills.LOGGER.debug("Granted {} Agility XP for sneaking to player {}",
                     xp, player.getName().getString());
         }

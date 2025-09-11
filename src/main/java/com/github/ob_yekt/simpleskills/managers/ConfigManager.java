@@ -1032,11 +1032,11 @@ public class ConfigManager {
         record AgilityMapping(String action, int xp) {
         }
         AgilityMapping[] defaults = {
-                new AgilityMapping("fall_damage", 30), // Base XP per heart of damage
-                new AgilityMapping("jump", 10),
-                new AgilityMapping("sprint", 10),
-                new AgilityMapping("swim", 15),
-                new AgilityMapping("sneak", 10)
+                new AgilityMapping("fall_damage", 60), // Base XP per heart of damage
+                new AgilityMapping("jump", 20),
+                new AgilityMapping("sprint", 20),
+                new AgilityMapping("swim", 25),
+                new AgilityMapping("sneak", 20)
         };
         for (AgilityMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
