@@ -6,6 +6,7 @@
     "AgilityXPMixin",
     "AlchemyXPMixin",
     "ArmorRestrictionMixin",
+    "AxeItemMixin",
     "EnchantingScreenHandlerMixin",
     "HoeItemMixin",
     "InventoryCheckMixin",

@@ -716,7 +716,16 @@ public class ConfigManager {
                 "minecraft:glowstone_dust",
                 "minecraft:glowstone",
                 "minecraft:bone_meal",
-                "minecraft:bone_block"
+                "minecraft:bone_block",
+                "minecraft:wool",
+                "minecraft:string",
+                "minecraft:quartz_block",
+                "minecraft:quartz,",
+                "minecraft:nether_wart",
+                "minecraft:nether_wart_block",
+                "minecraft:ice",
+                "minecraft:packed_ice",
+                "minecraft:blue_ice",
         };
         for (String item : blacklistedItems) {
             blacklist.add(item);
