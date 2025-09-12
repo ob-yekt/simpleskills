@@ -230,4 +230,6 @@ Join the countless players already mastering their skills and dominating leaderb
 
 **Questions?** You can message me on Discord: **obyekt**, or check out the [GitHub](https://github.com/ob-yekt/simpleskills).
 
+### Check out my other mod 'simpleqol' on [Modrinth](https://modrinth.com/mod/simpleqol) or [GitHub](https://github.com/ob-yekt/simpleqol)!
+
 ## Level up your world with simpleskills.
