@@ -219,14 +219,10 @@ Configs live in `server_root\config\simpleskills`, making it easy to craft the p
 
 ## 🚀 Get Started Today!
 
-Ready to level up your Minecraft server? **simpleskills** is your ticket to a deeper, more rewarding gameplay experience. Whether you’re a server owner looking to spice up your SMP or a player hungry for progression, this mod has it all.
-
 1. **Download** **simpleskills**: Grab it from [Modrinth](https://modrinth.com/mod/simpleskills).
 2. **Install**: Drop it into your server’s `mods` folder, or `\AppData\Roaming\.minecraft\mods` for singleplayer ([Fabric API](https://modrinth.com/mod/fabric-api) required for either option).
-2.1 **Customize**: Tweak configs to match your server’s vibe, or just try it out-of-the-box.
-3. **Play**: Jump in and start leveling up!
-
-Join the countless players already mastering their skills and dominating leaderboards. Don’t miss out, bring **simpleskills** to your server and let your community thrive!
+3. **Customize**: Tweak configs to match your server’s vibe, or just try it out-of-the-box.
+4. **Play**: Jump in and start leveling up!
 
 **Questions?** You can message me on Discord: **obyekt**, or check out the [GitHub](https://github.com/ob-yekt/simpleskills).
 

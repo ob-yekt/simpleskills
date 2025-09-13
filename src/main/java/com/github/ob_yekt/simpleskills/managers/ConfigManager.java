@@ -140,8 +140,8 @@ public class ConfigManager {
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
         json.addProperty("standard_xp_multiplier", 1.0);
-        json.addProperty("ironman_xp_multiplier", 0.2);
-        json.addProperty("ironman_health_reduction", -10.0);
+        json.addProperty("ironman_xp_multiplier", 0.5);
+        json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
         return json;
     }
@@ -470,83 +470,71 @@ public class ConfigManager {
         }
         CraftingMapping[] defaults = {
                 // Wood
-                new CraftingMapping("minecraft:wood_shovel", 30),
-                new CraftingMapping("minecraft:wood_hoe", 60),
-                new CraftingMapping("minecraft:wood_sword", 60),
-                new CraftingMapping("minecraft:wood_pickaxe", 90),
-                new CraftingMapping("minecraft:wood_axe", 90),
+                new CraftingMapping("minecraft:wood_shovel", 300),
+                new CraftingMapping("minecraft:wood_hoe", 600),
+                new CraftingMapping("minecraft:wood_sword", 600),
+                new CraftingMapping("minecraft:wood_pickaxe", 900),
+                new CraftingMapping("minecraft:wood_axe", 900),
 
                 // Leather/Stone
-                new CraftingMapping("minecraft:leather_helmet", 250),
-                new CraftingMapping("minecraft:leather_chestplate", 400),
-                new CraftingMapping("minecraft:leather_leggings", 350),
-                new CraftingMapping("minecraft:leather_boots", 200),
-                new CraftingMapping("minecraft:stone_shovel", 100),
-                new CraftingMapping("minecraft:stone_hoe", 200),
-                new CraftingMapping("minecraft:stone_sword", 200),
-                new CraftingMapping("minecraft:stone_pickaxe", 300),
-                new CraftingMapping("minecraft:stone_axe", 300),
+                new CraftingMapping("minecraft:leather_helmet", 2500),
+                new CraftingMapping("minecraft:leather_chestplate", 4000),
+                new CraftingMapping("minecraft:leather_leggings", 3500),
+                new CraftingMapping("minecraft:leather_boots", 2000),
+                new CraftingMapping("minecraft:stone_shovel", 1000),
+                new CraftingMapping("minecraft:stone_hoe", 2000),
+                new CraftingMapping("minecraft:stone_sword", 2000),
+                new CraftingMapping("minecraft:stone_pickaxe", 3000),
+                new CraftingMapping("minecraft:stone_axe", 3000),
 
                 // Gold
-                new CraftingMapping("minecraft:golden_helmet", 2500),
-                new CraftingMapping("minecraft:golden_chestplate", 4000),
-                new CraftingMapping("minecraft:golden_leggings", 3500),
-                new CraftingMapping("minecraft:golden_boots", 2000),
-                new CraftingMapping("minecraft:golden_shovel", 500),
-                new CraftingMapping("minecraft:golden_hoe", 1000),
-                new CraftingMapping("minecraft:golden_sword", 1000),
-                new CraftingMapping("minecraft:golden_pickaxe", 1500),
-                new CraftingMapping("minecraft:golden_axe", 1500),
+                new CraftingMapping("minecraft:golden_helmet", 25000),
+                new CraftingMapping("minecraft:golden_chestplate", 40000),
+                new CraftingMapping("minecraft:golden_leggings", 35000),
+                new CraftingMapping("minecraft:golden_boots", 20000),
+                new CraftingMapping("minecraft:golden_shovel", 5000),
+                new CraftingMapping("minecraft:golden_hoe", 10000),
+                new CraftingMapping("minecraft:golden_sword", 10000),
+                new CraftingMapping("minecraft:golden_pickaxe", 15000),
+                new CraftingMapping("minecraft:golden_axe", 15000),
 
                 // Copper
-                new CraftingMapping("minecraft:copper_helmet", 1250),
-                new CraftingMapping("minecraft:copper_chestplate", 2000),
-                new CraftingMapping("minecraft:copper_leggings", 1750),
-                new CraftingMapping("minecraft:copper_boots", 1000),
-                new CraftingMapping("minecraft:copper_shovel", 250),
-                new CraftingMapping("minecraft:copper_hoe", 500),
-                new CraftingMapping("minecraft:copper_sword", 500),
-                new CraftingMapping("minecraft:copper_pickaxe", 750),
-                new CraftingMapping("minecraft:copper_axe", 750),
+                new CraftingMapping("minecraft:copper_helmet", 12500),
+                new CraftingMapping("minecraft:copper_chestplate", 20000),
+                new CraftingMapping("minecraft:copper_leggings", 17500),
+                new CraftingMapping("minecraft:copper_boots", 10000),
+                new CraftingMapping("minecraft:copper_shovel", 2500),
+                new CraftingMapping("minecraft:copper_hoe", 5000),
+                new CraftingMapping("minecraft:copper_sword", 5000),
+                new CraftingMapping("minecraft:copper_pickaxe", 7500),
+                new CraftingMapping("minecraft:copper_axe", 7500),
 
                 // Iron
-                new CraftingMapping("minecraft:iron_helmet", 1500),
-                new CraftingMapping("minecraft:iron_chestplate", 2400),
-                new CraftingMapping("minecraft:iron_leggings", 2100),
-                new CraftingMapping("minecraft:iron_boots", 1200),
-                new CraftingMapping("minecraft:iron_shovel", 300),
-                new CraftingMapping("minecraft:iron_hoe", 600),
-                new CraftingMapping("minecraft:iron_sword", 600),
-                new CraftingMapping("minecraft:iron_pickaxe", 900),
-                new CraftingMapping("minecraft:iron_axe", 900),
+                new CraftingMapping("minecraft:iron_helmet", 15000),
+                new CraftingMapping("minecraft:iron_chestplate", 24000),
+                new CraftingMapping("minecraft:iron_leggings", 21000),
+                new CraftingMapping("minecraft:iron_boots", 12000),
+                new CraftingMapping("minecraft:iron_shovel", 3000),
+                new CraftingMapping("minecraft:iron_hoe", 6000),
+                new CraftingMapping("minecraft:iron_sword", 6000),
+                new CraftingMapping("minecraft:iron_pickaxe", 9000),
+                new CraftingMapping("minecraft:iron_axe", 9000),
 
                 // Diamond
-                new CraftingMapping("minecraft:diamond_helmet", 4000),
-                new CraftingMapping("minecraft:diamond_chestplate", 8000),
-                new CraftingMapping("minecraft:diamond_leggings", 7000),
-                new CraftingMapping("minecraft:diamond_boots", 4000),
-                new CraftingMapping("minecraft:diamond_shovel", 1000),
-                new CraftingMapping("minecraft:diamond_hoe", 2000),
-                new CraftingMapping("minecraft:diamond_sword", 2000),
-                new CraftingMapping("minecraft:diamond_pickaxe", 3000),
-                new CraftingMapping("minecraft:diamond_axe", 3000),
+                new CraftingMapping("minecraft:diamond_helmet", 40000),
+                new CraftingMapping("minecraft:diamond_chestplate", 80000),
+                new CraftingMapping("minecraft:diamond_leggings", 70000),
+                new CraftingMapping("minecraft:diamond_boots", 40000),
+                new CraftingMapping("minecraft:diamond_shovel", 10000),
+                new CraftingMapping("minecraft:diamond_hoe", 20000),
+                new CraftingMapping("minecraft:diamond_sword", 20000),
+                new CraftingMapping("minecraft:diamond_pickaxe", 30000),
+                new CraftingMapping("minecraft:diamond_axe", 30000),
 
-                // Netherite
-                new CraftingMapping("minecraft:netherite_helmet", 8000),
-                new CraftingMapping("minecraft:netherite_chestplate", 16000),
-                new CraftingMapping("minecraft:netherite_leggings", 14000),
-                new CraftingMapping("minecraft:netherite_boots", 8000),
-                new CraftingMapping("minecraft:netherite_shovel", 2000),
-                new CraftingMapping("minecraft:netherite_hoe", 4000),
-                new CraftingMapping("minecraft:netherite_sword", 4000),
-                new CraftingMapping("minecraft:netherite_pickaxe", 6000),
-                new CraftingMapping("minecraft:netherite_axe", 6000),
+                new CraftingMapping("minecraft:mace", 50000),
 
-
-                new CraftingMapping("minecraft:mace", 5000),
-
-                new CraftingMapping("minecraft:crossbow", 750),
-                new CraftingMapping("minecraft:bow", 250),
+                new CraftingMapping("minecraft:crossbow", 7500),
+                new CraftingMapping("minecraft:bow", 2500),
         };
         for (CraftingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -1466,8 +1454,7 @@ public class ConfigManager {
 
     private static JsonObject getDefaultFishingXPConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("catch", 500);
-        // Add more
+        json.addProperty("catch", 550);
         return json;
     }
 

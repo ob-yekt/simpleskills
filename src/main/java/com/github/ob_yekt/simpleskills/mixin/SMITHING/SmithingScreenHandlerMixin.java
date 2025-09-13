@@ -60,8 +60,8 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         Simpleskills.LOGGER.debug("SmithingScreenHandlerMixin: onTakeOutput triggered for player {}, output: {}",
                 serverPlayer.getName().getString(), stack.getItem());
 
-        // Grant 6000 XP for completing smithing action
-        XPManager.addXPWithNotification(serverPlayer, Skills.SMITHING, 6000);
+        // Grant 20,000 XP for completing smithing action
+        XPManager.addXPWithNotification(serverPlayer, Skills.SMITHING, 20000);
 
         // Apply lore to the output stack
         applySmithingLore(stack, serverPlayer);
