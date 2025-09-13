@@ -527,72 +527,74 @@ public class ConfigManager {
         record CraftingMapping(String item, int xp) {
         }
         CraftingMapping[] defaults = {
-                // Wood
-                new CraftingMapping("minecraft:wood_shovel", 300),
-                new CraftingMapping("minecraft:wood_hoe", 600),
-                new CraftingMapping("minecraft:wood_sword", 600),
-                new CraftingMapping("minecraft:wood_pickaxe", 900),
-                new CraftingMapping("minecraft:wood_axe", 900),
+                // Wood (Base XP: 200 per plank)
+                new CraftingMapping("minecraft:wood_shovel", 200),     // 1 plank
+                new CraftingMapping("minecraft:wood_hoe", 400),        // 2 planks
+                new CraftingMapping("minecraft:wood_sword", 400),      // 2 planks
+                new CraftingMapping("minecraft:wood_pickaxe", 600),    // 3 planks
+                new CraftingMapping("minecraft:wood_axe", 600),        // 3 planks
 
-                // Leather/Stone
-                new CraftingMapping("minecraft:leather_helmet", 2500),
-                new CraftingMapping("minecraft:leather_chestplate", 4000),
-                new CraftingMapping("minecraft:leather_leggings", 3500),
-                new CraftingMapping("minecraft:leather_boots", 2000),
-                new CraftingMapping("minecraft:stone_shovel", 1000),
-                new CraftingMapping("minecraft:stone_hoe", 2000),
-                new CraftingMapping("minecraft:stone_sword", 2000),
-                new CraftingMapping("minecraft:stone_pickaxe", 3000),
-                new CraftingMapping("minecraft:stone_axe", 3000),
+                // Leather (Base XP: 300 per leather)
+                new CraftingMapping("minecraft:leather_helmet", 1500),     // 5 leather
+                new CraftingMapping("minecraft:leather_chestplate", 2400), // 8 leather
+                new CraftingMapping("minecraft:leather_leggings", 2100),   // 7 leather
+                new CraftingMapping("minecraft:leather_boots", 1200),      // 4 leather
 
-                // Gold
-                new CraftingMapping("minecraft:golden_helmet", 25000),
-                new CraftingMapping("minecraft:golden_chestplate", 40000),
-                new CraftingMapping("minecraft:golden_leggings", 35000),
-                new CraftingMapping("minecraft:golden_boots", 20000),
-                new CraftingMapping("minecraft:golden_shovel", 5000),
-                new CraftingMapping("minecraft:golden_hoe", 10000),
-                new CraftingMapping("minecraft:golden_sword", 10000),
-                new CraftingMapping("minecraft:golden_pickaxe", 15000),
-                new CraftingMapping("minecraft:golden_axe", 15000),
+                // Stone (Base XP: 300 per cobblestone)
+                new CraftingMapping("minecraft:stone_shovel", 300),    // 1 cobblestone
+                new CraftingMapping("minecraft:stone_hoe", 600),       // 2 cobblestone
+                new CraftingMapping("minecraft:stone_sword", 600),     // 2 cobblestone
+                new CraftingMapping("minecraft:stone_pickaxe", 900),   // 3 cobblestone
+                new CraftingMapping("minecraft:stone_axe", 900),       // 3 cobblestone
 
-                // Copper
-                new CraftingMapping("minecraft:copper_helmet", 12500),
-                new CraftingMapping("minecraft:copper_chestplate", 20000),
-                new CraftingMapping("minecraft:copper_leggings", 17500),
-                new CraftingMapping("minecraft:copper_boots", 10000),
-                new CraftingMapping("minecraft:copper_shovel", 2500),
-                new CraftingMapping("minecraft:copper_hoe", 5000),
-                new CraftingMapping("minecraft:copper_sword", 5000),
-                new CraftingMapping("minecraft:copper_pickaxe", 7500),
-                new CraftingMapping("minecraft:copper_axe", 7500),
+                // Gold (Base XP: 600 per gold ingot)
+                new CraftingMapping("minecraft:golden_helmet", 3000),      // 5 gold ingots
+                new CraftingMapping("minecraft:golden_chestplate", 4800),  // 8 gold ingots
+                new CraftingMapping("minecraft:golden_leggings", 4200),    // 7 gold ingots
+                new CraftingMapping("minecraft:golden_boots", 2400),       // 4 gold ingots
+                new CraftingMapping("minecraft:golden_shovel", 600),       // 1 gold ingot
+                new CraftingMapping("minecraft:golden_hoe", 1200),         // 2 gold ingots
+                new CraftingMapping("minecraft:golden_sword", 1200),       // 2 gold ingots
+                new CraftingMapping("minecraft:golden_pickaxe", 1800),     // 3 gold ingots
+                new CraftingMapping("minecraft:golden_axe", 1800),         // 3 gold ingots
 
-                // Iron
-                new CraftingMapping("minecraft:iron_helmet", 15000),
-                new CraftingMapping("minecraft:iron_chestplate", 24000),
-                new CraftingMapping("minecraft:iron_leggings", 21000),
-                new CraftingMapping("minecraft:iron_boots", 12000),
-                new CraftingMapping("minecraft:iron_shovel", 3000),
-                new CraftingMapping("minecraft:iron_hoe", 6000),
-                new CraftingMapping("minecraft:iron_sword", 6000),
-                new CraftingMapping("minecraft:iron_pickaxe", 9000),
-                new CraftingMapping("minecraft:iron_axe", 9000),
+                // Copper (Base XP: 400 per copper ingot)
+                new CraftingMapping("minecraft:copper_helmet", 2000),      // 5 copper ingots
+                new CraftingMapping("minecraft:copper_chestplate", 3200),  // 8 copper ingots
+                new CraftingMapping("minecraft:copper_leggings", 2800),    // 7 copper ingots
+                new CraftingMapping("minecraft:copper_boots", 1600),       // 4 copper ingots
+                new CraftingMapping("minecraft:copper_shovel", 400),       // 1 copper ingot
+                new CraftingMapping("minecraft:copper_hoe", 800),          // 2 copper ingots
+                new CraftingMapping("minecraft:copper_sword", 800),        // 2 copper ingots
+                new CraftingMapping("minecraft:copper_pickaxe", 1200),     // 3 copper ingots
+                new CraftingMapping("minecraft:copper_axe", 1200),         // 3 copper ingots
 
-                // Diamond
-                new CraftingMapping("minecraft:diamond_helmet", 40000),
-                new CraftingMapping("minecraft:diamond_chestplate", 80000),
-                new CraftingMapping("minecraft:diamond_leggings", 70000),
-                new CraftingMapping("minecraft:diamond_boots", 40000),
-                new CraftingMapping("minecraft:diamond_shovel", 10000),
-                new CraftingMapping("minecraft:diamond_hoe", 20000),
-                new CraftingMapping("minecraft:diamond_sword", 20000),
-                new CraftingMapping("minecraft:diamond_pickaxe", 30000),
-                new CraftingMapping("minecraft:diamond_axe", 30000),
+                // Iron (Base XP: 500 per iron ingot)
+                new CraftingMapping("minecraft:iron_helmet", 2500),        // 5 iron ingots
+                new CraftingMapping("minecraft:iron_chestplate", 4000),    // 8 iron ingots
+                new CraftingMapping("minecraft:iron_leggings", 3500),      // 7 iron ingots
+                new CraftingMapping("minecraft:iron_boots", 2000),         // 4 iron ingots
+                new CraftingMapping("minecraft:iron_shovel", 500),         // 1 iron ingot
+                new CraftingMapping("minecraft:iron_hoe", 1000),           // 2 iron ingots
+                new CraftingMapping("minecraft:iron_sword", 1000),         // 2 iron ingots
+                new CraftingMapping("minecraft:iron_pickaxe", 1500),       // 3 iron ingots
+                new CraftingMapping("minecraft:iron_axe", 1500),           // 3 iron ingots
 
-                new CraftingMapping("minecraft:mace", 50000),
+                // Diamond (Base XP: 1000 per diamond)
+                new CraftingMapping("minecraft:diamond_helmet", 5000),     // 5 diamonds
+                new CraftingMapping("minecraft:diamond_chestplate", 8000), // 8 diamonds
+                new CraftingMapping("minecraft:diamond_leggings", 7000),   // 7 diamonds
+                new CraftingMapping("minecraft:diamond_boots", 4000),      // 4 diamonds
+                new CraftingMapping("minecraft:diamond_shovel", 1000),     // 1 diamond
+                new CraftingMapping("minecraft:diamond_hoe", 2000),        // 2 diamonds
+                new CraftingMapping("minecraft:diamond_sword", 2000),      // 2 diamonds
+                new CraftingMapping("minecraft:diamond_pickaxe", 3000),    // 3 diamonds
+                new CraftingMapping("minecraft:diamond_axe", 3000),        // 3 diamonds
 
-                new CraftingMapping("minecraft:crossbow", 7500),
-                new CraftingMapping("minecraft:bow", 2500),
+                // Special Items
+                new CraftingMapping("minecraft:mace", 7500),               // ~5 units at 1500 XP/unit
+                new CraftingMapping("minecraft:crossbow", 2400),           // ~3 units at 800 XP/unit
+                new CraftingMapping("minecraft:bow", 1500),                // ~3 units at 500 XP/unit
         };
         for (CraftingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -819,19 +821,19 @@ public class ConfigManager {
         record SmeltingCraftingXP(String item, int xp) {
         }
         SmeltingCraftingXP[] defaults = {
-                new SmeltingCraftingXP("item.minecraft.copper_ingot", 100),
-                new SmeltingCraftingXP("item.minecraft.copper_nugget", 70),
-                new SmeltingCraftingXP("item.minecraft.iron_ingot", 150),
-                new SmeltingCraftingXP("item.minecraft.iron_nugget", 70),
-                new SmeltingCraftingXP("item.minecraft.gold_ingot", 200),
-                new SmeltingCraftingXP("item.minecraft.gold_nugget", 80),
-                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 500),
-                new SmeltingCraftingXP("item.minecraft.redstone", 50),
-                new SmeltingCraftingXP("item.minecraft.coal", 30),
-                new SmeltingCraftingXP("item.minecraft.emerald", 300),
-                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 100),
-                new SmeltingCraftingXP("item.minecraft.diamond", 400),
-                new SmeltingCraftingXP("item.minecraft.quartz", 80)
+                new SmeltingCraftingXP("item.minecraft.copper_ingot", 300),
+                new SmeltingCraftingXP("item.minecraft.copper_nugget", 150),
+                new SmeltingCraftingXP("item.minecraft.iron_ingot", 450),
+                new SmeltingCraftingXP("item.minecraft.iron_nugget", 150),
+                new SmeltingCraftingXP("item.minecraft.gold_ingot", 600),
+                new SmeltingCraftingXP("item.minecraft.gold_nugget", 200),
+                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 1500),
+                new SmeltingCraftingXP("item.minecraft.redstone", 200),
+                new SmeltingCraftingXP("item.minecraft.coal", 100),
+                new SmeltingCraftingXP("item.minecraft.emerald", 900),
+                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 300),
+                new SmeltingCraftingXP("item.minecraft.diamond", 1200),
+                new SmeltingCraftingXP("item.minecraft.quartz", 250)
         };
         for (SmeltingCraftingXP config : defaults) {
             JsonObject entry = new JsonObject();
@@ -1058,14 +1060,14 @@ public class ConfigManager {
         JsonArray mappings = new JsonArray();
         record SmithingMapping(String action, float xp) {}
         SmithingMapping[] defaults = {
-                new SmithingMapping("repair:minecraft:leather", 9.0f),
-                new SmithingMapping("repair:minecraft:copper_ingot", 9.5f),
-                new SmithingMapping("repair:minecraft:gold_ingot", 9.5f),
-                new SmithingMapping("repair:minecraft:turtle_scute", 10.0f),
-                new SmithingMapping("repair:minecraft:iron_ingot", 10.0f),
-                new SmithingMapping("repair:minecraft:phantom_membrane", 11.5f),
-                new SmithingMapping("repair:minecraft:diamond", 11.0f),
-                new SmithingMapping("repair:minecraft:netherite_ingot", 11.5f)
+                new SmithingMapping("repair:minecraft:leather", 15.0f),
+                new SmithingMapping("repair:minecraft:copper_ingot", 16.0f),
+                new SmithingMapping("repair:minecraft:gold_ingot", 16.0f),
+                new SmithingMapping("repair:minecraft:turtle_scute", 17.0f),
+                new SmithingMapping("repair:minecraft:iron_ingot", 17.0f),
+                new SmithingMapping("repair:minecraft:phantom_membrane", 19.0f),
+                new SmithingMapping("repair:minecraft:diamond", 18.0f),
+                new SmithingMapping("repair:minecraft:netherite_ingot", 19.0f)
         };
         for (SmithingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -1577,7 +1579,7 @@ public class ConfigManager {
 
     private static JsonObject getDefaultFishingXPConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("catch", 550);
+        json.addProperty("catch", 1750);
         return json;
     }
 

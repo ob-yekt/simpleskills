@@ -30,7 +30,7 @@ import java.util.List;
 public abstract class FurnaceOutputSlotMixin {
     @Shadow @Final private PlayerEntity player;
 
-    @Inject(method = "onTakeItem", at = @At("HEAD"))
+    @Inject(method = "onTakeItem", at = @At("TAIL"))
     private void onTakeItem(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
             // Skip if stack is empty or represents air
@@ -40,9 +40,17 @@ public abstract class FurnaceOutputSlotMixin {
             }
             grantCookingXP(serverPlayer, stack);
             grantCraftingXP(serverPlayer, stack);
-            applyCookingLore(stack, serverPlayer);
-            applyCookingScaling(stack, serverPlayer);
+            if (isCookableFoodItem(stack)) {
+                applyCookingLore(stack, serverPlayer);
+                applyCookingScaling(stack, serverPlayer);
+            }
         }
+    }
+
+    @Unique
+    private boolean isCookableFoodItem(ItemStack stack) {
+        String itemKey = stack.getItem().getTranslationKey();
+        return ConfigManager.getCookingXP(itemKey, Skills.COOKING) > 0 && stack.get(DataComponentTypes.FOOD) != null;
     }
 
     @Unique

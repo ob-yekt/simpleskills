@@ -46,8 +46,10 @@ public abstract class AbstractFurnaceScreenHandlerMixin {
                 Simpleskills.LOGGER.debug("Skipping onQuickMoveBeforeInsert for empty or air stack: {}", itemStack2);
                 return;
             }
-            applyCookingLore(itemStack2, serverPlayer);
-            applyCookingScaling(itemStack2, serverPlayer);
+            if (isCookableFoodItem(itemStack2)) {
+                applyCookingLore(itemStack2, serverPlayer);
+                applyCookingScaling(itemStack2, serverPlayer);
+            }
         }
     }
 
@@ -75,6 +77,12 @@ public abstract class AbstractFurnaceScreenHandlerMixin {
                 grantCraftingXP(serverPlayer, movedStack);
             }
         }
+    }
+
+    @Unique
+    private boolean isCookableFoodItem(ItemStack stack) {
+        String itemKey = stack.getItem().getTranslationKey();
+        return ConfigManager.getCookingXP(itemKey, Skills.COOKING) > 0 && stack.get(DataComponentTypes.FOOD) != null;
     }
 
     @Unique
