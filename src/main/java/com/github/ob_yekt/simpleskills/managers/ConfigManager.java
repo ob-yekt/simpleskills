@@ -34,7 +34,10 @@ public class ConfigManager {
     private static final Map<String, SkillRequirement> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
     public static final Map<String, PrayerSacrifice> PRAYER_SACRIFICES = new HashMap<>();
     private static final Map<String, Integer> COOKING_XP_MAP = new HashMap<>();
+    private static final Map<String, Float> COOKING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> CRAFTING_XP_MAP = new HashMap<>();
+    private static final Map<String, Integer> SMELTING_CRAFTING_XP_MAP = new HashMap<>();
+
     private static JsonObject craftingMultipliersConfig = new JsonObject();
     private static final Set<String> CRAFTING_RECOVERY_BLACKLIST = new HashSet<>();
     private static final Map<String, Integer> ALCHEMY_XP_MAP = new HashMap<>();
@@ -63,9 +66,12 @@ public class ConfigManager {
             loadEnchantmentRequirements();
             loadPrayerSacrifices();
             loadCookingXPConfig();
+            loadCookingMultipliersConfig();
             loadCraftingXPConfig();
             loadCraftingMultipliersConfig();
             loadCraftingRecoveryBlacklist();
+
+            loadSmeltingCraftingXPConfig();
             loadAlchemyXPConfig();
             loadAlchemyMultiplierConfig();
             loadSmithingXPConfig();
@@ -365,6 +371,58 @@ public class ConfigManager {
             return getDefaultCombatConfig();
         }
         return combatConfig;
+    }
+
+    /**
+     * Loads cooking multipliers from cooking_multipliers.json.
+     */
+    private static void loadCookingMultipliersConfig() {
+        Path filePath = CONFIG_DIR.resolve("cooking_multipliers.json");
+        try {
+            JsonObject json = loadJsonFile(filePath, getDefaultCookingMultipliersConfig());
+            COOKING_MULTIPLIER_MAP.clear();
+            for (var entry : json.entrySet()) {
+                String range = entry.getKey();
+                float multiplier = entry.getValue().getAsFloat();
+                if (multiplier >= 0) {
+                    COOKING_MULTIPLIER_MAP.put(range, multiplier);
+                } else {
+                    Simpleskills.LOGGER.warn("Invalid multiplier {} for range {} in cooking_multipliers.json, skipping", multiplier, range);
+                }
+            }
+            Simpleskills.LOGGER.info("Loaded cooking_multipliers.json");
+        } catch (JsonSyntaxException e) {
+            Simpleskills.LOGGER.error("JSON syntax error in cooking_multipliers.json: {}", e.getMessage());
+        } catch (IOException e) {
+            Simpleskills.LOGGER.error("Error loading cooking_multipliers.json: {}", e.getMessage());
+        }
+    }
+
+    private static JsonObject getDefaultCookingMultipliersConfig() {
+        JsonObject json = new JsonObject();
+        json.addProperty("0-24", 0.875f);
+        json.addProperty("25-49", 1.0f);
+        json.addProperty("50-74", 1.125f);
+        json.addProperty("75-98", 1.25f);
+        json.addProperty("99-99", 1.5f);
+        return json;
+    }
+
+    /**
+     * Gets the cooking multiplier for a given level.
+     */
+    public static float getCookingMultiplier(int level) {
+        if (level >= 99) {
+            return COOKING_MULTIPLIER_MAP.getOrDefault("99-99", 1.5f);
+        } else if (level >= 75) {
+            return COOKING_MULTIPLIER_MAP.getOrDefault("75-98", 1.25f);
+        } else if (level >= 50) {
+            return COOKING_MULTIPLIER_MAP.getOrDefault("50-74", 1.125f);
+        } else if (level >= 25) {
+            return COOKING_MULTIPLIER_MAP.getOrDefault("25-49", 1.0f);
+        } else {
+            return COOKING_MULTIPLIER_MAP.getOrDefault("0-24", 0.875f);
+        }
     }
 
     /**
@@ -725,6 +783,71 @@ public class ConfigManager {
     // Check if a recipe's output item is blacklisted
     public static boolean isRecipeBlacklisted(String itemId) {
         return CRAFTING_RECOVERY_BLACKLIST.contains(itemId);
+    }
+
+    /**
+     * Loads smelting crafting XP mappings from smelting_crafting_xp.json.
+     */
+    private static void loadSmeltingCraftingXPConfig() {
+        Path filePath = CONFIG_DIR.resolve("smelting_crafting_xp.json");
+        try {
+            JsonObject json = loadJsonFile(filePath, getDefaultSmeltingCraftingXPConfig());
+            var mappings = json.getAsJsonArray("smelting_crafting_mappings");
+            SMELTING_CRAFTING_XP_MAP.clear();
+            for (var element : mappings) {
+                JsonObject mapping = element.getAsJsonObject();
+                String item = mapping.get("item").getAsString();
+                int xp = mapping.get("xp").getAsInt();
+
+                if (xp < 0) {
+                    Simpleskills.LOGGER.warn("Invalid XP value {} for item {} in smelting_crafting_xp.json, skipping", xp, item);
+                    continue;
+                }
+                SMELTING_CRAFTING_XP_MAP.put(item, xp);
+            }
+            Simpleskills.LOGGER.info("Loaded smelting_crafting_xp.json");
+        } catch (JsonSyntaxException e) {
+            Simpleskills.LOGGER.error("JSON syntax error in smelting_crafting_xp.json: {}", e.getMessage());
+        } catch (IOException e) {
+            Simpleskills.LOGGER.error("Error loading smelting_crafting_xp.json: {}", e.getMessage());
+        }
+    }
+
+    private static JsonObject getDefaultSmeltingCraftingXPConfig() {
+        JsonObject json = new JsonObject();
+        JsonArray mappings = new JsonArray();
+        record SmeltingCraftingXP(String item, int xp) {
+        }
+        SmeltingCraftingXP[] defaults = {
+                new SmeltingCraftingXP("item.minecraft.copper_ingot", 100),
+                new SmeltingCraftingXP("item.minecraft.copper_nugget", 70),
+                new SmeltingCraftingXP("item.minecraft.iron_ingot", 150),
+                new SmeltingCraftingXP("item.minecraft.iron_nugget", 70),
+                new SmeltingCraftingXP("item.minecraft.gold_ingot", 200),
+                new SmeltingCraftingXP("item.minecraft.gold_nugget", 80),
+                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 500),
+                new SmeltingCraftingXP("item.minecraft.redstone", 50),
+                new SmeltingCraftingXP("item.minecraft.coal", 30),
+                new SmeltingCraftingXP("item.minecraft.emerald", 300),
+                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 100),
+                new SmeltingCraftingXP("item.minecraft.diamond", 400),
+                new SmeltingCraftingXP("item.minecraft.quartz", 80)
+        };
+        for (SmeltingCraftingXP config : defaults) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("item", config.item);
+            entry.addProperty("xp", config.xp);
+            mappings.add(entry);
+        }
+        json.add("smelting_crafting_mappings", mappings);
+        return json;
+    }
+
+    /**
+     * Gets the smelting crafting XP for an item.
+     */
+    public static int getSmeltingCraftingXP(String itemKey, Skills skill) {
+        return SMELTING_CRAFTING_XP_MAP.getOrDefault(itemKey, 0);
     }
 
     private static JsonObject getDefaultBlockMappings() {

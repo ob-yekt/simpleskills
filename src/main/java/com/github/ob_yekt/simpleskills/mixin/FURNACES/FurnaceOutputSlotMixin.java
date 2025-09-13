@@ -1,4 +1,4 @@
-package com.github.ob_yekt.simpleskills.mixin.COOKING;
+package com.github.ob_yekt.simpleskills.mixin.FURNACES;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(FurnaceOutputSlot.class)
-public abstract class CookingXPMixin {
+public abstract class FurnaceOutputSlotMixin {
     @Shadow @Final private PlayerEntity player;
 
     @Inject(method = "onTakeItem", at = @At("HEAD"))
@@ -39,6 +39,7 @@ public abstract class CookingXPMixin {
                 return;
             }
             grantCookingXP(serverPlayer, stack);
+            grantCraftingXP(serverPlayer, stack);
             applyCookingLore(stack, serverPlayer);
             applyCookingScaling(stack, serverPlayer);
         }
@@ -56,6 +57,22 @@ public abstract class CookingXPMixin {
 
         Simpleskills.LOGGER.debug(
                 "Granted {} Cooking XP for {}x {} to player {}",
+                totalXP, stack.getCount(), itemKey, player.getName().getString()
+        );
+    }
+
+    @Unique
+    private void grantCraftingXP(ServerPlayerEntity player, ItemStack stack) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        String itemKey = stack.getItem().getTranslationKey();
+        int xpPerItem = ConfigManager.getSmeltingCraftingXP(itemKey, Skills.CRAFTING);
+        if (xpPerItem <= 0) return;
+
+        int totalXP = xpPerItem * stack.getCount();
+        XPManager.addXPWithNotification(player, Skills.CRAFTING, totalXP);
+
+        Simpleskills.LOGGER.debug(
+                "Granted {} Crafting XP for {}x {} to player {}",
                 totalXP, stack.getCount(), itemKey, player.getName().getString()
         );
     }
@@ -86,7 +103,7 @@ public abstract class CookingXPMixin {
     private void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
         if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
-        float multiplier = getMultiplier(level);
+        float multiplier = ConfigManager.getCookingMultiplier(level);
 
         FoodComponent original = stack.get(DataComponentTypes.FOOD);
         if (original == null) return;
@@ -108,14 +125,5 @@ public abstract class CookingXPMixin {
                 player.getName().getString(),
                 level, multiplier
         );
-    }
-
-    @Unique
-    private float getMultiplier(int level) {
-        if (level >= 99) return 1.5f;
-        else if (level >= 75) return 1.25f;
-        else if (level >= 50) return 1.125f;
-        else if (level >= 25) return 1.0f;
-        else return 0.875f;
     }
 }
