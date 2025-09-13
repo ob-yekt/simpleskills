@@ -44,7 +44,7 @@ Unleash your potential with **15 core skills** that make every action in Minecra
 10. **Alchemy**: Brew potions with boosted durations as you rise through tiers.
 11. **Smithing**: Repair and upgrade gear with unmatched efficiency.
 12. **Cooking**: Cook meals that restore more hunger and saturation.
-13. **Crafting**: Craft durable tools and armor with a chance to refund materials on (almost) any recipe.
+13. **Crafting**: Craft durable tools and armor with a chance to refund materials on most recipes.
 14. **Agility**: Run, jump, and swim faster with every level.
 15. **Prayer**: Sacrifice rare items for long-term buffs like Haste or Invisibility.
 
@@ -147,7 +147,9 @@ Brew potions with boosted durations, defaulted to:
 - Grandmaster (99): 3x duration
 
 ### Crafting
-Tools and armor crafted by players enjoy boosts to durability based on tier. All crafted items are signed by the player and their rank, signifying the extent of the durability increase. Crafting increases your change to get recover ingredients on successful craft of (almost) any recipe.
+Gain XP by crafting tools and armor, as well as smelting ores.
+
+Tools and armor crafted by players enjoy boosts to durability based on Crafting skill tier. All crafted items are signed by the player and their rank, signifying the extent of the durability increase. Crafting increases your chance to get recover ingredients on successful craft of (almost) any recipe.
 - Novice (1–24): 0% durability bonus, 0% recovery chance
 - Journeyman (25–49): 5% durability bonus, 2.5% recovery chance
 - Artisan (50–74): 10% durability bonus, 5% recovery chance
