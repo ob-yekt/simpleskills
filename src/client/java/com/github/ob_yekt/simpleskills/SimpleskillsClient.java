@@ -7,8 +7,9 @@ public class SimpleskillsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Register HUD and keybinds without restriction here
-        SkillHudRenderer.register();
         Keybinds.register();
+        SkillHudRenderer.register();
+        ClientConfig.load();
         Simpleskills.LOGGER.info("[simpleskills] Skill HUD & keybinds registered.");
     }
 }

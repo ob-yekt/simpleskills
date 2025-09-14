@@ -20,10 +20,11 @@ public class SkillHudRenderer implements HudElement {
     private static final Identifier HUD_ID = Identifier.of("simpleskills", "skill_hud");
     private static final Map<UUID, Boolean> playerHudVisibility = new HashMap<>();
     private static final int MAX_SKILL_NAME_LENGTH = getMaxSkillNameLength();
-    private static final int PANEL_WIDTH = 275; // Reduced width slightly
-    private static final int PANEL_HEIGHT = 220; // Significantly reduced height
-    private static final int PADDING = 5; // Reduced padding
-    private static final int LINE_HEIGHT = 10; // Reduced line height
+    private static final int PADDING = 3;
+    private static final int LINE_HEIGHT = 8;
+    private static final int BAR_WIDTH = 40; // Increased for better visibility
+    private static final int BAR_HEIGHT = 4;
+    private static final int ELEMENT_SPACING = 5;
 
     // Colors
     private static final int BACKGROUND_COLOR = 0x80000000; // Semi-transparent black
@@ -34,6 +35,16 @@ public class SkillHudRenderer implements HudElement {
     private static final int XP_COLOR = 0xFF88FF88; // Light green
     private static final int PROGRESS_FILLED_COLOR = 0xFF55FF55; // Green
     private static final int PROGRESS_EMPTY_COLOR = 0xFF555555; // Gray
+
+    private static class HudSize {
+        int width;
+        int height;
+
+        HudSize(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
+    }
 
     /**
      * Registers the HUD element with Fabric's HUD registry
@@ -90,28 +101,10 @@ public class SkillHudRenderer implements HudElement {
                 DatabaseManager.getInstance().isTabMenuVisible(playerUuid.toString()));
     }
 
-    @Override
-    public void render(DrawContext context, RenderTickCounter tickCounter) {
-        if (!shouldRenderHud()) return;
-
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null) return;
-
-        // Position the HUD in the top-left corner with some margin
-        int x = 10;
-        int y = 10;
-
-        try {
-            renderSkillPanel(context, x, y, client.player.getUuid());
-        } catch (Exception e) {
-            Simpleskills.LOGGER.error("Failed to render skill HUD: {}", e.getMessage());
-        }
-    }
-
     /**
-     * Renders the main skill panel
+     * Calculates the required size of the HUD based on content
      */
-    private void renderSkillPanel(DrawContext context, int x, int y, UUID playerUuid) {
+    private HudSize calculateHudSize(UUID playerUuid) {
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuidStr = playerUuid.toString();
         TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
@@ -121,55 +114,194 @@ public class SkillHudRenderer implements HudElement {
             db.initializePlayer(playerUuidStr);
         }
 
-        // Draw background panel
-        context.fill(x, y, x + PANEL_WIDTH, y + PANEL_HEIGHT, BACKGROUND_COLOR);
+        boolean isIronman = db.isPlayerInIronmanMode(playerUuidStr);
+        Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuidStr);
+
+        int maxWidth = 0;
+        int height = PADDING;
+
+        // Header
+        String headerText = "⚔ Skills ⚔";
+        maxWidth = Math.max(maxWidth, textRenderer.getWidth(headerText));
+        height += LINE_HEIGHT + 2;
+
+        // Ironman mode indicator
+        if (isIronman) {
+            String ironmanText = "Ironman Mode";
+            maxWidth = Math.max(maxWidth, textRenderer.getWidth(ironmanText));
+            height += LINE_HEIGHT + 1;
+        }
+
+        // Separator
+        height += 3;
+
+        // Skills
+        for (Skills skillEnum : Skills.values()) {
+            String skillName = skillEnum.getId();
+            DatabaseManager.SkillData skill = skills.getOrDefault(skillName, new DatabaseManager.SkillData(0, 1));
+            String skillDisplayName = skillEnum.getDisplayName();
+            int lineWidth;
+
+            if (skill.level() == XPManager.getMaxLevel()) {
+                String skillText = String.format("★ %-" + MAX_SKILL_NAME_LENGTH + "s Lvl 99", skillDisplayName);
+                String xpText = String.format("XP: %,d", skill.xp());
+                lineWidth = textRenderer.getWidth(skillText) + ELEMENT_SPACING + textRenderer.getWidth(xpText);
+            } else {
+                int XPForCurrentLevel = XPManager.getExperienceForLevel(skill.level());
+                int XPToNextLevel = XPManager.getExperienceForLevel(skill.level() + 1) - XPForCurrentLevel;
+                int progressToNextLevel = skill.xp() - XPForCurrentLevel;
+                String skillText = String.format("%-" + MAX_SKILL_NAME_LENGTH + "s Lvl %d", skillDisplayName, skill.level());
+                String xpText = String.format("%,d/%,d", progressToNextLevel, XPToNextLevel);
+                lineWidth = textRenderer.getWidth(skillText) + ELEMENT_SPACING + BAR_WIDTH + ELEMENT_SPACING + textRenderer.getWidth(xpText);
+            }
+
+            maxWidth = Math.max(maxWidth, lineWidth);
+            height += LINE_HEIGHT + 1;
+        }
+
+        // Total level
+        int totalLevels = skills.values().stream().mapToInt(DatabaseManager.SkillData::level).sum();
+        String totalText = String.format("Total: %d", totalLevels);
+        maxWidth = Math.max(maxWidth, textRenderer.getWidth(totalText));
+        height += 2 + 3 + LINE_HEIGHT;
+
+        // Bottom padding
+        height += PADDING;
+
+        // Add side paddings to width with extra for borders
+        int panelWidth = maxWidth + 2 * (PADDING + 5); // Extra margin for aesthetics
+
+        return new HudSize(panelWidth, height);
+    }
+
+    /**
+     * Calculates the (x, y) position of the HUD based on the configured position and size
+     */
+    private int[] getHudPosition(int panelWidth, int panelHeight) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        int windowWidth = client.getWindow().getScaledWidth();
+        int windowHeight = client.getWindow().getScaledHeight();
+        int margin = 10; // Margin from edges
+        ClientConfig.HudPosition position = ClientConfig.getHudPosition();
+        int x, y;
+
+        switch (position) {
+            case TOP_LEFT:
+                x = margin;
+                y = margin;
+                break;
+            case TOP_CENTER:
+                x = (windowWidth - panelWidth) / 2;
+                y = margin;
+                break;
+            case TOP_RIGHT:
+                x = windowWidth - panelWidth - margin;
+                y = margin;
+                break;
+            case MIDDLE_LEFT:
+                x = margin;
+                y = (windowHeight - panelHeight) / 2;
+                break;
+            case MIDDLE_CENTER:
+                x = (windowWidth - panelWidth) / 2;
+                y = (windowHeight - panelHeight) / 2;
+                break;
+            case MIDDLE_RIGHT:
+                x = windowWidth - panelWidth - margin;
+                y = (windowHeight - panelHeight) / 2;
+                break;
+            case BOTTOM_LEFT:
+                x = margin;
+                y = windowHeight - panelHeight - margin;
+                break;
+            case BOTTOM_CENTER:
+                x = (windowWidth - panelWidth) / 2;
+                y = windowHeight - panelHeight - margin;
+                break;
+            case BOTTOM_RIGHT:
+                x = windowWidth - panelWidth - margin;
+                y = windowHeight - panelHeight - margin;
+                break;
+            default:
+                x = margin;
+                y = margin; // Fallback to TOP_LEFT
+                break;
+        }
+
+        return new int[]{x, y};
+    }
+
+    @Override
+    public void render(DrawContext context, RenderTickCounter tickCounter) {
+        if (!shouldRenderHud()) return;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) return;
+
+        UUID playerUuid = client.player.getUuid();
+        HudSize size = calculateHudSize(playerUuid);
+        int[] pos = getHudPosition(size.width, size.height);
+        int x = pos[0];
+        int y = pos[1];
+
+        try {
+            renderSkillPanel(context, x, y, size.width, size.height, playerUuid);
+        } catch (Exception e) {
+            Simpleskills.LOGGER.error("Failed to render skill HUD: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Renders the main skill panel
+     */
+    private void renderSkillPanel(DrawContext context, int x, int y, int panelWidth, int panelHeight, UUID playerUuid) {
+        DatabaseManager db = DatabaseManager.getInstance();
+        String playerUuidStr = playerUuid.toString();
+        TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
 
         // Draw border
-        context.drawHorizontalLine(x, x + PANEL_WIDTH - 1, y, BORDER_COLOR);
-        context.drawHorizontalLine(x, x + PANEL_WIDTH - 1, y + PANEL_HEIGHT - 1, BORDER_COLOR);
-        context.drawVerticalLine(x, y, y + PANEL_HEIGHT - 1, BORDER_COLOR);
-        context.drawVerticalLine(x + PANEL_WIDTH - 1, y, y + PANEL_HEIGHT - 1, BORDER_COLOR);
+        context.drawHorizontalLine(x, x + panelWidth - 1, y, BORDER_COLOR);
+        context.drawHorizontalLine(x, x + panelWidth - 1, y + panelHeight - 1, BORDER_COLOR);
+        context.drawVerticalLine(x, y, y + panelHeight - 1, BORDER_COLOR);
+        context.drawVerticalLine(x + panelWidth - 1, y, y + panelHeight - 1, BORDER_COLOR);
 
         int currentY = y + PADDING;
 
         // Header
-        String headerText = "⚔ Skills ⚔"; // Shortened header
-        int headerX = x + (PANEL_WIDTH - textRenderer.getWidth(headerText)) / 2;
+        String headerText = "⚔ Skills ⚔";
+        int headerX = x + (panelWidth - textRenderer.getWidth(headerText)) / 2;
         context.drawText(textRenderer, headerText, headerX, currentY, HEADER_COLOR, true);
-        currentY += LINE_HEIGHT + 3;
+        currentY += LINE_HEIGHT + 2;
 
         // Ironman mode indicator
         boolean isIronman = db.isPlayerInIronmanMode(playerUuidStr);
         if (isIronman) {
-            String ironmanText = "Ironman Mode Enabled";
+            String ironmanText = "Ironman Mode";
             context.drawText(textRenderer, ironmanText, x + PADDING, currentY, 0xFFFF4444, false);
-            currentY += LINE_HEIGHT + 2;
+            currentY += LINE_HEIGHT + 1;
         }
 
         // Separator line
-        context.drawHorizontalLine(x + PADDING, x + PANEL_WIDTH - PADDING, currentY, 0xFF666666);
-        currentY += 5;
+        context.drawHorizontalLine(x + PADDING, x + panelWidth - PADDING, currentY, 0xFF666666);
+        currentY += 3;
 
         // Skills
         Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuidStr);
-        int totalLevels = skills.values().stream().mapToInt(DatabaseManager.SkillData::level).sum();
 
         for (Skills skillEnum : Skills.values()) {
             String skillName = skillEnum.getId();
-            DatabaseManager.SkillData skill = skills.get(skillName);
-            if (skill == null) {
-                skill = new DatabaseManager.SkillData(0, 1);
-            }
+            DatabaseManager.SkillData skill = skills.getOrDefault(skillName, new DatabaseManager.SkillData(0, 1));
 
             currentY = renderSkillLine(context, x + PADDING, currentY, skill, skillEnum.getDisplayName());
-            currentY += 1; // Smaller gap between skills
+            currentY += 1;
         }
 
         // Total level
+        currentY += 2;
+        context.drawHorizontalLine(x + PADDING, x + panelWidth - PADDING, currentY, 0xFF666666);
         currentY += 3;
-        context.drawHorizontalLine(x + PADDING, x + PANEL_WIDTH - PADDING, currentY, 0xFF666666);
-        currentY += 5;
 
+        int totalLevels = skills.values().stream().mapToInt(DatabaseManager.SkillData::level).sum();
         String totalText = String.format("Total: %d", totalLevels);
         context.drawText(textRenderer, totalText, x + PADDING, currentY, LEVEL_COLOR, true);
     }
@@ -186,7 +318,8 @@ public class SkillHudRenderer implements HudElement {
             String xpText = String.format("XP: %,d", skill.xp());
 
             context.drawText(textRenderer, skillText, x, y, BORDER_COLOR, false);
-            context.drawText(textRenderer, xpText, x + 120, y, TEXT_COLOR, false); // Adjusted x offset
+            int xpTextX = x + textRenderer.getWidth(skillText) + ELEMENT_SPACING;
+            context.drawText(textRenderer, xpText, xpTextX, y, TEXT_COLOR, false);
 
             return y + LINE_HEIGHT;
         } else {
@@ -199,16 +332,13 @@ public class SkillHudRenderer implements HudElement {
             context.drawText(textRenderer, skillText, x, y, TEXT_COLOR, false);
 
             // Progress bar
-            int barX = x + 120; // Adjusted x offset
-            int barY = y + 2;
-            int barWidth = 60; // Reduced bar width
-            int barHeight = 6; // Reduced bar height
-
-            renderProgressBar(context, barX, barY, barWidth, barHeight, progressToNextLevel, XPToNextLevel);
+            int barX = x + textRenderer.getWidth(skillText) + ELEMENT_SPACING;
+            int barY = y + (LINE_HEIGHT - BAR_HEIGHT) / 2;
+            renderProgressBar(context, barX, barY, BAR_WIDTH, BAR_HEIGHT, progressToNextLevel, XPToNextLevel);
 
             // XP text
             String xpText = String.format("%,d/%,d", progressToNextLevel, XPToNextLevel);
-            int xpTextX = barX + barWidth + 5;
+            int xpTextX = barX + BAR_WIDTH + ELEMENT_SPACING;
             context.drawText(textRenderer, xpText, xpTextX, y, XP_COLOR, false);
 
             return y + LINE_HEIGHT;
