@@ -173,7 +173,6 @@ public class EventHandlers {
             }
         }
     }
-
     private static void registerCombatHandlers() {
         // Prevent melee attacks if weapon requirement not met
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
@@ -245,13 +244,12 @@ public class EventHandlers {
 
             JsonObject config = ConfigManager.getCombatConfig();
             float xpPerDamageSlaying = config.get("slaying_xp_per_damage") != null ? config.get("slaying_xp_per_damage").getAsFloat() : 100.0f;
-            float xpPerDamageRanged = config.get("ranged_xp_per_damage") != null ? config.get("ranged_xp_per_damage").getAsFloat() : 100.0f; // Fixed key name
+            float xpPerDamageRanged = config.get("ranged_xp_per_damage") != null ? config.get("ranged_xp_per_damage").getAsFloat() : 100.0f;
             float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 100.0f;
             float minDamageSlaying = config.get("slaying_min_damage_threshold") != null ? config.get("slaying_min_damage_threshold").getAsFloat() : 2.0f;
-            float minDamageRanged = config.get("ranged_min_damage_threshold") != null ? config.get("ranged_min_damage_threshold").getAsFloat() : 2.0f; // Fixed key name
+            float minDamageRanged = config.get("ranged_min_damage_threshold") != null ? config.get("ranged_min_damage_threshold").getAsFloat() : 2.0f;
             float minDamageDefense = config.get("defense_min_damage_threshold") != null ? config.get("defense_min_damage_threshold").getAsFloat() : 2.0f;
             float armorMultiplierPerPiece = config.get("defense_xp_armor_multiplier_per_piece") != null ? config.get("defense_xp_armor_multiplier_per_piece").getAsFloat() : 0.25f;
-            float shieldXPMultiplier = config.get("defense_shield_xp_multiplier") != null ? config.get("defense_shield_xp_multiplier").getAsFloat() : 0.3f;
 
             // Slaying/Ranged: Player dealing damage to non-player mob
             if (entity instanceof LivingEntity target && !(target instanceof PlayerEntity) && !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
@@ -287,35 +285,59 @@ public class EventHandlers {
                 }
             }
 
-            // Defense: Player taking damage from non-player mob while wearing armor or blocking with shield
-            if (entity instanceof ServerPlayerEntity defender && source.getAttacker() instanceof LivingEntity attacker && !(attacker instanceof PlayerEntity)) {
-                // Check if player is blocking with a shield
-                boolean isShieldBlocking = defender.isBlocking() && defender.getActiveItem().getItem() == net.minecraft.item.Items.SHIELD;
+            return true; // Allow damage to proceed normally
+        });
 
-                if (isShieldBlocking && amount >= minDamageDefense) {
-                    int xp = (int) (amount * xpPerDamageDefense * shieldXPMultiplier);
-                    XPManager.addXPWithNotification(defender, Skills.DEFENSE, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP in {} to {} for blocking {} raw damage from {} with shield", xp, Skills.DEFENSE.getId(), defender.getName().getString(), amount, attacker.getType().toString());
-                    return true; // Shield XP granted, skip armor check
-                }
-
-                // Check for at least one armor piece
-                int armorCount = 0;
-                for (EquipmentSlot slot : EquipmentSlot.values()) {
-                    if (slot.isArmorSlot() && !defender.getEquippedStack(slot).isEmpty()) {
-                        armorCount++;
-                    }
-                }
-
-                if (armorCount > 0 && amount >= minDamageDefense) {
-                    float armorMultiplier = armorCount * armorMultiplierPerPiece;
-                    int xp = (int) (amount * xpPerDamageDefense * armorMultiplier);
-                    XPManager.addXPWithNotification(defender, Skills.DEFENSE, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP in {} to {} for taking {} raw damage from {} with {} armor pieces", xp, Skills.DEFENSE.getId(), defender.getName().getString(), amount, attacker.getType().toString(), armorCount);
-                }
+        // Defense XP: Handle after damage is processed to detect actual blocking/armor absorption
+        ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, originalAmount, actualAmount, blocked) -> {
+            if (entity.getEntityWorld().isClient()) {
+                return;
             }
 
-            return true; // Allow damage to proceed
+            // Exclude explosion damage
+            if (source.isOf(net.minecraft.entity.damage.DamageTypes.EXPLOSION) ||
+                    source.isOf(net.minecraft.entity.damage.DamageTypes.PLAYER_EXPLOSION)) {
+                return;
+            }
+
+            // Defense: Player taking damage from non-player mob
+            if (entity instanceof ServerPlayerEntity defender && source.getAttacker() instanceof LivingEntity attacker && !(attacker instanceof PlayerEntity)) {
+                JsonObject config = ConfigManager.getCombatConfig();
+                float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 100.0f;
+                float minDamageDefense = config.get("defense_min_damage_threshold") != null ? config.get("defense_min_damage_threshold").getAsFloat() : 2.0f;
+                float armorMultiplierPerPiece = config.get("defense_xp_armor_multiplier_per_piece") != null ? config.get("defense_xp_armor_multiplier_per_piece").getAsFloat() : 0.25f;
+                float shieldXPMultiplier = config.get("defense_shield_xp_multiplier") != null ? config.get("defense_shield_xp_multiplier").getAsFloat() : 0.3f;
+
+                if (originalAmount >= minDamageDefense) {
+                    // Check if damage was blocked (shield blocking)
+                    boolean wasBlocked = blocked || (originalAmount > actualAmount && defender.isBlocking() &&
+                            defender.getActiveItem().getItem() == net.minecraft.item.Items.SHIELD);
+
+                    if (wasBlocked) {
+                        // Shield blocking XP - based on original damage amount
+                        int xp = (int) (originalAmount * xpPerDamageDefense * shieldXPMultiplier);
+                        XPManager.addXPWithNotification(defender, Skills.DEFENSE, xp);
+                        Simpleskills.LOGGER.debug("Granted {} XP in {} to {} for blocking {} damage from {} with shield",
+                                xp, Skills.DEFENSE.getId(), defender.getName().getString(), originalAmount, attacker.getType().toString());
+                    } else {
+                        // Armor absorption XP - check for armor pieces
+                        int armorCount = 0;
+                        for (EquipmentSlot slot : EquipmentSlot.values()) {
+                            if (slot.isArmorSlot() && !defender.getEquippedStack(slot).isEmpty()) {
+                                armorCount++;
+                            }
+                        }
+
+                        if (armorCount > 0) {
+                            float armorMultiplier = armorCount * armorMultiplierPerPiece;
+                            int xp = (int) (actualAmount * xpPerDamageDefense * armorMultiplier);
+                            XPManager.addXPWithNotification(defender, Skills.DEFENSE, xp);
+                            Simpleskills.LOGGER.debug("Granted {} XP in {} to {} for taking {} damage from {} with {} armor pieces",
+                                    xp, Skills.DEFENSE.getId(), defender.getName().getString(), actualAmount, attacker.getType().toString(), armorCount);
+                        }
+                    }
+                }
+            }
         });
     }
 

@@ -24,7 +24,6 @@
     "LORE.SimpleInventoryMixin",
     "SMITHING.AnvilScreenHandlerMixin",
     "SMITHING.ForgingScreenHandlerMixin",
-    "SMITHING.GrindstoneScreenHandlerMixin",
     "SMITHING.SmithingScreenHandlerMixin"
   ],
   "injectors": {

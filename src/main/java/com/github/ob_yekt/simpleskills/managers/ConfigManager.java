@@ -37,7 +37,6 @@ public class ConfigManager {
     private static final Map<String, Float> COOKING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> CRAFTING_XP_MAP = new HashMap<>();
     private static final Map<String, Integer> SMELTING_CRAFTING_XP_MAP = new HashMap<>();
-
     private static JsonObject craftingMultipliersConfig = new JsonObject();
     private static final Set<String> CRAFTING_RECOVERY_BLACKLIST = new HashSet<>();
     private static final Map<String, Integer> ALCHEMY_XP_MAP = new HashMap<>();
@@ -70,7 +69,6 @@ public class ConfigManager {
             loadCraftingXPConfig();
             loadCraftingMultipliersConfig();
             loadCraftingRecoveryBlacklist();
-
             loadSmeltingCraftingXPConfig();
             loadAlchemyXPConfig();
             loadAlchemyMultiplierConfig();
@@ -146,7 +144,7 @@ public class ConfigManager {
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
         json.addProperty("standard_xp_multiplier", 1.0);
-        json.addProperty("ironman_xp_multiplier", 0.5);
+        json.addProperty("ironman_xp_multiplier", 0.1);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
         return json;
@@ -354,14 +352,14 @@ public class ConfigManager {
 
     private static JsonObject getDefaultCombatConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("slaying_xp_per_damage", 100.0f);
-        json.addProperty("ranged_xp_per_damage", 100.0f);
+        json.addProperty("slaying_xp_per_damage", 25.0f);
+        json.addProperty("ranged_xp_per_damage", 25.0f);
         json.addProperty("defense_xp_per_damage", 100.0f);
         json.addProperty("slaying_min_damage_threshold", 2.0f);
         json.addProperty("ranged_min_damage_threshold", 2.0f);
         json.addProperty("defense_min_damage_threshold", 2.0f);
         json.addProperty("defense_xp_armor_multiplier_per_piece", 0.25f);
-        json.addProperty("defense_shield_xp_multiplier", 0.3f);
+        json.addProperty("defense_shield_xp_multiplier", 0.04f);
         return json;
     }
 
@@ -821,19 +819,19 @@ public class ConfigManager {
         record SmeltingCraftingXP(String item, int xp) {
         }
         SmeltingCraftingXP[] defaults = {
-                new SmeltingCraftingXP("item.minecraft.copper_ingot", 300),
-                new SmeltingCraftingXP("item.minecraft.copper_nugget", 150),
-                new SmeltingCraftingXP("item.minecraft.iron_ingot", 450),
-                new SmeltingCraftingXP("item.minecraft.iron_nugget", 150),
-                new SmeltingCraftingXP("item.minecraft.gold_ingot", 600),
-                new SmeltingCraftingXP("item.minecraft.gold_nugget", 200),
+                new SmeltingCraftingXP("item.minecraft.copper_ingot", 250),
+                new SmeltingCraftingXP("item.minecraft.copper_nugget", 100),
+                new SmeltingCraftingXP("item.minecraft.iron_ingot", 350),
+                new SmeltingCraftingXP("item.minecraft.iron_nugget", 125),
+                new SmeltingCraftingXP("item.minecraft.gold_ingot", 450),
+                new SmeltingCraftingXP("item.minecraft.gold_nugget", 150),
                 new SmeltingCraftingXP("item.minecraft.netherite_scrap", 1500),
-                new SmeltingCraftingXP("item.minecraft.redstone", 200),
+                new SmeltingCraftingXP("item.minecraft.redstone", 175),
                 new SmeltingCraftingXP("item.minecraft.coal", 100),
-                new SmeltingCraftingXP("item.minecraft.emerald", 900),
-                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 300),
-                new SmeltingCraftingXP("item.minecraft.diamond", 1200),
-                new SmeltingCraftingXP("item.minecraft.quartz", 250)
+                new SmeltingCraftingXP("item.minecraft.emerald", 375),
+                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 250),
+                new SmeltingCraftingXP("item.minecraft.diamond", 500),
+                new SmeltingCraftingXP("item.minecraft.quartz", 150)
         };
         for (SmeltingCraftingXP config : defaults) {
             JsonObject entry = new JsonObject();
