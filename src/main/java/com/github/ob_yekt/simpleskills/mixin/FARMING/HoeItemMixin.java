@@ -1,4 +1,4 @@
-package com.github.ob_yekt.simpleskills.mixin;
+package com.github.ob_yekt.simpleskills.mixin.FARMING;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;

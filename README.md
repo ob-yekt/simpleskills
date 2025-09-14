@@ -35,12 +35,12 @@ Unleash your potential with **15 core skills** that make every action in Minecra
 1. **Mining**: Break stone and ores to level up and unlock better tools.
 2. **Woodcutting**: Chop trees to become a lumberjack legend.
 3. **Excavating**: Shovel dirt, sand, and gravel to dig your way to greatness.
-4. **Farming**: Till soil and harvest crops to feed your empire.
+4. **Farming**: Till soil, compost, and harvest crops to feed your empire.
 5. **Fishing**: Reel in fish, treasures, and XP with faster and increasingly better catches as you level.
-6. **Defense**: Take hits in armor to equip better gear.
+6. **Defense**: Take hits in armor to equip improved gear.
 7. **Slaying**: Slay mobs with melee weapons to become a feared warrior.
-8. **Ranged**: Master bows and crossbows for pinpoint precision.
-9. **Enchanting**: Craft epic gear with level-locked enchantments like Mending.
+8. **Ranged**: Master bows, crossbows, and tridents.
+9. **Enchanting**: Enhance your gear with level-locked enchantments like Mending.
 10. **Alchemy**: Brew potions with boosted durations as you rise through tiers.
 11. **Smithing**: Repair and upgrade gear with unmatched efficiency.
 12. **Cooking**: Cook meals that restore more hunger and saturation.
@@ -138,6 +138,38 @@ Lock powerful enchantments to specific levels, defaulted to:
 
 No more rushing and cycling trades for Mending villagers, you have to earn it! You can also offer your enchanting services to other players.
 
+### Cooking
+Players are rewarded with higher multipliers to saturation and hunger for foods created based on the players' Cooking level.
+
+Default (customizable):
+- Novice (1–24): 0.875x multiplier to saturation and hunger from cooked foods
+- Journeyman (25–49): 1x multiplier to saturation and hunger from cooked foods
+- Artisan (50–74): 1.125x multiplier to saturation and hunger from cooked foods
+- Expert (75–98): 1.25x multiplier to saturation and hunger from cooked foods
+- Grandmaster (99): 1.5x multiplier to saturation and hunger from cooked foods
+
+The customizable Cooking XP table is also designed to encourage other food types, not just the usual porkchops, mutton, and beef.
+
+| Item                | XP  |
+|---------------------|-----|
+| Cooked Porkchop     | 180 |
+| Cooked Beef         | 180 |
+| Cooked Mutton       | 180 |
+| Cooked Chicken      | 225 |
+| Cooked Salmon       | 150 |
+| Cooked Cod          | 150 |
+| Cooked Rabbit       | 285 |
+| Baked Potato        | 130 |
+| Golden Carrot       | 230 |
+| Golden Apple        | 450 |
+| Bread               | 130 |
+| Cookie              | 40  |
+| Cake                | 750 |
+| Pumpkin Pie         | 350 |
+| Mushroom Stew       | 285 |
+| Beetroot Soup       | 285 |
+| Rabbit Stew         | 350 |
+
 ### Alchemy
 Brew potions with boosted durations, defaulted to:
 - Novice (1–24): 1x duration
@@ -228,6 +260,6 @@ Configs live in `server_root\config\simpleskills`, making it easy to craft the p
 
 **Questions?** You can message me on Discord: **obyekt**, or check out the [GitHub](https://github.com/ob-yekt/simpleskills).
 
-### Check out my other mod 'simpleqol' on [Modrinth](https://modrinth.com/mod/simpleqol) or [GitHub](https://github.com/ob-yekt/simpleqol)!
+### I highly recommend checking out my compatible mod 'simpleqol' on [Modrinth](https://modrinth.com/mod/simpleqol) or [GitHub](https://github.com/ob-yekt/simpleqol)!
 
 ## Level up your world with simpleskills.

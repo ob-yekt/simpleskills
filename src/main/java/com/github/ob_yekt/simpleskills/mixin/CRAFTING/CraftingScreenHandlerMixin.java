@@ -9,6 +9,7 @@ import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.llamalad7.mixinextras.sugar.Local;
 
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.FoodComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.RecipeInputInventory;
@@ -61,12 +62,23 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
     )
     private void onQuickMoveCraft(PlayerEntity player, int slotIndex, CallbackInfoReturnable<ItemStack> cir, @Local(ordinal = 0) ItemStack itemStack, @Local Slot slot, @Local(ordinal = 1) ItemStack itemStack2) {
         if (slotIndex == 0 && player instanceof ServerPlayerEntity serverPlayer) {
+            // Skip if stack is empty or represents air
+            if (itemStack2.isEmpty() || Registries.ITEM.getId(itemStack2.getItem()).toString().equals("minecraft:air")) {
+                Simpleskills.LOGGER.debug("Skipping onQuickMoveCraft for empty or air stack: {}", itemStack2);
+                return;
+            }
             // Capture original input stacks
             for (int i = 0; i < 9; i++) {
                 originalInputs[i] = craftingInventory.getStack(i).copy();
             }
-            applyCraftingLore(itemStack2, serverPlayer);
-            applyCraftingScaling(itemStack2, serverPlayer);
+            // Apply lore and scaling based on item type
+            if (itemStack2.get(DataComponentTypes.MAX_DAMAGE) != null) {
+                applyCraftingLore(itemStack2, serverPlayer);
+                applyCraftingScaling(itemStack2, serverPlayer);
+            } else if (isCookableFoodItem(itemStack2)) {
+                applyCookingLore(itemStack2, serverPlayer);
+                applyCookingScaling(itemStack2, serverPlayer);
+            }
         }
     }
 
@@ -81,15 +93,28 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
     )
     private void onQuickMoveAfterTransfer(PlayerEntity player, int slotIndex, CallbackInfoReturnable<ItemStack> cir, @Local(ordinal = 0) ItemStack itemStack, @Local Slot slot, @Local(ordinal = 1) ItemStack itemStack2) {
         if (slotIndex == 0 && player instanceof ServerPlayerEntity serverPlayer) {
+            // Skip if itemStack is empty or represents air
+            if (itemStack.isEmpty() || Registries.ITEM.getId(itemStack.getItem()).toString().equals("minecraft:air")) {
+                Simpleskills.LOGGER.debug("Skipping onQuickMoveAfterTransfer for empty or air stack: {}", itemStack);
+                return;
+            }
             int movedCount = itemStack.getCount() - (itemStack2.isEmpty() ? 0 : itemStack2.getCount());
             if (movedCount > 0) {
-                ItemStack movedStack = itemStack.copy(); // Use itemStack for consistency with crafted item
+                ItemStack movedStack = itemStack.copy();
                 movedStack.setCount(movedCount);
                 grantCraftingXP(serverPlayer, movedStack);
-                // Use itemStack for blacklist check to ensure we're checking the crafted item
+                if (isCookableFoodItem(movedStack)) {
+                    grantCookingXP(serverPlayer, movedStack);
+                }
                 applyMaterialRecovery(serverPlayer, itemStack);
             }
         }
+    }
+
+    @Unique
+    private boolean isCookableFoodItem(ItemStack stack) {
+        String itemKey = stack.getItem().getTranslationKey();
+        return ConfigManager.getCookingXP(itemKey, Skills.COOKING) > 0;
     }
 
     @Unique
@@ -104,6 +129,22 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
 
         Simpleskills.LOGGER.debug(
                 "Granted {} Crafting XP for {}x {} to player {}",
+                totalXP, stack.getCount(), itemKey, player.getName().getString()
+        );
+    }
+
+    @Unique
+    private void grantCookingXP(ServerPlayerEntity player, ItemStack stack) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        String itemKey = stack.getItem().getTranslationKey();
+        int xpPerItem = ConfigManager.getCookingXP(itemKey, Skills.COOKING);
+        if (xpPerItem <= 0) return;
+
+        int totalXP = xpPerItem * stack.getCount();
+        XPManager.addXPWithNotification(player, Skills.COOKING, totalXP);
+
+        Simpleskills.LOGGER.debug(
+                "Granted {} Cooking XP for {}x {} to player {}",
                 totalXP, stack.getCount(), itemKey, player.getName().getString()
         );
     }
@@ -147,11 +188,53 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
     }
 
     @Unique
-    private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
-        // Check if the output item is blacklisted
-        String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
+    private void applyCookingLore(ItemStack stack, ServerPlayerEntity player) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
+        LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
-        // Enhanced debug logging
+        LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
+        List<Text> currentLore = new ArrayList<>(currentLoreComponent.lines());
+
+        Text cookingLore = Text.literal("Cooked by " + player.getName().getString() +
+                        " (" + tierInfo.name() + " Cook)")
+                .setStyle(Style.EMPTY.withItalic(false).withColor(tierInfo.color()));
+
+        currentLore.addFirst(cookingLore);
+        stack.set(DataComponentTypes.LORE, new LoreComponent(currentLore));
+    }
+
+    @Unique
+    private void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
+        float multiplier = ConfigManager.getCookingMultiplier(level);
+
+        FoodComponent original = stack.get(DataComponentTypes.FOOD);
+        if (original == null) return;
+
+        int newHunger = Math.max(1, Math.round(original.nutrition() * multiplier));
+        float newSaturation = original.saturation() * multiplier;
+
+        FoodComponent scaledFood = new FoodComponent.Builder()
+                .nutrition(newHunger)
+                .saturationModifier(newSaturation)
+                .build();
+
+        stack.set(DataComponentTypes.FOOD, scaledFood);
+
+        Simpleskills.LOGGER.debug(
+                "Scaled food {} -> hunger {} sat {} for player {} (lvl {}, multiplier {})",
+                stack.getItem().getTranslationKey(),
+                newHunger, newSaturation,
+                player.getName().getString(),
+                level, multiplier
+        );
+    }
+
+    @Unique
+    private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
+        String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
         Simpleskills.LOGGER.info("=== MATERIAL RECOVERY DEBUG (Shift-Click) ===");
         Simpleskills.LOGGER.info("Player: {}", player.getName().getString());
         Simpleskills.LOGGER.info("Output item: {}", itemId);

@@ -144,7 +144,7 @@ public class ConfigManager {
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
         json.addProperty("standard_xp_multiplier", 1.0);
-        json.addProperty("ironman_xp_multiplier", 0.1);
+        json.addProperty("ironman_xp_multiplier", 0.2);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
         return json;
@@ -490,14 +490,25 @@ public class ConfigManager {
         record CookingMapping(String item, int xp) {
         }
         CookingMapping[] defaults = {
-                new CookingMapping("item.minecraft.cooked_porkchop", 250),
-                new CookingMapping("item.minecraft.cooked_beef", 250),
-                new CookingMapping("item.minecraft.cooked_chicken", 250),
-                new CookingMapping("item.minecraft.cooked_mutton", 250),
-                new CookingMapping("item.minecraft.cooked_salmon", 200),
-                new CookingMapping("item.minecraft.cooked_cod", 200),
-                new CookingMapping("item.minecraft.cooked_rabbit", 300),
-                new CookingMapping("item.minecraft.baked_potato", 150)
+                new CookingMapping("item.minecraft.cooked_porkchop", 180),
+                new CookingMapping("item.minecraft.cooked_beef", 180),
+                new CookingMapping("item.minecraft.cooked_mutton", 180),
+                new CookingMapping("item.minecraft.cooked_chicken", 225),     // Boosted to compete with baseline meats
+                new CookingMapping("item.minecraft.cooked_salmon", 150),     // Higher to reward fishing effort
+                new CookingMapping("item.minecraft.cooked_cod", 150),        // Same as salmon
+                new CookingMapping("item.minecraft.cooked_rabbit", 285),     // Increased for rarity and biome specificity
+
+                new CookingMapping("item.minecraft.baked_potato", 130),      // Commonly eaten, easy to get
+                new CookingMapping("item.minecraft.golden_carrot", 230),     // Slightly higher for gold and carrot effort
+                new CookingMapping("item.minecraft.golden_apple", 450),     // Increased for rare apples and gold ingots
+
+                new CookingMapping("item.minecraft.bread", 130),             // Commonly eaten, easy to get
+                new CookingMapping("item.minecraft.cookie", 40),             // Per-cookie, total 320 for 8, for cocoa rarity
+                new CookingMapping("item.minecraft.cake", 750),             // Higher for complex ingredients
+                new CookingMapping("item.minecraft.pumpkin_pie", 350),       // Never made/eaten
+                new CookingMapping("item.minecraft.mushroom_stew", 285),     // Boosted for biome-specific mushrooms
+                new CookingMapping("item.minecraft.beetroot_soup", 285),     // Never made/eaten
+                new CookingMapping("item.minecraft.rabbit_stew", 500)        // Never made/eaten
         };
         for (CookingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -508,6 +519,7 @@ public class ConfigManager {
         json.add("cooking_mappings", mappings);
         return json;
     }
+
 
     /**
      * Gets the XP for cooking an item.
@@ -821,16 +833,16 @@ public class ConfigManager {
         SmeltingCraftingXP[] defaults = {
                 new SmeltingCraftingXP("item.minecraft.copper_ingot", 250),
                 new SmeltingCraftingXP("item.minecraft.copper_nugget", 100),
-                new SmeltingCraftingXP("item.minecraft.iron_ingot", 350),
+                new SmeltingCraftingXP("item.minecraft.iron_ingot", 300),
                 new SmeltingCraftingXP("item.minecraft.iron_nugget", 125),
-                new SmeltingCraftingXP("item.minecraft.gold_ingot", 450),
+                new SmeltingCraftingXP("item.minecraft.gold_ingot", 400),
                 new SmeltingCraftingXP("item.minecraft.gold_nugget", 150),
-                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 1500),
+                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 1250),
                 new SmeltingCraftingXP("item.minecraft.redstone", 175),
                 new SmeltingCraftingXP("item.minecraft.coal", 100),
                 new SmeltingCraftingXP("item.minecraft.emerald", 375),
                 new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 250),
-                new SmeltingCraftingXP("item.minecraft.diamond", 500),
+                new SmeltingCraftingXP("item.minecraft.diamond", 300),
                 new SmeltingCraftingXP("item.minecraft.quartz", 150)
         };
         for (SmeltingCraftingXP config : defaults) {

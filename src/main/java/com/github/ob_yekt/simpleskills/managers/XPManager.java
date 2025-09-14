@@ -20,10 +20,10 @@ public class XPManager {
     private static final int MAX_LEVEL = 99;
     private static BiConsumer<ServerPlayerEntity, Skills> onXPChangeListener;
 
-    private static final double STANDARD_XP_MULTIPLIER;
-    private static final double IRONMAN_XP_MULTIPLIER;
-    private static final boolean XP_NOTIFICATIONS_ENABLED;
-    private static final int XP_NOTIFICATION_THRESHOLD;
+    private static double STANDARD_XP_MULTIPLIER;
+    private static double IRONMAN_XP_MULTIPLIER;
+    private static boolean XP_NOTIFICATIONS_ENABLED;
+    private static int XP_NOTIFICATION_THRESHOLD;
 
     static {
         JsonObject config = ConfigManager.getFeatureConfig();
@@ -211,6 +211,16 @@ public class XPManager {
     }
 
     // Config helper methods
+
+    public static void reloadConfig() {
+        JsonObject config = ConfigManager.getFeatureConfig();
+        STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
+        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
+        XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
+        XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
+        Simpleskills.LOGGER.info("Reloaded XPManager config values.");
+    }
+
     private static double getConfigDouble(JsonObject config, String key, double defaultValue) {
         if (config.has(key) && config.get(key).isJsonPrimitive() && config.getAsJsonPrimitive(key).isNumber()) {
             return config.get(key).getAsDouble();

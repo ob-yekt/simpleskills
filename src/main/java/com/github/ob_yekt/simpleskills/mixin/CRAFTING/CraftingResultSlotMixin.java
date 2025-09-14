@@ -7,6 +7,7 @@ import com.github.ob_yekt.simpleskills.managers.LoreManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.FoodComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.RecipeInputInventory;
@@ -40,31 +41,40 @@ public abstract class CraftingResultSlotMixin {
     @Inject(method = "onTakeItem", at = @At("HEAD"))
     private void onTakeItemHead(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
-            // Skip if stack is empty or represents air
             if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) {
                 Simpleskills.LOGGER.debug("Skipping onTakeItem for empty or air stack: {}", stack);
                 return;
             }
-            // Capture original input stacks
             for (int i = 0; i < 9; i++) {
                 originalInputs[i] = input.getStack(i).copy();
             }
-            grantCraftingXP(serverPlayer, stack);
-            applyCraftingLore(stack, serverPlayer);
-            applyCraftingScaling(stack, serverPlayer);
+            if (stack.get(DataComponentTypes.MAX_DAMAGE) != null) {
+                grantCraftingXP(serverPlayer, stack);
+                applyCraftingLore(stack, serverPlayer);
+                applyCraftingScaling(stack, serverPlayer);
+            } else if (isCookableFoodItem(stack)) {
+                grantCookingXP(serverPlayer, stack);
+                applyCookingLore(stack, serverPlayer);
+                applyCookingScaling(stack, serverPlayer);
+            }
         }
     }
 
     @Inject(method = "onTakeItem", at = @At("TAIL"))
     private void onTakeItemTail(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
-            // Skip material recovery if stack is empty or air
             if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) {
                 Simpleskills.LOGGER.debug("Skipping material recovery for empty or air stack: {}", stack);
                 return;
             }
             applyMaterialRecovery(serverPlayer, stack);
         }
+    }
+
+    @Unique
+    private boolean isCookableFoodItem(ItemStack stack) {
+        String itemKey = stack.getItem().getTranslationKey();
+        return ConfigManager.getCookingXP(itemKey, Skills.COOKING) > 0;
     }
 
     @Unique
@@ -79,6 +89,22 @@ public abstract class CraftingResultSlotMixin {
 
         Simpleskills.LOGGER.debug(
                 "Granted {} Crafting XP for {}x {} to player {}",
+                totalXP, stack.getCount(), itemKey, player.getName().getString()
+        );
+    }
+
+    @Unique
+    private void grantCookingXP(ServerPlayerEntity player, ItemStack stack) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        String itemKey = stack.getItem().getTranslationKey();
+        int xpPerItem = ConfigManager.getCookingXP(itemKey, Skills.COOKING);
+        if (xpPerItem <= 0) return;
+
+        int totalXP = xpPerItem * stack.getCount();
+        XPManager.addXPWithNotification(player, Skills.COOKING, totalXP);
+
+        Simpleskills.LOGGER.debug(
+                "Granted {} Cooking XP for {}x {} to player {}",
                 totalXP, stack.getCount(), itemKey, player.getName().getString()
         );
     }
@@ -122,11 +148,53 @@ public abstract class CraftingResultSlotMixin {
     }
 
     @Unique
-    private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
-        // Check if the output item is blacklisted
-        String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
+    private void applyCookingLore(ItemStack stack, ServerPlayerEntity player) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
+        LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
-        // Add debug logging
+        LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
+        List<Text> currentLore = new ArrayList<>(currentLoreComponent.lines());
+
+        Text cookingLore = Text.literal("Cooked by " + player.getName().getString() +
+                        " (" + tierInfo.name() + " Cook)")
+                .setStyle(Style.EMPTY.withItalic(false).withColor(tierInfo.color()));
+
+        currentLore.addFirst(cookingLore);
+        stack.set(DataComponentTypes.LORE, new LoreComponent(currentLore));
+    }
+
+    @Unique
+    private void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
+        if (stack.isEmpty() || Registries.ITEM.getId(stack.getItem()).toString().equals("minecraft:air")) return;
+        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
+        float multiplier = ConfigManager.getCookingMultiplier(level);
+
+        FoodComponent original = stack.get(DataComponentTypes.FOOD);
+        if (original == null) return;
+
+        int newHunger = Math.max(1, Math.round(original.nutrition() * multiplier));
+        float newSaturation = original.saturation() * multiplier;
+
+        FoodComponent scaledFood = new FoodComponent.Builder()
+                .nutrition(newHunger)
+                .saturationModifier(newSaturation)
+                .build();
+
+        stack.set(DataComponentTypes.FOOD, scaledFood);
+
+        Simpleskills.LOGGER.debug(
+                "Scaled food {} -> hunger {} sat {} for player {} (lvl {}, multiplier {})",
+                stack.getItem().getTranslationKey(),
+                newHunger, newSaturation,
+                player.getName().getString(),
+                level, multiplier
+        );
+    }
+
+    @Unique
+    private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
+        String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
         Simpleskills.LOGGER.info("=== MATERIAL RECOVERY DEBUG (Regular Click) ===");
         Simpleskills.LOGGER.info("Player: {}", player.getName().getString());
         Simpleskills.LOGGER.info("Output item: {}", itemId);

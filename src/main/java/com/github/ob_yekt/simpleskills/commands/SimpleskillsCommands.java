@@ -54,6 +54,7 @@ public class SimpleskillsCommands {
                                         .requires(source -> source.hasPermissionLevel(2))
                                         .executes(context -> {
                                             ConfigManager.initialize();
+                                            XPManager.reloadConfig();
                                             context.getSource().sendFeedback(() -> Text.literal("§6[simpleskills]§f Configs reloaded."), true);
                                             return 1;
                                         }))
