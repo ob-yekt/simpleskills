@@ -6,11 +6,7 @@ import net.minecraft.server.MinecraftServer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +27,8 @@ public class DatabaseManager {
     private Connection connection;
     private Path currentDatabasePath;
     private static final Map<String, Map<String, SkillData>> skillCache = new HashMap<>();
+    private static final Map<String, Boolean> ironmanCache = new HashMap<>();
+    private static final Map<String, Integer> totalLevelCache = new HashMap<>();
 
     // Custom exception for database errors
     public static class DatabaseException extends RuntimeException {
@@ -68,6 +66,10 @@ public class DatabaseManager {
             Files.createDirectories(worldDirectory);
             connection = DriverManager.getConnection("jdbc:sqlite:" + newDatabasePath);
             connection.setAutoCommit(true);
+            // Enable WAL mode for better write performance
+            try (PreparedStatement pragmaStmt = connection.prepareStatement("PRAGMA journal_mode=WAL;")) {
+                pragmaStmt.execute();
+            }
             currentDatabasePath = newDatabasePath;
             createTables();
             Simpleskills.LOGGER.info("Connected to SQLite database at: {}", newDatabasePath);
@@ -111,19 +113,22 @@ public class DatabaseManager {
             PRIMARY KEY (uuid, last_seen)
         )
     """;
+        String createIndex = """
+        CREATE INDEX IF NOT EXISTS idx_player_skills_uuid ON player_skills (player_uuid)
+    """;
 
-        try (PreparedStatement playersStmt = connection.prepareStatement(createPlayersTable);
-             PreparedStatement skillsStmt = connection.prepareStatement(createSkillsTable);
-             PreparedStatement playerNamesStmt = connection.prepareStatement(createPlayerNamesTable)) {
-            playersStmt.execute();
-            skillsStmt.execute();
-            playerNamesStmt.execute();
-            Simpleskills.LOGGER.debug("Created database tables if they didn't exist.");
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(createPlayersTable);
+            stmt.execute(createSkillsTable);
+            stmt.execute(createPlayerNamesTable);
+            stmt.execute(createIndex);
+            Simpleskills.LOGGER.debug("Created database tables and indexes if they didn't exist.");
         } catch (SQLException e) {
-            Simpleskills.LOGGER.error("Failed to create database tables: {}", e.getMessage());
+            Simpleskills.LOGGER.error("Failed to create database tables or indexes: {}", e.getMessage());
             throw new DatabaseException("Failed to create tables", e);
         }
     }
+
 
     public void initializePlayer(String playerUuid) {
         checkConnection();
@@ -147,7 +152,14 @@ public class DatabaseManager {
             }
 
             connection.commit();
-            skillCache.remove(playerUuid);
+            // Initialize cache with default skills
+            Map<String, SkillData> defaultSkills = new HashMap<>();
+            for (String skill : SKILLS) {
+                defaultSkills.put(skill, new SkillData(0, 1));
+            }
+            skillCache.put(playerUuid, defaultSkills);
+            ironmanCache.put(playerUuid, false);
+            totalLevelCache.put(playerUuid, SKILLS.size());
             Simpleskills.LOGGER.debug("Initialized player data for UUID: {}", playerUuid);
         } catch (SQLException e) {
             try {
@@ -230,17 +242,46 @@ public class DatabaseManager {
         checkConnection();
         String sql = "INSERT OR REPLACE INTO player_skills (player_uuid, skill_id, xp, level) VALUES (?, ?, ?, ?)";
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, playerUuid);
-            statement.setString(2, skillId);
-            statement.setInt(3, xp);
-            statement.setInt(4, level);
-            statement.executeUpdate();
-            skillCache.remove(playerUuid);
+        try {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, playerUuid);
+                statement.setString(2, skillId);
+                statement.setInt(3, xp);
+                statement.setInt(4, level);
+                statement.executeUpdate();
+            }
+            connection.commit();
+            // Update cache in-place
+            if (skillCache.containsKey(playerUuid)) {
+                skillCache.get(playerUuid).put(skillId, new SkillData(xp, level));
+                // Update total level cache
+                int total = 0;
+                for (SkillData data : skillCache.get(playerUuid).values()) {
+                    total += data.level();
+                }
+                totalLevelCache.put(playerUuid, total);
+            } else {
+                // Lazily initialize partial cache
+                Map<String, SkillData> skills = new HashMap<>();
+                skills.put(skillId, new SkillData(xp, level));
+                skillCache.put(playerUuid, skills);
+            }
             Simpleskills.LOGGER.debug("Saved skill {} for UUID {}: {} XP, level {}", skillId, playerUuid, xp, level);
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                Simpleskills.LOGGER.error("Failed to rollback transaction: {}", rollbackEx.getMessage());
+            }
             Simpleskills.LOGGER.error("Failed to save skill {} for UUID {}: {}", skillId, playerUuid, e.getMessage());
             throw new DatabaseException("Failed to save skill data", e);
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                Simpleskills.LOGGER.error("Failed to restore auto-commit: {}", e.getMessage());
+            }
         }
     }
 
@@ -248,14 +289,36 @@ public class DatabaseManager {
         checkConnection();
         String sql = "UPDATE player_skills SET xp = 0, level = 1 WHERE player_uuid = ?";
 
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, playerUuid);
-            statement.executeUpdate();
-            skillCache.remove(playerUuid);
+        try {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, playerUuid);
+                statement.executeUpdate();
+            }
+            connection.commit();
+            // Update cache in-place
+            if (skillCache.containsKey(playerUuid)) {
+                Map<String, SkillData> cachedSkills = skillCache.get(playerUuid);
+                for (String skill : SKILLS) {
+                    cachedSkills.put(skill, new SkillData(0, 1));
+                }
+                totalLevelCache.put(playerUuid, SKILLS.size());
+            }
             Simpleskills.LOGGER.debug("Reset skills for UUID: {}", playerUuid);
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                Simpleskills.LOGGER.error("Failed to rollback transaction: {}", rollbackEx.getMessage());
+            }
             Simpleskills.LOGGER.error("Failed to reset skills for UUID {}: {}", playerUuid, e.getMessage());
             throw new DatabaseException("Failed to reset skills", e);
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                Simpleskills.LOGGER.error("Failed to restore auto-commit: {}", e.getMessage());
+            }
         }
     }
 
@@ -267,6 +330,7 @@ public class DatabaseManager {
             statement.setInt(1, isIronman ? 1 : 0);
             statement.setString(2, playerUuid);
             statement.executeUpdate();
+            ironmanCache.put(playerUuid, isIronman);
             Simpleskills.LOGGER.debug("Set Ironman mode to {} for UUID: {}", isIronman, playerUuid);
         } catch (SQLException e) {
             Simpleskills.LOGGER.error("Failed to set Ironman mode for UUID {}: {}", playerUuid, e.getMessage());
@@ -276,13 +340,18 @@ public class DatabaseManager {
 
     public boolean isPlayerInIronmanMode(String playerUuid) {
         checkConnection();
+        if (ironmanCache.containsKey(playerUuid)) {
+            return ironmanCache.get(playerUuid);
+        }
         String sql = "SELECT is_ironman FROM players WHERE player_uuid = ?";
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, playerUuid);
             try (ResultSet result = statement.executeQuery()) {
                 if (result.next()) {
-                    return result.getInt("is_ironman") == 1;
+                    boolean isIronman = result.getInt("is_ironman") == 1;
+                    ironmanCache.put(playerUuid, isIronman);
+                    return isIronman;
                 }
             }
         } catch (SQLException e) {
@@ -342,13 +411,18 @@ public class DatabaseManager {
 
     public int getTotalSkillLevel(String playerUuid) {
         checkConnection();
+        if (totalLevelCache.containsKey(playerUuid)) {
+            return totalLevelCache.get(playerUuid);
+        }
         String sql = "SELECT SUM(level) as total_level FROM player_skills WHERE player_uuid = ?";
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, playerUuid);
             try (ResultSet result = statement.executeQuery()) {
                 if (result.next()) {
-                    return result.getInt("total_level");
+                    int total = result.getInt("total_level");
+                    totalLevelCache.put(playerUuid, total);
+                    return total;
                 }
             }
         } catch (SQLException e) {
@@ -441,6 +515,10 @@ public class DatabaseManager {
             try {
                 connection = DriverManager.getConnection("jdbc:sqlite:" + currentDatabasePath);
                 connection.setAutoCommit(true);
+                // Re-enable WAL mode after reconnect
+                try (PreparedStatement pragmaStmt = connection.prepareStatement("PRAGMA journal_mode=WAL;")) {
+                    pragmaStmt.execute();
+                }
                 createTables();
                 Simpleskills.LOGGER.info("Successfully reconnected to the database.");
             } catch (SQLException e) {
@@ -470,8 +548,21 @@ public class DatabaseManager {
     }
 
     public void close() {
-        closeConnection();
-        currentDatabasePath = null;
-        skillCache.clear();
+        try {
+            if (connection != null && !connection.isClosed()) {
+                // Run PRAGMA optimize before closing
+                try (PreparedStatement optimizeStmt = connection.prepareStatement("PRAGMA optimize;")) {
+                    optimizeStmt.execute();
+                    Simpleskills.LOGGER.debug("Ran PRAGMA optimize on database.");
+                }
+            }
+            closeConnection();
+            currentDatabasePath = null;
+            skillCache.clear();
+            ironmanCache.clear();
+            totalLevelCache.clear();
+        } catch (SQLException e) {
+            Simpleskills.LOGGER.error("Failed to optimize or close database: {}", e.getMessage());
+        }
     }
 }

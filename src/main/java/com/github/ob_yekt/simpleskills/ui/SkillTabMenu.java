@@ -15,7 +15,6 @@ import java.util.UUID;
 public class SkillTabMenu {
     private static final Map<UUID, Boolean> playerTabMenuVisibility = new HashMap<>();
     private static final int MAX_SKILL_NAME_LENGTH = getMaxSkillNameLength();
-    private static final int MAX_LINE_LENGTH = calculateMaxLineLength();
 
     /**
      * Determines the length of the longest skill display name for padding purposes.
@@ -26,16 +25,6 @@ public class SkillTabMenu {
             maxLength = Math.max(maxLength, skill.getDisplayName().length());
         }
         return maxLength;
-    }
-
-    /**
-     * Calculates the maximum possible line length for consistent alignment.
-     * Accounts for skill name, level, progress bar, and max XP string (e.g., 14,391,459).
-     */
-    private static int calculateMaxLineLength() {
-        // Base components: skill name, " Level ", level number (2 digits), progress bar (10 chars), " [", XP strings, "/", "]", and spaces
-        int maxXPStringLength = String.format("%,d", XPManager.getExperienceForLevel(99)).length(); // e.g., "14,391,459" = 10 chars
-        return MAX_SKILL_NAME_LENGTH + " Level ".length() + 2 + 1 + 10 + 2 + maxXPStringLength + 1 + maxXPStringLength + 1;
     }
 
     /**
@@ -131,49 +120,60 @@ public class SkillTabMenu {
     }
 
     private static void appendSkillInfo(StringBuilder skillInfo, DatabaseManager.SkillData skill, String skillDisplayName) {
+        // Create consistent spacing for all elements
+        String paddedSkillName = String.format("%-" + MAX_SKILL_NAME_LENGTH + "s", skillDisplayName);
+        String levelText = String.format("Level %2d", skill.level());
+        String progressBar = createProgressBar(skill);
+
         String line;
         if (skill.level() == XPManager.getMaxLevel()) {
-            line = String.format("§6⭐ §e%-" + MAX_SKILL_NAME_LENGTH + "s §eLevel 99 §r§bXP: %,d",
-                    skillDisplayName,
+            // Max level - show total XP with star icon
+            line = String.format("§6⭐ §e%s §e%s %s §7[§f%,d§7]",
+                    paddedSkillName,
+                    levelText,
+                    progressBar,
                     skill.xp()
             );
         } else {
-            int XPForCurrentLevel = XPManager.getExperienceForLevel(skill.level());
-            int XPToNextLevel = XPManager.getExperienceForLevel(skill.level() + 1) - XPForCurrentLevel;
-            int progressToNextLevel = skill.xp() - XPForCurrentLevel;
+            // Regular level - show progress to next level
+            int xpForCurrentLevel = XPManager.getExperienceForLevel(skill.level());
+            int xpToNextLevel = XPManager.getExperienceForLevel(skill.level() + 1) - xpForCurrentLevel;
+            int progressToNextLevel = skill.xp() - xpForCurrentLevel;
 
-            String progressBar = createProgressBar(progressToNextLevel, XPToNextLevel);
-
-            line = String.format("§a%-" + MAX_SKILL_NAME_LENGTH + "s §fLevel §b%-2d %s §7[§f%,d§7/§f%,d§7]",
-                    skillDisplayName,
+            line = String.format("§a%s §fLevel §b%2d %s §7[§f%,d§7/§f%,d§7]",
+                    paddedSkillName,
                     skill.level(),
                     progressBar,
                     progressToNextLevel,
-                    XPToNextLevel
+                    xpToNextLevel
             );
-        }
-
-        // Pad the line to MAX_LINE_LENGTH, stripping formatting codes for length calculation
-        String plainLine = line.replaceAll("§[0-9a-fklmnor]", "");
-        int paddingLength = MAX_LINE_LENGTH - plainLine.length();
-        if (paddingLength > 0) {
-            line += " ".repeat(paddingLength);
         }
 
         skillInfo.append(line).append("\n");
     }
 
-    private static String createProgressBar(int progress, int total) {
+    private static String createProgressBar(DatabaseManager.SkillData skill) {
         int barLength = 10;
-        if (total <= 0) {
-            total = 1; // Prevent division by zero
-        }
-        progress = Math.max(0, Math.min(progress, total));
 
-        int filled = (int) ((double) progress / total * barLength);
+        if (skill.level() == XPManager.getMaxLevel()) {
+            // Max level - full bar
+            return "§a" + "█".repeat(barLength);
+        }
+
+        int xpForCurrentLevel = XPManager.getExperienceForLevel(skill.level());
+        int xpToNextLevel = XPManager.getExperienceForLevel(skill.level() + 1) - xpForCurrentLevel;
+        int progressToNextLevel = skill.xp() - xpForCurrentLevel;
+
+        // Ensure we don't divide by zero and clamp values
+        if (xpToNextLevel <= 0) {
+            xpToNextLevel = 1;
+        }
+        progressToNextLevel = Math.max(0, Math.min(progressToNextLevel, xpToNextLevel));
+
+        int filled = (int) ((double) progressToNextLevel / xpToNextLevel * barLength);
         int empty = barLength - filled;
 
-        return "§a" + "█".repeat(filled) + "§7" + "░".repeat(empty);
+        return "§a" + "█".repeat(filled) + "§7" + "▒".repeat(empty);
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.github.ob_yekt.simpleskills.mixin.COOKING;
+package com.github.ob_yekt.simpleskills.mixin.FURNACES;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;

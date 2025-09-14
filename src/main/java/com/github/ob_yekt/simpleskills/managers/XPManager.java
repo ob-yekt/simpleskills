@@ -20,6 +20,19 @@ public class XPManager {
     private static final int MAX_LEVEL = 99;
     private static BiConsumer<ServerPlayerEntity, Skills> onXPChangeListener;
 
+    private static final double STANDARD_XP_MULTIPLIER;
+    private static final double IRONMAN_XP_MULTIPLIER;
+    private static final boolean XP_NOTIFICATIONS_ENABLED;
+    private static final int XP_NOTIFICATION_THRESHOLD;
+
+    static {
+        JsonObject config = ConfigManager.getFeatureConfig();
+        STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
+        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
+        XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
+        XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
+    }
+
     // Provide access to MAX_LEVEL
     public static int getMaxLevel() {
         return MAX_LEVEL;
@@ -49,19 +62,34 @@ public class XPManager {
     // Updated XP LOGIC with refined curve
     public static int getExperienceForLevel(int level) {
         if (level <= 1) return 0;
-        double a = 1.164;
-        double b = 3.5;
-        double s = 2.75;
-        return (int) Math.floor(a * (Math.pow(level + s, b) - Math.pow(1 + s, b)));
+        if (level <= 15) {
+            double A = 200.0;
+            double p = 1.43819883963;
+            return (int) Math.floor(A * Math.pow(level - 1, p));
+        } else if (level <= 25) {
+            double XP15 = 8900.0;
+            double C = 600.34085713;
+            double p = 1.6;
+            return (int) Math.floor(XP15 + C * Math.pow(level - 15, p));
+        } else {
+            double XP25 = 32800.0;
+            double B = 425.11140846;
+            double p = 2.2;
+            return (int) Math.floor(XP25 + B * Math.pow(level - 25, p));
+        }
     }
 
-    // Inverse method to find the level for a given XP amount
     public static int getLevelForExperience(int experience) {
-        int level = 1;
-        while (level < MAX_LEVEL && getExperienceForLevel(level + 1) <= experience) {
-            level++;
+        if (experience <= 0) return 1;
+        // Binary-search safe fallback for piecewise curves
+        int lo = 1;
+        int hi = MAX_LEVEL;
+        while (lo < hi) {
+            int mid = (lo + hi + 1) / 2;
+            if (getExperienceForLevel(mid) <= experience) lo = mid;
+            else hi = mid - 1;
         }
-        return level;
+        return Math.min(lo, MAX_LEVEL);
     }
 
     // Add XP to a player's skill silently (no notifications or level-up effects)
@@ -87,15 +115,13 @@ public class XPManager {
 
         String playerUuid = player.getUuidAsString();
         DatabaseManager db = DatabaseManager.getInstance();
-        JsonObject config = ConfigManager.getFeatureConfig();
 
         // Apply multiplier with fallback
-        double multiplier = getConfigDouble(config, db.isPlayerInIronmanMode(playerUuid)
-                ? "ironman_xp_multiplier" : "standard_xp_multiplier", 1.0);
+        double multiplier = db.isPlayerInIronmanMode(playerUuid) ? IRONMAN_XP_MULTIPLIER : STANDARD_XP_MULTIPLIER;
         xpToAdd = (int) (xpToAdd * multiplier);
 
-        // Ensure player is initialized
-        db.initializePlayer(playerUuid);
+        // Ensure player is initialized (checks first, avoids redundant DB ops)
+        db.ensurePlayerInitialized(playerUuid);
         Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuid);
         DatabaseManager.SkillData skillData = skills.getOrDefault(skill.getId(), new DatabaseManager.SkillData(0, 0));
         int currentXP = skillData.xp();
@@ -113,9 +139,7 @@ public class XPManager {
 
         // Send XP gain notification if enabled
         if (notifyXP) {
-            boolean notificationsEnabled = getConfigBoolean(config, "xp_notifications_enabled", false);
-            int threshold = getConfigInt(config, "xp_notification_threshold", 1);
-            if (notificationsEnabled && xpToAdd >= threshold) {
+            if (XP_NOTIFICATIONS_ENABLED && xpToAdd >= XP_NOTIFICATION_THRESHOLD) {
                 player.sendMessage(Text.literal(String.format("Gained %d XP in %s!", xpToAdd, skill.getDisplayName()))
                         .formatted(Formatting.GOLD), true);
             }
