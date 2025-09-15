@@ -73,7 +73,9 @@ public abstract class AbstractFurnaceScreenHandlerMixin {
             if (movedCount > 0) {
                 ItemStack movedStack = itemStack.copy();
                 movedStack.setCount(movedCount);
-                grantCookingXP(serverPlayer, movedStack);
+                if (isCookableFoodItem(movedStack)) {
+                    grantCookingXP(serverPlayer, movedStack);
+                }
                 grantCraftingXP(serverPlayer, movedStack);
             }
         }

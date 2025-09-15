@@ -1,6 +1,6 @@
-# 🌟 **simpleskills**: Level Up Your Minecraft Adventure! (Minecraft Fabric 25w37a)
+# 🌟 **simpleskills**: Add Skills to Minecraft! (Minecraft Fabric 25w37a)
 
-Welcome to ****simpleskills****, the ultimate server-side Fabric mod that transforms Minecraft into an epic RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds thrilling progression with 15 unique skills, unlockable gear, and competitive leaderboards. Feel the rush of mastering Woodcutting, Slaying, Alchemy, and more, as you climb to level 99 and dominate the server!
+Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms Minecraft into an epic RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds thrilling progression with 15 unique skills, unlockable gear, and competitive leaderboards. Feel the rush of mastering Woodcutting, Slaying, Alchemy, and more, as you climb to level 99 and dominate the server!
 
 **Why **simpleskills**?**
 - 🎮 **Seamless Fun**: Works flawlessly out-of-the-box in multiplayer - no client mods needed!
@@ -56,8 +56,8 @@ Unleash your potential with **15 core skills** that make every action in Minecra
 
 Nothing fuels fun like a little friendly competition! **simpleskills**’ **built-in leaderboard system** lets you:
 - Track your rank in **individual skills** or **total level**.
-- Show off your progress with commands like `/simpleskills leaderboard alchemy`.
-- Celebrate the **top 5 players** in each skill or total level mastery.
+- Show off your progress with commands like `/simpleskills leaderboard alchemy` or `/simpleskills leaderboardironman total`.
+- Cheer on the **top 5 players** in each skill or total level mastery, including those in the Ironman-exclusive leaderboard.
 - The mod doesn't stop at 99! Leaderboards continue to track XP after hitting max level.
 
 Perfect for SMPs and communities, leaderboards create a vibrant “endgame” where players strive to be the best. Who’s ready to claim the #1 spot?

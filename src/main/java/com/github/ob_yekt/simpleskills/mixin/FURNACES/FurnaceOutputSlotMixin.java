@@ -38,12 +38,12 @@ public abstract class FurnaceOutputSlotMixin {
                 Simpleskills.LOGGER.debug("Skipping onTakeItem for empty or air stack: {}", stack);
                 return;
             }
-            grantCookingXP(serverPlayer, stack);
-            grantCraftingXP(serverPlayer, stack);
             if (isCookableFoodItem(stack)) {
+                grantCookingXP(serverPlayer, stack);
                 applyCookingLore(stack, serverPlayer);
                 applyCookingScaling(stack, serverPlayer);
             }
+            grantCraftingXP(serverPlayer, stack); // Crafting XP can still apply to non-food items
         }
     }
 

@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 
 public class Simpleskills implements ModInitializer {
-public static final String MOD_ID = "simpleskills";
-public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static final String MOD_ID = "simpleskills";
+	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 
 
@@ -21,22 +21,11 @@ public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public void onInitialize() {
 		LOGGER.info("Initializing SimpleSkills mod...");
 
-		// Register commands
 		SimpleskillsCommands.registerCommands();
-
-		// Register Ironman mode events
 		IronmanManager.init();
-
-		// Register attribute-related events
 		AttributeManager.registerPlayerEvents();
-
-		//
 		LoreManager.initialize();
-
-		//
 		ConfigManager.initialize();
-
-		// Register all event handlers (block, combat, join/leave)
 		EventHandlers.registerAll();
 
 		// Initialize database and setup server lifecycle hooks

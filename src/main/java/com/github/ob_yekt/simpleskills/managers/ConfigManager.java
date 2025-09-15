@@ -525,7 +525,7 @@ public class ConfigManager {
      * Gets the XP for cooking an item.
      */
     public static int getCookingXP(String itemTranslationKey, Skills skill) {
-        return COOKING_XP_MAP.getOrDefault(itemTranslationKey, getBaseXP(skill));
+        return COOKING_XP_MAP.getOrDefault(itemTranslationKey, 0); // Changed from getBaseXP(skill) to 0
     }
 
     /**
@@ -1589,7 +1589,7 @@ public class ConfigManager {
 
     private static JsonObject getDefaultFishingXPConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("catch", 1750);
+        json.addProperty("catch", 750);
         return json;
     }
 
