@@ -83,17 +83,23 @@ public class SimpleskillsCommands {
                                 .then(CommandManager.literal("query")
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
-                                                .then(CommandManager.literal("total")
+                                                .then(CommandManager.literal("TOTAL")
                                                         .executes(SimpleskillsCommands::queryTotalLevel))
                                                 .then(CommandManager.argument("skill", StringArgumentType.word())
                                                         .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                         .executes(SimpleskillsCommands::querySkill))))
                                 .then(CommandManager.literal("leaderboard")
-                                        .then(CommandManager.literal("total")
+                                        .then(CommandManager.literal("TOTAL")
                                                 .executes(SimpleskillsCommands::showTotalLevelLeaderboard))
                                         .then(CommandManager.argument("skill", StringArgumentType.word())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                 .executes(SimpleskillsCommands::showSkillLeaderboard)))
+                                .then(CommandManager.literal("leaderboardironman")
+                                        .then(CommandManager.literal("TOTAL")
+                                                .executes(SimpleskillsCommands::showIronmanTotalLevelLeaderboard))
+                                        .then(CommandManager.argument("skill", StringArgumentType.word())
+                                                .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
+                                                .executes(SimpleskillsCommands::showIronmanSkillLeaderboard)))
                 ));
     }
 
@@ -310,8 +316,10 @@ public class SimpleskillsCommands {
 
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
-            message.append(String.format("§e%d. §f%s - Level §b%d §7[§f%,d XP§7]\n",
-                    i + 1, entry.playerName(), entry.level(), entry.xp()));
+            boolean isIronman = db.isPlayerInIronmanMode(entry.playerUuid());
+            String namePrefix = isIronman ? "§c§l☠ §f" : "§f"; // White name for all, skull for Ironman
+            message.append(String.format("§e%d. %s%s - Level §b%d §7[§f%,d XP§7]\n",
+                    i + 1, namePrefix, entry.playerName(), entry.level(), entry.xp()));
         }
 
         if (leaderboard.isEmpty()) {
@@ -335,8 +343,10 @@ public class SimpleskillsCommands {
 
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
-            message.append(String.format("§e%d. §f%s - Total Level §b%d\n",
-                    i + 1, entry.playerName(), entry.level()));
+            boolean isIronman = db.isPlayerInIronmanMode(entry.playerUuid());
+            String namePrefix = isIronman ? "§c§l☠ §f" : "§f"; // White name for all, skull for Ironman
+            message.append(String.format("§e%d. %s%s - Total Level §b%d\n",
+                    i + 1, namePrefix, entry.playerName(), entry.level()));
         }
 
         if (leaderboard.isEmpty()) {
@@ -346,6 +356,66 @@ public class SimpleskillsCommands {
         message.append("§8§m---------------------------------------");
         source.sendFeedback(() -> Text.literal(message.toString()), false);
         Simpleskills.LOGGER.debug("Displayed total level leaderboard");
+        return 1;
+    }
+
+    private static int showIronmanSkillLeaderboard(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        String skillName = StringArgumentType.getString(context, "skill");
+
+        Skills skill;
+        try {
+            skill = Skills.valueOf(skillName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
+            return 0;
+        }
+
+        DatabaseManager db = DatabaseManager.getInstance();
+        List<DatabaseManager.LeaderboardEntry> leaderboard = db.getIronmanSkillLeaderboard(skill.getId(), 5);
+
+        StringBuilder message = new StringBuilder();
+        message.append("§6[simpleskills]§f Top 5 - Ironman ").append(skill.getDisplayName()).append(" Leaderboard\n");
+        message.append("§8§m---------------------------------------\n");
+
+        for (int i = 0; i < leaderboard.size(); i++) {
+            DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
+            message.append(String.format("§e%d. §c§l☠ §f%s - Level §b%d §7[§f%,d XP§7]\n",
+                    i + 1, entry.playerName(), entry.level(), entry.xp()));
+        }
+
+        if (leaderboard.isEmpty()) {
+            message.append("§7No Ironman players found for this skill.\n");
+        }
+
+        message.append("§8§m---------------------------------------");
+        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        Simpleskills.LOGGER.debug("Displayed Ironman leaderboard for skill {}", skill.getDisplayName());
+        return 1;
+    }
+
+    private static int showIronmanTotalLevelLeaderboard(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        DatabaseManager db = DatabaseManager.getInstance();
+        List<DatabaseManager.LeaderboardEntry> leaderboard = db.getIronmanTotalLevelLeaderboard(5);
+
+        StringBuilder message = new StringBuilder();
+        message.append("§6[simpleskills]§f Top 5 - Ironman Total Level Leaderboard\n");
+        message.append("§8§m---------------------------------------\n");
+
+        for (int i = 0; i < leaderboard.size(); i++) {
+            DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
+            message.append(String.format("§e%d. §c§l☠ §f%s - Total Level §b%d\n",
+                    i + 1, entry.playerName(), entry.level()));
+        }
+
+        if (leaderboard.isEmpty()) {
+            message.append("§7No Ironman players found.\n");
+        }
+
+        message.append("§8§m---------------------------------------");
+        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        Simpleskills.LOGGER.debug("Displayed Ironman total level leaderboard");
         return 1;
     }
 

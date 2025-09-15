@@ -120,28 +120,23 @@ public class SkillTabMenu {
     }
 
     private static void appendSkillInfo(StringBuilder skillInfo, DatabaseManager.SkillData skill, String skillDisplayName) {
-        // Create consistent spacing for all elements
-        String paddedSkillName = String.format("%-" + MAX_SKILL_NAME_LENGTH + "s", skillDisplayName);
-        String levelText = String.format("Level %2d", skill.level());
-        String progressBar = createProgressBar(skill);
-
         String line;
         if (skill.level() == XPManager.getMaxLevel()) {
-            // Max level - show total XP with star icon
-            line = String.format("§6⭐ §e%s §e%s %s §7[§f%,d§7]",
-                    paddedSkillName,
-                    levelText,
-                    progressBar,
+            // Max level - show total XP with star icon, no progress bar
+            line = String.format("§6⭐ §e%s §eLevel %2d §7[§f%,d§7]",
+                    skillDisplayName,
+                    skill.level(),
                     skill.xp()
             );
         } else {
-            // Regular level - show progress to next level
+            // Regular level - show progress to next level with progress bar
+            String progressBar = createProgressBar(skill);
             int xpForCurrentLevel = XPManager.getExperienceForLevel(skill.level());
             int xpToNextLevel = XPManager.getExperienceForLevel(skill.level() + 1) - xpForCurrentLevel;
             int progressToNextLevel = skill.xp() - xpForCurrentLevel;
 
             line = String.format("§a%s §fLevel §b%2d %s §7[§f%,d§7/§f%,d§7]",
-                    paddedSkillName,
+                    skillDisplayName,
                     skill.level(),
                     progressBar,
                     progressToNextLevel,
@@ -149,15 +144,60 @@ public class SkillTabMenu {
             );
         }
 
-        skillInfo.append(line).append("\n");
+        // Add manual left-alignment padding
+        String leftAlignedLine = addLeftAlignmentPadding(line);
+        skillInfo.append(leftAlignedLine).append("\n");
+    }
+
+    /**
+     * Adds spacing to simulate left alignment in the centered tab menu
+     */
+    private static String addLeftAlignmentPadding(String line) {
+        // Calculate approximate line width (rough estimate based on character count)
+        int estimatedWidth = calculateApproximateWidth(line);
+
+        // Tab menu is roughly 60-70 characters wide for your skill names
+        // Adjusted based on your longest skill name "ENCHANTING" (11 chars)
+        int tabMenuWidth = 70;
+        int padding = Math.max(0, (tabMenuWidth - estimatedWidth) / 2);
+
+        // Push content significantly to the left
+        padding = Math.max(0, padding - 20);
+
+        return " ".repeat(padding) + line;
+    }
+
+    /**
+     * Rough calculation of string width for alignment purposes
+     * This accounts for color codes not taking visual space and your specific skill names
+     */
+    private static int calculateApproximateWidth(String text) {
+        String cleanText = text.replaceAll("§[0-9a-fklmnor]", ""); // Remove color codes
+
+        // More accurate width calculation for your skill names
+        int width = 0;
+        for (char c : cleanText.toCharArray()) {
+            switch (c) {
+                case 'i', 'l', 't', 'f', 'I', '!', '|', '.', ':', ';', ',' -> width += 2; // Narrow chars
+                case 'W', 'M', 'm', 'w' -> width += 6; // Wide chars
+                case ' ', 'r', 's' -> width += 3; // Medium chars
+                case '⭐' -> width += 8; // Star emoji is wide
+                case '█' -> width += 4; // Progress bar filled
+                case '▒' -> width += 4; // Progress bar empty
+                case '[', ']', '(', ')' -> width += 3; // Brackets
+                case '/' -> width += 2; // Slash
+                default -> width += 4; // Regular chars like A, N, G, etc.
+            }
+        }
+        return width;
     }
 
     private static String createProgressBar(DatabaseManager.SkillData skill) {
         int barLength = 10;
 
         if (skill.level() == XPManager.getMaxLevel()) {
-            // Max level - full bar
-            return "§a" + "█".repeat(barLength);
+            // Max level - return empty string (no progress bar)
+            return "";
         }
 
         int xpForCurrentLevel = XPManager.getExperienceForLevel(skill.level());

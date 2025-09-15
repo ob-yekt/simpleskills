@@ -1,4 +1,5 @@
 {
   "key.simpleskills.toggle_hud": "Toggle HUD",
-  "key.categories.simpleskills": "simpleskills"
+  "key.simpleskills.cycle_hud_position": "Cycle HUD Position",
+  "key.category.minecraft.simpleskills": "simpleskills"
 }

@@ -39,7 +39,7 @@ public class DatabaseManager {
 
     public record SkillData(int xp, int level) {}
 
-    public record LeaderboardEntry(String playerName, int level, int xp) {}
+    public record LeaderboardEntry(String playerUuid, String playerName, int level, int xp) {}
 
     private DatabaseManager() {
         // Private constructor for singleton pattern
@@ -128,7 +128,6 @@ public class DatabaseManager {
             throw new DatabaseException("Failed to create tables", e);
         }
     }
-
 
     public void initializePlayer(String playerUuid) {
         checkConnection();
@@ -458,10 +457,11 @@ public class DatabaseManager {
             statement.setInt(2, limit);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
+                    String playerUuid = result.getString("player_uuid");
                     String playerName = result.getString("player_name");
                     int level = result.getInt("level");
                     int xp = result.getInt("xp");
-                    leaderboard.add(new LeaderboardEntry(playerName, level, xp));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp));
                 }
             }
         } catch (SQLException e) {
@@ -496,14 +496,94 @@ public class DatabaseManager {
             statement.setInt(1, limit);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
+                    String playerUuid = result.getString("player_uuid");
                     String playerName = result.getString("player_name");
                     int totalLevel = result.getInt("total_level");
-                    leaderboard.add(new LeaderboardEntry(playerName, totalLevel, 0));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0));
                 }
             }
         } catch (SQLException e) {
             Simpleskills.LOGGER.error("Failed to retrieve total level leaderboard: {}", e.getMessage());
             throw new DatabaseException("Failed to retrieve total level leaderboard", e);
+        }
+        return leaderboard;
+    }
+
+    public List<LeaderboardEntry> getIronmanSkillLeaderboard(String skillId, int limit) {
+        checkConnection();
+        String sql = """
+        SELECT p.player_uuid, ps.level, ps.xp, COALESCE(n.player_name, p.player_uuid) as player_name
+        FROM player_skills ps
+        JOIN players p ON ps.player_uuid = p.player_uuid
+        LEFT JOIN (
+            SELECT uuid, name as player_name
+            FROM player_names
+            WHERE (uuid, last_seen) IN (
+                SELECT uuid, MAX(last_seen)
+                FROM player_names
+                GROUP BY uuid
+            )
+        ) n ON p.player_uuid = n.uuid
+        WHERE ps.skill_id = ? AND p.is_ironman = 1
+        ORDER BY ps.level DESC, ps.xp DESC
+        LIMIT ?
+    """;
+
+        List<LeaderboardEntry> leaderboard = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, skillId);
+            statement.setInt(2, limit);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    String playerUuid = result.getString("player_uuid");
+                    String playerName = result.getString("player_name");
+                    int level = result.getInt("level");
+                    int xp = result.getInt("xp");
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp));
+                }
+            }
+        } catch (SQLException e) {
+            Simpleskills.LOGGER.error("Failed to retrieve Ironman leaderboard for skill {}: {}", skillId, e.getMessage());
+            throw new DatabaseException("Failed to retrieve Ironman skill leaderboard", e);
+        }
+        return leaderboard;
+    }
+
+    public List<LeaderboardEntry> getIronmanTotalLevelLeaderboard(int limit) {
+        checkConnection();
+        String sql = """
+        SELECT p.player_uuid, SUM(ps.level) as total_level, COALESCE(n.player_name, p.player_uuid) as player_name
+        FROM player_skills ps
+        JOIN players p ON ps.player_uuid = p.player_uuid
+        LEFT JOIN (
+            SELECT uuid, name as player_name
+            FROM player_names
+            WHERE (uuid, last_seen) IN (
+                SELECT uuid, MAX(last_seen)
+                FROM player_names
+                GROUP BY uuid
+            )
+        ) n ON p.player_uuid = n.uuid
+        WHERE p.is_ironman = 1
+        GROUP BY p.player_uuid
+        ORDER BY total_level DESC
+        LIMIT ?
+    """;
+
+        List<LeaderboardEntry> leaderboard = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, limit);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    String playerUuid = result.getString("player_uuid");
+                    String playerName = result.getString("player_name");
+                    int totalLevel = result.getInt("total_level");
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0));
+                }
+            }
+        } catch (SQLException e) {
+            Simpleskills.LOGGER.error("Failed to retrieve Ironman total level leaderboard: {}", e.getMessage());
+            throw new DatabaseException("Failed to retrieve Ironman total level leaderboard", e);
         }
         return leaderboard;
     }

@@ -7,7 +7,7 @@ Welcome to ****simpleskills****, the ultimate server-side Fabric mod that transf
 - ⚔️ **Epic Progression**: Unlock powerful tools, armor, and bonuses as you level up.
 - 🏆 **Bragging Rights**: Compete on leaderboards and show off your skills!
 - 🛠 **Your World, Your Rules**: Fully customizable to craft the perfect experience for your server.
-- 🛠 **Singleplayer Support**: Prefer to play on your own? Toggle the skill HUD with H, rebind in options.
+- 🛠 **Singleplayer Support**: Prefer to play on your own? Install **simpleskills** on your client. Toggle the skill HUD with TAB, move it around with J, rebind in options->controls->key binds.
 
 Ready to embark on a journey of mastery and glory? Let’s dive in!
 
@@ -101,12 +101,12 @@ Unlock tools and armor as you level up, with fully customizable tiers:
 | Diamond       | 75             |  
 | Netherite     | 99             |  
 
-| Tool Material | Required Level |  
-|---------------|----------------|  
-| Mace          | 80             |  
-| Crossbow      | 0              |  
-| Bow           | 50             |  
-| Trident       | 99             |  
+| Weapon Material | Required Level |  
+|-----------------|----------------|  
+| Mace            | 80             |  
+| Crossbow        | 0              |  
+| Bow             | 50             |  
+| Trident         | 99             |  
 
 
 Affected gear comes with **lore text** (e.g., *“Requires level 50 Defense”*), keeping things intuitive for players.
@@ -231,6 +231,7 @@ Fully customizable: create your own sacrifices and effects!
 - `/simpleskills ironman enable`: Embrace the Ironman challenge.
 - `/simpleskills reset`: Set all skills to 0.
 - `/simpleskills leaderboard <skill|total>`: Check the top 5 players.
+- `/simpleskills leaderboardironman <skill|total>`: Check the top 5 ironman players.
 - `/simpleskills query <username> <skill|total>`: See anyone’s progress.
 - **Admin Commands**:
   - `/simpleskills reload`: Update configs without restarting.
