@@ -64,7 +64,7 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
         if (slotIndex == 0 && player instanceof ServerPlayerEntity serverPlayer) {
             // Skip if stack is empty or represents air
             if (itemStack2.isEmpty() || Registries.ITEM.getId(itemStack2.getItem()).toString().equals("minecraft:air")) {
-                Simpleskills.LOGGER.debug("Skipping onQuickMoveCraft for empty or air stack: {}", itemStack2);
+                //Simpleskills.LOGGER.debug("Skipping onQuickMoveCraft for empty or air stack: {}", itemStack2);
                 return;
             }
             // Capture original input stacks
@@ -95,7 +95,7 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
         if (slotIndex == 0 && player instanceof ServerPlayerEntity serverPlayer) {
             // Skip if itemStack is empty or represents air
             if (itemStack.isEmpty() || Registries.ITEM.getId(itemStack.getItem()).toString().equals("minecraft:air")) {
-                Simpleskills.LOGGER.debug("Skipping onQuickMoveAfterTransfer for empty or air stack: {}", itemStack);
+                //Simpleskills.LOGGER.debug("Skipping onQuickMoveAfterTransfer for empty or air stack: {}", itemStack);
                 return;
             }
             int movedCount = itemStack.getCount() - (itemStack2.isEmpty() ? 0 : itemStack2.getCount());
@@ -127,10 +127,7 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
         int totalXP = xpPerItem * stack.getCount();
         XPManager.addXPWithNotification(player, Skills.CRAFTING, totalXP);
 
-        Simpleskills.LOGGER.debug(
-                "Granted {} Crafting XP for {}x {} to player {}",
-                totalXP, stack.getCount(), itemKey, player.getName().getString()
-        );
+        //Simpleskills.LOGGER.debug("Granted {} Crafting XP for {}x {} to player {}", totalXP, stack.getCount(), itemKey, player.getName().getString());
     }
 
     @Unique
@@ -235,30 +232,30 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
     @Unique
     private void applyMaterialRecovery(ServerPlayerEntity player, ItemStack outputStack) {
         String itemId = Registries.ITEM.getId(outputStack.getItem()).toString();
-        Simpleskills.LOGGER.info("=== MATERIAL RECOVERY DEBUG (Shift-Click) ===");
-        Simpleskills.LOGGER.info("Player: {}", player.getName().getString());
-        Simpleskills.LOGGER.info("Output item: {}", itemId);
-        Simpleskills.LOGGER.info("Is blacklisted: {}", ConfigManager.isRecipeBlacklisted(itemId));
+        //Simpleskills.LOGGER.info("=== MATERIAL RECOVERY DEBUG (Shift-Click) ===");
+        //Simpleskills.LOGGER.info("Player: {}", player.getName().getString());
+        //Simpleskills.LOGGER.info("Output item: {}", itemId);
+        //Simpleskills.LOGGER.info("Is blacklisted: {}", ConfigManager.isRecipeBlacklisted(itemId));
 
         if (ConfigManager.isRecipeBlacklisted(itemId)) {
-            Simpleskills.LOGGER.info("Skipping material recovery for blacklisted item: {}", itemId);
+            //Simpleskills.LOGGER.info("Skipping material recovery for blacklisted item: {}", itemId);
             return;
         }
 
-        Simpleskills.LOGGER.info("Proceeding with recovery check for: {}", itemId);
+        //Simpleskills.LOGGER.info("Proceeding with recovery check for: {}", itemId);
 
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
         float recoveryChance = getRecoveryChance(level);
-        Simpleskills.LOGGER.info("Recovery chance: {} for level {}", recoveryChance, level);
+        //Simpleskills.LOGGER.info("Recovery chance: {} for level {}", recoveryChance, level);
         if (recoveryChance <= 0) {
-            Simpleskills.LOGGER.info("No recovery possible (chance <= 0)");
+            //Simpleskills.LOGGER.info("No recovery possible (chance <= 0)");
             return;
         }
 
         for (int i = 0; i < 9; i++) {
             ItemStack original = originalInputs[i];
             ItemStack current = craftingInventory.getStack(i);
-            Simpleskills.LOGGER.info("Slot {}: Original count: {}, Current count: {}", i, original.getCount(), current.getCount());
+            //Simpleskills.LOGGER.info("Slot {}: Original count: {}, Current count: {}", i, original.getCount(), current.getCount());
             if (!original.isEmpty() && current.getCount() < original.getCount()) {
                 if (player.getRandom().nextFloat() < recoveryChance) {
                     ItemStack recovered = original.copy();
@@ -266,13 +263,7 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingScreenH
                     if (!player.getInventory().insertStack(recovered)) {
                         player.dropItem(recovered, false);
                     }
-                    Simpleskills.LOGGER.info(
-                            "Recovered {} for player {} (lvl {}, chance {})",
-                            recovered.getItem().getTranslationKey(),
-                            player.getName().getString(),
-                            level,
-                            recoveryChance
-                    );
+                    //Simpleskills.LOGGER.info("Recovered {} for player {} (lvl {}, chance {})", recovered.getItem().getTranslationKey(), player.getName().getString(), level recoveryChance);
                 }
             }
         }

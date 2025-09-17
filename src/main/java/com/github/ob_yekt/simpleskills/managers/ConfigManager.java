@@ -831,19 +831,20 @@ public class ConfigManager {
         record SmeltingCraftingXP(String item, int xp) {
         }
         SmeltingCraftingXP[] defaults = {
-                new SmeltingCraftingXP("item.minecraft.copper_ingot", 250),
-                new SmeltingCraftingXP("item.minecraft.copper_nugget", 100),
-                new SmeltingCraftingXP("item.minecraft.iron_ingot", 300),
-                new SmeltingCraftingXP("item.minecraft.iron_nugget", 125),
-                new SmeltingCraftingXP("item.minecraft.gold_ingot", 400),
-                new SmeltingCraftingXP("item.minecraft.gold_nugget", 150),
-                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 1250),
-                new SmeltingCraftingXP("item.minecraft.redstone", 175),
-                new SmeltingCraftingXP("item.minecraft.coal", 100),
-                new SmeltingCraftingXP("item.minecraft.emerald", 375),
-                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 250),
-                new SmeltingCraftingXP("item.minecraft.diamond", 300),
-                new SmeltingCraftingXP("item.minecraft.quartz", 150)
+                new SmeltingCraftingXP("item.minecraft.copper_ingot", 125),
+                new SmeltingCraftingXP("item.minecraft.copper_nugget", 50),
+                new SmeltingCraftingXP("item.minecraft.iron_ingot", 150),
+                new SmeltingCraftingXP("item.minecraft.iron_nugget", 62),
+                new SmeltingCraftingXP("item.minecraft.gold_ingot", 200),
+                new SmeltingCraftingXP("item.minecraft.gold_nugget", 75),
+                new SmeltingCraftingXP("item.minecraft.netherite_scrap", 625),
+                new SmeltingCraftingXP("item.minecraft.redstone", 80),
+                new SmeltingCraftingXP("item.minecraft.coal", 50),
+                new SmeltingCraftingXP("item.minecraft.emerald", 225),
+                new SmeltingCraftingXP("item.minecraft.lapis_lazuli", 125),
+                new SmeltingCraftingXP("item.minecraft.diamond", 250),
+                new SmeltingCraftingXP("item.minecraft.quartz", 75)
+
         };
         for (SmeltingCraftingXP config : defaults) {
             JsonObject entry = new JsonObject();

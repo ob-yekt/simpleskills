@@ -8,7 +8,8 @@ import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 public class Keybinds {
-    public static final KeyBinding.Category KEY_CATEGORY = KeyBinding.Category.method_74699("simpleskills");
+    // Use an existing category, e.g., MISC
+    public static final KeyBinding.Category KEY_CATEGORY = KeyBinding.Category.MISC;
 
     public static final KeyBinding TOGGLE_HUD_KEY = new KeyBinding(
             "key.simpleskills.toggle_hud",
@@ -29,7 +30,6 @@ public class Keybinds {
         KeyBindingHelper.registerKeyBinding(CYCLE_HUD_POSITION_KEY);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Skip keybind processing in multiplayer
             if (SimpleskillsClient.isMultiplayer()) {
                 return;
             }

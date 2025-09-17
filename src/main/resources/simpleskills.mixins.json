@@ -5,10 +5,10 @@
   "mixins": [
     "AgilityXPMixin",
     "AlchemyXPMixin",
-    "ArmorRestrictionMixin",
+    "DEFENSE.ArmorRestrictionMixin",
     "AxeItemMixin",
     "EnchantingScreenHandlerMixin",
-    "InventoryCheckMixin",
+    "DEFENSE.InventoryCheckMixin",
     "ServerPlayerEntityMixin",
     "ShovelItemMixin",
     "CRAFTING.AbstractCraftingScreenHandlerAccessor",
