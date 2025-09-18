@@ -1,4 +1,4 @@
-# 🌟 **simpleskills**: Add Skills to Minecraft! (Minecraft Fabric 25w37a)
+# 🌟 **simpleskills**: Add Skills to Minecraft!
 
 Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms Minecraft into an epic RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds thrilling progression with 15 unique skills, unlockable gear, and competitive leaderboards. Feel the rush of mastering Woodcutting, Slaying, Alchemy, and more, as you climb to level 99 and dominate the server!
 
