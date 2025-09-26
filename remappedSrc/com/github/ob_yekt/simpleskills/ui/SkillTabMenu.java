@@ -86,12 +86,8 @@ public class SkillTabMenu {
                     .append("§6§m=======================================\n\n");
 
             boolean isIronman = db.isPlayerInIronmanMode(playerUuidStr);
-            int prestige = db.getPrestige(playerUuidStr);
             if (isIronman) {
                 skillInfo.append("§cIronman Mode: §aENABLED\n\n");
-            }
-            if (prestige > 0) {
-                skillInfo.append(String.format("§6Prestige: §e★%d\n\n", prestige));
             }
 
             Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuidStr);

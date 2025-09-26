@@ -28,7 +28,6 @@ public class DatabaseManager {
     private Path currentDatabasePath;
     private static final Map<String, Map<String, SkillData>> skillCache = new HashMap<>();
     private static final Map<String, Boolean> ironmanCache = new HashMap<>();
-    private static final Map<String, Integer> prestigeCache = new HashMap<>();
     private static final Map<String, Integer> totalLevelCache = new HashMap<>();
 
     // Custom exception for database errors
@@ -40,7 +39,7 @@ public class DatabaseManager {
 
     public record SkillData(int xp, int level) {}
 
-    public record LeaderboardEntry(String playerUuid, String playerName, int level, int xp, int prestige) {}
+    public record LeaderboardEntry(String playerUuid, String playerName, int level, int xp) {}
 
     private DatabaseManager() {
         // Private constructor for singleton pattern
@@ -94,8 +93,7 @@ public class DatabaseManager {
         CREATE TABLE IF NOT EXISTS players (
             player_uuid TEXT PRIMARY KEY,
             is_ironman INTEGER DEFAULT 0,
-            is_tab_menu_visible INTEGER DEFAULT 1,
-            prestige INTEGER DEFAULT 0
+            is_tab_menu_visible INTEGER DEFAULT 1
         )
     """;
         String createSkillsTable = """
@@ -124,12 +122,6 @@ public class DatabaseManager {
             stmt.execute(createSkillsTable);
             stmt.execute(createPlayerNamesTable);
             stmt.execute(createIndex);
-            // Lightweight migration for older databases missing prestige column
-            try {
-                stmt.execute("ALTER TABLE players ADD COLUMN prestige INTEGER DEFAULT 0");
-            } catch (SQLException ignored) {
-                // Column likely exists; ignore
-            }
             Simpleskills.LOGGER.debug("Created database tables and indexes if they didn't exist.");
         } catch (SQLException e) {
             Simpleskills.LOGGER.error("Failed to create database tables or indexes: {}", e.getMessage());
@@ -139,7 +131,7 @@ public class DatabaseManager {
 
     public void initializePlayer(String playerUuid) {
         checkConnection();
-        String insertPlayerSql = "INSERT OR IGNORE INTO players (player_uuid, is_ironman, is_tab_menu_visible, prestige) VALUES (?, 0, 1, 0)";
+        String insertPlayerSql = "INSERT OR IGNORE INTO players (player_uuid, is_ironman, is_tab_menu_visible) VALUES (?, 0, 1)";
         String insertSkillSql = "INSERT OR IGNORE INTO player_skills (player_uuid, skill_id, xp, level) VALUES (?, ?, 0, 1)";
 
         try {
@@ -166,7 +158,6 @@ public class DatabaseManager {
             }
             skillCache.put(playerUuid, defaultSkills);
             ironmanCache.put(playerUuid, false);
-            prestigeCache.put(playerUuid, 0);
             totalLevelCache.put(playerUuid, SKILLS.size());
             Simpleskills.LOGGER.debug("Initialized player data for UUID: {}", playerUuid);
         } catch (SQLException e) {
@@ -330,48 +321,6 @@ public class DatabaseManager {
         }
     }
 
-    // Prestige API
-    public int getPrestige(String playerUuid) {
-        checkConnection();
-        if (prestigeCache.containsKey(playerUuid)) {
-            return prestigeCache.get(playerUuid);
-        }
-        String sql = "SELECT prestige FROM players WHERE player_uuid = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, playerUuid);
-            try (ResultSet result = statement.executeQuery()) {
-                if (result.next()) {
-                    int prestige = result.getInt("prestige");
-                    prestigeCache.put(playerUuid, prestige);
-                    return prestige;
-                }
-            }
-        } catch (SQLException e) {
-            Simpleskills.LOGGER.error("Failed to get prestige for UUID {}: {}", playerUuid, e.getMessage());
-            throw new DatabaseException("Failed to get prestige", e);
-        }
-        return 0;
-    }
-
-    public void setPrestige(String playerUuid, int prestige) {
-        checkConnection();
-        String sql = "UPDATE players SET prestige = ? WHERE player_uuid = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, prestige);
-            statement.setString(2, playerUuid);
-            statement.executeUpdate();
-            prestigeCache.put(playerUuid, prestige);
-            Simpleskills.LOGGER.debug("Set prestige to {} for UUID: {}", prestige, playerUuid);
-        } catch (SQLException e) {
-            Simpleskills.LOGGER.error("Failed to set prestige for UUID {}: {}", playerUuid, e.getMessage());
-            throw new DatabaseException("Failed to set prestige", e);
-        }
-    }
-
-    public void incrementPrestige(String playerUuid) {
-        setPrestige(playerUuid, getPrestige(playerUuid) + 1);
-    }
-
     public void setIronmanMode(String playerUuid, boolean isIronman) {
         checkConnection();
         String sql = "UPDATE players SET is_ironman = ? WHERE player_uuid = ?";
@@ -485,7 +434,7 @@ public class DatabaseManager {
     public List<LeaderboardEntry> getSkillLeaderboard(String skillId, int limit) {
         checkConnection();
         String sql = """
-        SELECT p.player_uuid, ps.level, ps.xp, COALESCE(n.player_name, p.player_uuid) as player_name, p.prestige
+        SELECT p.player_uuid, ps.level, ps.xp, COALESCE(n.player_name, p.player_uuid) as player_name
         FROM player_skills ps
         JOIN players p ON ps.player_uuid = p.player_uuid
         LEFT JOIN (
@@ -498,7 +447,7 @@ public class DatabaseManager {
             )
         ) n ON p.player_uuid = n.uuid
         WHERE ps.skill_id = ?
-        ORDER BY p.prestige DESC, ps.level DESC, ps.xp DESC
+        ORDER BY ps.level DESC, ps.xp DESC
         LIMIT ?
     """;
 
@@ -512,8 +461,7 @@ public class DatabaseManager {
                     String playerName = result.getString("player_name");
                     int level = result.getInt("level");
                     int xp = result.getInt("xp");
-                    int prestige = result.getInt("prestige");
-                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp, prestige));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp));
                 }
             }
         } catch (SQLException e) {
@@ -526,7 +474,7 @@ public class DatabaseManager {
     public List<LeaderboardEntry> getTotalLevelLeaderboard(int limit) {
         checkConnection();
         String sql = """
-        SELECT p.player_uuid, SUM(ps.level) as total_level, COALESCE(n.player_name, p.player_uuid) as player_name, p.prestige
+        SELECT p.player_uuid, SUM(ps.level) as total_level, COALESCE(n.player_name, p.player_uuid) as player_name
         FROM player_skills ps
         JOIN players p ON ps.player_uuid = p.player_uuid
         LEFT JOIN (
@@ -539,7 +487,7 @@ public class DatabaseManager {
             )
         ) n ON p.player_uuid = n.uuid
         GROUP BY p.player_uuid
-        ORDER BY p.prestige DESC, total_level DESC
+        ORDER BY total_level DESC
         LIMIT ?
     """;
 
@@ -551,8 +499,7 @@ public class DatabaseManager {
                     String playerUuid = result.getString("player_uuid");
                     String playerName = result.getString("player_name");
                     int totalLevel = result.getInt("total_level");
-                    int prestige = result.getInt("prestige");
-                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0, prestige));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0));
                 }
             }
         } catch (SQLException e) {
@@ -565,7 +512,7 @@ public class DatabaseManager {
     public List<LeaderboardEntry> getIronmanSkillLeaderboard(String skillId, int limit) {
         checkConnection();
         String sql = """
-        SELECT p.player_uuid, ps.level, ps.xp, COALESCE(n.player_name, p.player_uuid) as player_name, p.prestige
+        SELECT p.player_uuid, ps.level, ps.xp, COALESCE(n.player_name, p.player_uuid) as player_name
         FROM player_skills ps
         JOIN players p ON ps.player_uuid = p.player_uuid
         LEFT JOIN (
@@ -578,7 +525,7 @@ public class DatabaseManager {
             )
         ) n ON p.player_uuid = n.uuid
         WHERE ps.skill_id = ? AND p.is_ironman = 1
-        ORDER BY p.prestige DESC, ps.level DESC, ps.xp DESC
+        ORDER BY ps.level DESC, ps.xp DESC
         LIMIT ?
     """;
 
@@ -592,8 +539,7 @@ public class DatabaseManager {
                     String playerName = result.getString("player_name");
                     int level = result.getInt("level");
                     int xp = result.getInt("xp");
-                    int prestige = result.getInt("prestige");
-                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp, prestige));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, level, xp));
                 }
             }
         } catch (SQLException e) {
@@ -606,7 +552,7 @@ public class DatabaseManager {
     public List<LeaderboardEntry> getIronmanTotalLevelLeaderboard(int limit) {
         checkConnection();
         String sql = """
-        SELECT p.player_uuid, SUM(ps.level) as total_level, COALESCE(n.player_name, p.player_uuid) as player_name, p.prestige
+        SELECT p.player_uuid, SUM(ps.level) as total_level, COALESCE(n.player_name, p.player_uuid) as player_name
         FROM player_skills ps
         JOIN players p ON ps.player_uuid = p.player_uuid
         LEFT JOIN (
@@ -620,7 +566,7 @@ public class DatabaseManager {
         ) n ON p.player_uuid = n.uuid
         WHERE p.is_ironman = 1
         GROUP BY p.player_uuid
-        ORDER BY p.prestige DESC, total_level DESC
+        ORDER BY total_level DESC
         LIMIT ?
     """;
 
@@ -632,8 +578,7 @@ public class DatabaseManager {
                     String playerUuid = result.getString("player_uuid");
                     String playerName = result.getString("player_name");
                     int totalLevel = result.getInt("total_level");
-                    int prestige = result.getInt("prestige");
-                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0, prestige));
+                    leaderboard.add(new LeaderboardEntry(playerUuid, playerName, totalLevel, 0));
                 }
             }
         } catch (SQLException e) {

@@ -6,8 +6,9 @@ Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms
 - 🎮 **Seamless Fun**: Works flawlessly out-of-the-box in multiplayer - no client mods needed!
 - ⚔️ **Epic Progression**: Unlock powerful tools, armor, and bonuses as you level up.
 - 🏆 **Bragging Rights**: Compete on leaderboards and show off your skills!
+- 👑 **Prestige System**: Reach max level in all skills to unlock Prestige mode, resetting skills and gaining a Prestige counter next to your name.
 - 🛠 **Your World, Your Rules**: Fully customizable to craft the perfect experience for your server.
-- 🛠 **Singleplayer Support**: Prefer to play on your own? Install **simpleskills** on your client. Toggle the skill HUD with TAB, move it around with J, rebind in options->controls->key binds.
+- 👤 **Singleplayer Support**: Prefer to play on your own? Install **simpleskills** on your client. Toggle the skill HUD with TAB, move it around with J, rebind in options->controls->key binds.
 
 Ready to embark on a journey of mastery and glory? Let’s dive in!
 
@@ -58,7 +59,8 @@ Nothing fuels fun like a little friendly competition! **simpleskills**’ **buil
 - Track your rank in **individual skills** or **total level**.
 - Show off your progress with commands like `/simpleskills leaderboard alchemy` or `/simpleskills leaderboardironman total`.
 - Cheer on the **top 5 players** in each skill or total level mastery, including those in the Ironman-exclusive leaderboard.
-- The mod doesn't stop at 99! Leaderboards continue to track XP after hitting max level.
+- The mod doesn't stop at 99! Leaderboards continue to track XP after hitting max level, and the Prestige system allows players a choice to reset their skills and gain a Prestige Counter on the leaderboards and scoreboards.
+- Leaderboards take into account Prestige levels.
 
 Perfect for SMPs and communities, leaderboards create a vibrant “endgame” where players strive to be the best. Who’s ready to claim the #1 spot?
 

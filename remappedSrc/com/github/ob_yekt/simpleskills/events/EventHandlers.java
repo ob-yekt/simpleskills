@@ -6,6 +6,7 @@ import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.AttributeManager;
+import com.github.ob_yekt.simpleskills.managers.IronmanManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
 
@@ -244,8 +245,11 @@ public class EventHandlers {
             JsonObject config = ConfigManager.getCombatConfig();
             float xpPerDamageSlaying = config.get("slaying_xp_per_damage") != null ? config.get("slaying_xp_per_damage").getAsFloat() : 100.0f;
             float xpPerDamageRanged = config.get("ranged_xp_per_damage") != null ? config.get("ranged_xp_per_damage").getAsFloat() : 100.0f;
+            float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 100.0f;
             float minDamageSlaying = config.get("slaying_min_damage_threshold") != null ? config.get("slaying_min_damage_threshold").getAsFloat() : 2.0f;
             float minDamageRanged = config.get("ranged_min_damage_threshold") != null ? config.get("ranged_min_damage_threshold").getAsFloat() : 2.0f;
+            float minDamageDefense = config.get("defense_min_damage_threshold") != null ? config.get("defense_min_damage_threshold").getAsFloat() : 2.0f;
+            float armorMultiplierPerPiece = config.get("defense_xp_armor_multiplier_per_piece") != null ? config.get("defense_xp_armor_multiplier_per_piece").getAsFloat() : 0.25f;
 
             // Slaying/Ranged: Player dealing damage to non-player mob
             if (entity instanceof LivingEntity target && !(target instanceof PlayerEntity) && !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
@@ -352,7 +356,6 @@ public class EventHandlers {
             db.updatePlayerName(playerUuid, playerName); // Add this line
             AttributeManager.refreshAllAttributes(player);
             SkillTabMenu.updateTabMenu(player);
-            com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(player);
             Simpleskills.LOGGER.debug("Processed join for player: {}", playerName);
         });
 
@@ -382,19 +385,18 @@ public class EventHandlers {
                     int totalLevels = db.getAllSkills(playerUuid).values().stream()
                             .mapToInt(DatabaseManager.SkillData::level)
                             .sum();
-                    int prestige = db.getPrestige(playerUuid);
                     db.setIronmanMode(playerUuid, false);
                     db.resetPlayerSkills(playerUuid);
                     db.ensurePlayerInitialized(playerUuid);
                     AttributeManager.clearSkillAttributes(newPlayer);
                     AttributeManager.clearIronmanAttributes(newPlayer);
+                    IronmanManager.removePlayerFromIronmanTeam(newPlayer);
                     newPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.").formatted(Formatting.YELLOW), false);
                     if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
                             ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
-                        String prestigePart = prestige > 0 ? String.format(" at §6★%d§f", prestige) : "";
                         Objects.requireNonNull(newPlayer.getEntityWorld().getServer()).getPlayerManager().broadcast(
-                                Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f%s.",
-                                        newPlayer.getName().getString(), totalLevels, prestigePart)), false);
+                                Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f.",
+                                        newPlayer.getName().getString(), totalLevels)), false);
                     }
                     Simpleskills.LOGGER.debug("Disabled Ironman mode and reset skills for player: {}", newPlayer.getName().getString());
                 } else {
@@ -404,7 +406,6 @@ public class EventHandlers {
             }
             AttributeManager.refreshAllAttributes(newPlayer);
             SkillTabMenu.updateTabMenu(newPlayer);
-            com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(newPlayer);
             Simpleskills.LOGGER.debug("Processed respawn for player: {}, alive: {}", newPlayer.getName().getString(), alive);
         });
     }

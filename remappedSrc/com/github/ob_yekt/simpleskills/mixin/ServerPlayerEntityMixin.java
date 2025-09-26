@@ -28,7 +28,6 @@ public class ServerPlayerEntityMixin {
         String playerUuid = player.getUuidAsString();
         DatabaseManager db = DatabaseManager.getInstance();
 
-        // Check if player is in Ironman mode
         if (db.isPlayerInIronmanMode(playerUuid)) {
             // Apply death penalties
             player.getInventory().clear();
@@ -38,25 +37,22 @@ public class ServerPlayerEntityMixin {
             int totalLevels = db.getAllSkills(playerUuid).values().stream()
                     .mapToInt(DatabaseManager.SkillData::level)
                     .sum();
-            int prestige = db.getPrestige(playerUuid);
 
-            // Disable Ironman mode and reset skills and prestige
+            // Disable Ironman mode and reset skills
             IronmanManager.disableIronmanMode(player);
             db.resetPlayerSkills(playerUuid);
-            db.setPrestige(playerUuid, 0);
             db.ensurePlayerInitialized(playerUuid);
 
             player.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.").formatted(Formatting.YELLOW), false);
 
             if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
                     ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
-                String prestigePart = prestige > 0 ? String.format(" at §6★%d§f", prestige) : "";
                 Objects.requireNonNull(player.getEntityWorld().getServer()).getPlayerManager().broadcast(
-                        Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f%s.",
-                                player.getName().getString(), totalLevels, prestigePart)), false);
+                        Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f.",
+                                player.getName().getString(), totalLevels)), false);
             }
 
-            Simpleskills.LOGGER.debug("Processed Ironman death for player: {} (prestige reset)", player.getName().getString());
+            Simpleskills.LOGGER.debug("Processed Ironman death for player: {}", player.getName().getString());
         } else {
             AttributeManager.clearSkillAttributes(player);
             AttributeManager.clearIronmanAttributes(player);
@@ -64,7 +60,6 @@ public class ServerPlayerEntityMixin {
 
         AttributeManager.refreshAllAttributes(player);
         SkillTabMenu.updateTabMenu(player);
-        com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(player);
         Simpleskills.LOGGER.debug("Processed death for player: {}", player.getName().getString());
     }
 }

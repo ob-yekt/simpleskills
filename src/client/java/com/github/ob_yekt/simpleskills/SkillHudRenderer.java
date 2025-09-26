@@ -130,6 +130,7 @@ public class SkillHudRenderer implements HudElement {
         }
 
         boolean isIronman = db.isPlayerInIronmanMode(playerUuidStr);
+        int prestige = db.getPrestige(playerUuidStr);
         Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuidStr);
 
         int maxWidth = 0;
@@ -144,6 +145,13 @@ public class SkillHudRenderer implements HudElement {
         if (isIronman) {
             String ironmanText = "Ironman Mode";
             maxWidth = Math.max(maxWidth, textRenderer.getWidth(ironmanText));
+            height += LINE_HEIGHT + 1;
+        }
+
+        // Prestige indicator
+        if (prestige > 0) {
+            String prestigeText = String.format("Prestige: ★%d", prestige);
+            maxWidth = Math.max(maxWidth, textRenderer.getWidth(prestigeText));
             height += LINE_HEIGHT + 1;
         }
 
@@ -286,9 +294,16 @@ public class SkillHudRenderer implements HudElement {
         currentY += LINE_HEIGHT + 2;
 
         boolean isIronman = db.isPlayerInIronmanMode(playerUuidStr);
+        int prestige = db.getPrestige(playerUuidStr);
         if (isIronman) {
             String ironmanText = "Ironman Mode";
             context.drawText(textRenderer, ironmanText, x + PADDING, currentY, 0xFFFF4444, false);
+            currentY += LINE_HEIGHT + 1;
+        }
+
+        if (prestige > 0) {
+            String prestigeText = String.format("Prestige: ★%d", prestige);
+            context.drawText(textRenderer, prestigeText, x + PADDING, currentY, 0xFFFFD700, false);
             currentY += LINE_HEIGHT + 1;
         }
 
