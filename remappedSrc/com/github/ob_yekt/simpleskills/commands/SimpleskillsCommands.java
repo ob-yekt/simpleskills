@@ -50,6 +50,8 @@ public class SimpleskillsCommands {
                                         .then(CommandManager.literal("disable")
                                                 .requires(source -> source.hasPermissionLevel(2))
                                                 .executes(SimpleskillsCommands::disableIronman)))
+                                .then(CommandManager.literal("prestige")
+                                        .executes(SimpleskillsCommands::prestige))
                                 .then(CommandManager.literal("reload")
                                         .requires(source -> source.hasPermissionLevel(2))
                                         .executes(context -> {
@@ -103,6 +105,39 @@ public class SimpleskillsCommands {
                 ));
     }
 
+    private static int prestige(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
+            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
+            return 0;
+        }
+
+        String playerUuid = player.getUuidAsString();
+        DatabaseManager db = DatabaseManager.getInstance();
+        db.ensurePlayerInitialized(playerUuid);
+
+        // Require level cap in all skills
+        boolean allMaxed = db.getAllSkills(playerUuid).values().stream()
+                .allMatch(s -> s.level() >= XPManager.getMaxLevel());
+        if (!allMaxed) {
+            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You must reach level " + XPManager.getMaxLevel() + " in all skills to prestige."), false);
+            return 0;
+        }
+
+        // Increment prestige and reset skill levels
+        db.incrementPrestige(playerUuid);
+        db.resetPlayerSkills(playerUuid);
+
+        AttributeManager.refreshAllAttributes(player);
+        SkillTabMenu.updateTabMenu(player);
+        com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(player);
+
+        int newPrestige = db.getPrestige(playerUuid);
+        player.sendMessage(Text.literal("§6[simpleskills]§f You prestiged to §6★" + newPrestige + "§f! Skills reset to 1."), false);
+        Simpleskills.LOGGER.info("Player {} prestiged to {}", player.getName().getString(), newPrestige);
+        return 1;
+    }
+
     private static int enableIronman(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
@@ -116,7 +151,7 @@ public class SimpleskillsCommands {
 
         int totalLevels = db.getTotalSkillLevel(playerUuid);
         int expectedTotalLevels = Skills.values().length;
-        if (totalLevels > expectedTotalLevels) {
+        if (totalLevels > expectedTotalLevels || DatabaseManager.getInstance().getPrestige(playerUuid) > 0) {
             source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You must reset your skills using /simpleskills reset before enabling Ironman Mode.").formatted(Formatting.RED), false);
             Simpleskills.LOGGER.debug("Player {} attempted to enable Ironman Mode but has {} total levels (expected {}).", player.getName().getString(), totalLevels, expectedTotalLevels);
             return 0;
@@ -168,11 +203,13 @@ public class SimpleskillsCommands {
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.resetPlayerSkills(playerUuid);
+        db.setPrestige(playerUuid, 0);
         AttributeManager.refreshAllAttributes(targetPlayer);
         SkillTabMenu.updateTabMenu(targetPlayer);
+        com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(targetPlayer);
 
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Reset skills for " + playerName + "."), true);
-        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your skills have been reset!"), false);
+        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Reset skills and prestige for " + playerName + "."), true);
+        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your skills and prestige have been reset!"), false);
         Simpleskills.LOGGER.debug("Reset skills for player {}", playerName);
         return 1;
     }
@@ -317,7 +354,8 @@ public class SimpleskillsCommands {
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
             boolean isIronman = db.isPlayerInIronmanMode(entry.playerUuid());
-            String namePrefix = isIronman ? "§c§l☠ §f" : "§f"; // White name for all, skull for Ironman
+            String star = entry.prestige() > 0 ? ("§6★" + entry.prestige() + " §f") : "";
+            String namePrefix = (isIronman ? "§c§l☠ §f" : "§f") + star;
             message.append(String.format("§e%d. %s%s - Level §b%d §7[§f%,d XP§7]\n",
                     i + 1, namePrefix, entry.playerName(), entry.level(), entry.xp()));
         }
@@ -344,7 +382,8 @@ public class SimpleskillsCommands {
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
             boolean isIronman = db.isPlayerInIronmanMode(entry.playerUuid());
-            String namePrefix = isIronman ? "§c§l☠ §f" : "§f"; // White name for all, skull for Ironman
+            String star = entry.prestige() > 0 ? ("§6★" + entry.prestige() + " §f") : "";
+            String namePrefix = (isIronman ? "§c§l☠ §f" : "§f") + star;
             message.append(String.format("§e%d. %s%s - Total Level §b%d\n",
                     i + 1, namePrefix, entry.playerName(), entry.level()));
         }
@@ -380,8 +419,9 @@ public class SimpleskillsCommands {
 
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
-            message.append(String.format("§e%d. §c§l☠ §f%s - Level §b%d §7[§f%,d XP§7]\n",
-                    i + 1, entry.playerName(), entry.level(), entry.xp()));
+            String star = entry.prestige() > 0 ? ("§6★" + entry.prestige() + " §f") : "";
+            message.append(String.format("§e%d. §c§l☠ §f%s%s - Level §b%d §7[§f%,d XP§7]\n",
+                    i + 1, star, entry.playerName(), entry.level(), entry.xp()));
         }
 
         if (leaderboard.isEmpty()) {
@@ -405,8 +445,9 @@ public class SimpleskillsCommands {
 
         for (int i = 0; i < leaderboard.size(); i++) {
             DatabaseManager.LeaderboardEntry entry = leaderboard.get(i);
-            message.append(String.format("§e%d. §c§l☠ §f%s - Total Level §b%d\n",
-                    i + 1, entry.playerName(), entry.level()));
+            String star = entry.prestige() > 0 ? ("§6★" + entry.prestige() + " §f") : "";
+            message.append(String.format("§e%d. §c§l☠ §f%s%s - Total Level §b%d\n",
+                    i + 1, star, entry.playerName(), entry.level()));
         }
 
         if (leaderboard.isEmpty()) {
