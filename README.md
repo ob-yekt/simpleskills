@@ -1,16 +1,14 @@
 # 🌟 **simpleskills**: Add Skills to Minecraft!
 
-Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms Minecraft into an epic RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds thrilling progression with 15 unique skills, unlockable gear, and competitive leaderboards. Feel the rush of mastering Woodcutting, Slaying, Alchemy, and more, as you climb to level 99 and dominate the server!
+Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms Minecraft into an engaging RPG experience! Whether you're a lone survivor or running a bustling SMP, **simpleskills** adds progression with 15 unique skills, unlockable gear, and competitive leaderboards. Master Woodcutting, Slaying, Alchemy, and more, as you climb to level 99!
 
 **Why **simpleskills**?**
 - 🎮 **Seamless Fun**: Works flawlessly out-of-the-box in multiplayer - no client mods needed!
-- ⚔️ **Epic Progression**: Unlock powerful tools, armor, and bonuses as you level up.
+- ⚔️ **Simple Progression**: Unlock powerful tools, armor, and bonuses as you level up.
 - 🏆 **Bragging Rights**: Compete on leaderboards and show off your skills!
 - 👑 **Prestige System**: Reach max level in all skills to unlock Prestige mode, resetting skills and gaining a Prestige counter next to your name.
 - 🛠 **Your World, Your Rules**: Fully customizable to craft the perfect experience for your server.
 - 👤 **Singleplayer Support**: Prefer to play on your own? Install **simpleskills** on your client. Toggle the skill HUD with TAB, move it around with J, rebind in options->controls->key binds.
-
-Ready to embark on a journey of mastery and glory? Let’s dive in!
 
 ---
 
@@ -23,15 +21,16 @@ Ready to embark on a journey of mastery and glory? Let’s dive in!
 - **Ironman Mode**: Crave a challenge? Test your skills with hardcore restrictions and epic stakes.
 - **Leaderboards**: Battle for the top spot in individual skills or overall mastery.
 - **Customizable Everything**: Tweak XP rates, unlock tiers, and more with easy JSON configs.
+- **Natural Economy**: Players who reach high levels can provide their superior services and goods, such as enchanting, cooking, crafting and more, to lower level players!
 - **Feels Like Vanilla+**: The mod is designed to be unintrusive and intuitive without overreach - simple!
 
-Perfect for casual SMPs, hardcore survival servers, streamers, lets-players, or solo adventurers who want a richer Minecraft experience.
+Perfect for casual SMPs, lets-players, hardcore survival servers, streamers, or solo players who want a richer Minecraft experience.
 
 ---
 
 ## 🛠 Skills to Master
 
-Unleash your potential with **15 core skills** that make every action in Minecraft feel rewarding:
+**simpleskills** is composed of **15 core skills** that make every action in Minecraft feel rewarding:
 
 1. **Mining**: Break stone and ores to level up and unlock better tools.
 2. **Woodcutting**: Chop trees to become a lumberjack legend.
@@ -49,7 +48,7 @@ Unleash your potential with **15 core skills** that make every action in Minecra
 14. **Agility**: Run, jump, and swim faster with every level.
 15. **Prayer**: Sacrifice rare items for long-term buffs like Haste or Invisibility.
 
-**Each skill is a journey, which one will you max out first?**
+**Which skill will you max out first?**
 
 ---
 
@@ -59,20 +58,20 @@ Nothing fuels fun like a little friendly competition! **simpleskills**’ **buil
 - Track your rank in **individual skills** or **total level**.
 - Show off your progress with commands like `/simpleskills leaderboard alchemy` or `/simpleskills leaderboardironman total`.
 - Cheer on the **top 5 players** in each skill or total level mastery, including those in the Ironman-exclusive leaderboard.
-- The mod doesn't stop at 99! Leaderboards continue to track XP after hitting max level, and the Prestige system allows players a choice to reset their skills and gain a Prestige Counter on the leaderboards and scoreboards.
+- **The mod doesn't stop at 99!** Leaderboards continue to track XP after hitting max level, and for the true achievers, the Prestige system allows players a choice to reset their skills and gain a Prestige Counter signifying their prowess.
 - Leaderboards take into account Prestige levels.
 
-Perfect for SMPs and communities, leaderboards create a vibrant “endgame” where players strive to be the best. Who’s ready to claim the #1 spot?
+Leaderboards create a vibrant “endgame” where players strive to claim and retain the #1 spot.
 
 ---
 
 ## ⚔️ Ironman Mode: The Ultimate Challenge
 
-Think you’ve got what it takes to be a legend? **Ironman Mode** cranks up the intensity:
+Think you’ve got what it takes to be a legend? **Ironman Mode** makes the game a true challenge without affecting your friends:
 - **High Stakes**: Lose *everything* on death, including items and XP.
-- **Customizable Hardcore Tweaks**: Reduced HP (-50%) and XP gain (0.2x)
-- **Epic Bragging Rights**: Red skull icon shows everyone you’re embarking on an Ironman journey.
-- **Death Announcements**: Share your total level with the server when you fall (optional).
+- **Admin-customizable Hardcore Tweaks**: Reduced HP (-50%) and XP gain (0.2x)
+- **Bragging Rights**: Red skull icon shows everyone you’re embarking on an Ironman journey.
+- **Death Announcements**: Notify the server of your total level if you fall.
 
 Perfect for players who crave a brutal, rewarding challenge or want to stand out in their community.
 
@@ -80,7 +79,7 @@ Perfect for players who crave a brutal, rewarding challenge or want to stand out
 
 ## 🔓 Gear Progression: Earn Your Power
 
-Unlock tools and armor as you level up, with fully customizable tiers:
+Unlock tools and armor as you level up, with **fully customizable** unlock tiers:
 
 | Armor Material | Required Level |  
 |----------------|----------------|  
@@ -138,7 +137,7 @@ Lock powerful enchantments to specific levels, defaulted to:
 - Efficiency V: Level 75
 - Mending: Level 99
 
-No more rushing and cycling trades for Mending villagers, you have to earn it! You can also offer your enchanting services to other players.
+No more rushing and cycling trades for Mending villagers; you have to earn it! You can also offer your enchanting services to other players, creating an economy.
 
 ### Cooking
 Players are rewarded with higher multipliers to saturation and hunger for foods created based on the players' Cooking level.
