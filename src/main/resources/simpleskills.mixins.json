@@ -5,19 +5,20 @@
   "mixins": [
     "AgilityXPMixin",
     "AlchemyXPMixin",
-    "DEFENSE.ArmorRestrictionMixin",
     "AxeItemMixin",
     "EnchantingScreenHandlerMixin",
-    "DEFENSE.InventoryCheckMixin",
     "ServerPlayerEntityMixin",
     "ShovelItemMixin",
     "CRAFTING.AbstractCraftingScreenHandlerAccessor",
     "CRAFTING.CraftingResultSlotMixin",
     "CRAFTING.CraftingScreenHandlerMixin",
+    "DEFENSE.ArmorRestrictionMixin",
+    "DEFENSE.InventoryCheckMixin",
     "FARMING.ComposterBlockMixin",
     "FARMING.HoeItemMixin",
     "FISHING.FishingBobberEntityAccessor",
     "FISHING.FishingBobberEntityMixin",
+    "FISHING.FishingBobberLootMixin",
     "FURNACES.AbstractFurnaceScreenHandlerMixin",
     "FURNACES.FurnaceOutputSlotMixin",
     "LORE.CraftingResultInventoryMixin",
@@ -27,7 +28,9 @@
     "SMITHING.ForgingScreenHandlerMixin",
     "SMITHING.SmithingScreenHandlerMixin"
   ],
+  "plugin": "com.github.ob_yekt.simpleskills.mixin.MixinPlugin",
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "priority": 900
 }

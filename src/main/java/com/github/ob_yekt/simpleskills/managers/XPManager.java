@@ -59,37 +59,33 @@ public class XPManager {
         return 1;
     }
 
-    // Updated XP LOGIC with refined curve
+    /// XP-SYSTEM
+
+    // Curve parameters
+    private static final double EXPONENT_P = 2.45;
+    private static final double SCALING_A  = 300.0;
+    private static final double FLOOR_B    = 500.0;
+
     public static int getExperienceForLevel(int level) {
         if (level <= 1) return 0;
-        if (level <= 15) {
-            double A = 200.0;
-            double p = 1.43819883963;
-            return (int) Math.floor(A * Math.pow(level - 1, p));
-        } else if (level <= 25) {
-            double XP15 = 8900.0;
-            double C = 600.34085713;
-            double p = 1.6;
-            return (int) Math.floor(XP15 + C * Math.pow(level - 15, p));
-        } else {
-            double XP25 = 32800.0;
-            double B = 425.11140846;
-            double p = 2.2;
-            return (int) Math.floor(XP25 + B * Math.pow(level - 25, p));
-        }
+        double L = level - 1;
+        return (int) Math.floor(SCALING_A * Math.pow(L, EXPONENT_P) + FLOOR_B * L);
     }
 
     public static int getLevelForExperience(int experience) {
         if (experience <= 0) return 1;
-        // Binary-search safe fallback for piecewise curves
-        int lo = 1;
-        int hi = MAX_LEVEL;
-        while (lo < hi) {
-            int mid = (lo + hi + 1) / 2;
-            if (getExperienceForLevel(mid) <= experience) lo = mid;
-            else hi = mid - 1;
+        int low = 1;
+        int high = MAX_LEVEL;
+        while (low < high) {
+            int mid = (low + high + 1) >>> 1; // bias upward
+            int xpForMid = getExperienceForLevel(mid);
+            if (xpForMid <= experience) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
         }
-        return Math.min(lo, MAX_LEVEL);
+        return low;
     }
 
     // Add XP to a player's skill silently (no notifications or level-up effects)

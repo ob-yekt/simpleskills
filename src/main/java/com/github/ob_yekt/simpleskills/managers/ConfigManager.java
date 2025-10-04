@@ -144,9 +144,11 @@ public class ConfigManager {
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
         json.addProperty("standard_xp_multiplier", 1.0);
-        json.addProperty("ironman_xp_multiplier", 0.2);
+        json.addProperty("ironman_xp_multiplier", 0.4);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
+        json.addProperty("custom_fishing_loot_enabled", true);
+        json.addProperty("fishing_speed_bonus_enabled", true);
         return json;
     }
 
@@ -987,6 +989,7 @@ public class ConfigManager {
         defaults.add(new BlockMapping("block.minecraft.dirt", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.grass_block", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.podzol", "EXCAVATING", 50));
+        defaults.add(new BlockMapping("block.minecraft.coarse_dirt", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.mycelium", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.farmland", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 50));
@@ -1417,10 +1420,10 @@ public class ConfigManager {
                 new ToolRequirement("minecraft:golden_hoe", "FARMING", 5),
 
                 // Stone Tools
-                new ToolRequirement("minecraft:stone_pickaxe", "MINING", 15),
-                new ToolRequirement("minecraft:stone_axe", "WOODCUTTING", 15),
-                new ToolRequirement("minecraft:stone_shovel", "EXCAVATING", 15),
-                new ToolRequirement("minecraft:stone_hoe", "FARMING", 15),
+                new ToolRequirement("minecraft:stone_pickaxe", "MINING", 10),
+                new ToolRequirement("minecraft:stone_axe", "WOODCUTTING", 10),
+                new ToolRequirement("minecraft:stone_shovel", "EXCAVATING", 10),
+                new ToolRequirement("minecraft:stone_hoe", "FARMING", 10),
 
                 // Copper Tools
                 new ToolRequirement("minecraft:copper_pickaxe", "MINING", 25),
@@ -1482,6 +1485,8 @@ public class ConfigManager {
                 new ArmorRequirement("minecraft:copper_leggings", "DEFENSE", 25),
                 new ArmorRequirement("minecraft:copper_boots", "DEFENSE", 25),
 
+                new ArmorRequirement("minecraft:turtle_helmet", "DEFENSE", 30),
+
                 // Chainmail (true mid-game)
                 new ArmorRequirement("minecraft:chainmail_helmet", "DEFENSE", 35),
                 new ArmorRequirement("minecraft:chainmail_chestplate", "DEFENSE", 35),
@@ -1504,7 +1509,9 @@ public class ConfigManager {
                 new ArmorRequirement("minecraft:netherite_helmet", "DEFENSE", 99),
                 new ArmorRequirement("minecraft:netherite_chestplate", "DEFENSE", 99),
                 new ArmorRequirement("minecraft:netherite_leggings", "DEFENSE", 99),
-                new ArmorRequirement("minecraft:netherite_boots", "DEFENSE", 99)
+                new ArmorRequirement("minecraft:netherite_boots", "DEFENSE", 99),
+
+                new ArmorRequirement("minecraft:elytra", "PRAYER", 50)
         };
         for (ArmorRequirement req : defaults) {
             JsonObject entry = new JsonObject();
@@ -1532,8 +1539,8 @@ public class ConfigManager {
                 new WeaponRequirement("minecraft:golden_axe", "SLAYING", 5),
 
                 // Stone Weapons
-                new WeaponRequirement("minecraft:stone_sword", "SLAYING", 15),
-                new WeaponRequirement("minecraft:stone_axe", "SLAYING", 15),
+                new WeaponRequirement("minecraft:stone_sword", "SLAYING", 10),
+                new WeaponRequirement("minecraft:stone_axe", "SLAYING", 10),
 
                 // Copper Weapons
                 new WeaponRequirement("minecraft:copper_sword", "SLAYING", 25),
@@ -1567,6 +1574,26 @@ public class ConfigManager {
             json.add(req.id, entry);
         }
         return json;
+    }
+
+    /**
+     * Checks if the fishing speed bonus is enabled.
+     */
+    public static boolean isFishingSpeedBonusEnabled() {
+        try {
+            if (featureConfig.has("fishing_speed_bonus_enabled")) {
+                return featureConfig.get("fishing_speed_bonus_enabled").getAsBoolean();
+            } else if (featureConfig.has("features")) {
+                JsonObject features = featureConfig.getAsJsonObject("features");
+                if (features != null && features.has("fishing_speed_bonus_enabled")) {
+                    return features.get("fishing_speed_bonus_enabled").getAsBoolean();
+                }
+            }
+            return true; // Default from getDefaultFeatureConfig()
+        } catch (Exception e) {
+            Simpleskills.LOGGER.warn("Error reading fishing_speed_bonus_enabled; defaulting to true");
+            return true;
+        }
     }
 
     /**

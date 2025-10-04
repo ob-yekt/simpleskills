@@ -81,15 +81,16 @@ Perfect for players who crave a brutal, rewarding challenge or want to stand out
 
 Unlock tools and armor as you level up, with **fully customizable** unlock tiers:
 
-| Armor Material | Required Level |  
-|----------------|----------------|  
-| Leather        | 0              |  
-| Gold           | 5              |  
-| Copper         | 25             |  
-| Chainmail      | 35             |  
-| Iron           | 50             |  
-| Diamond        | 75             |  
-| Netherite      | 99             |  
+| Armor Material | Defense Level |  
+|----------------|---------------|  
+| Leather        | 0             |  
+| Gold           | 5             |  
+| Copper         | 25            |  
+| Turtle Helmet  | 30            |  
+| Chainmail      | 35            |  
+| Iron           | 50            |  
+| Diamond        | 75            |  
+| Netherite      | 99            |  
 
 
 | Tool Material | Required Level |  
@@ -109,8 +110,29 @@ Unlock tools and armor as you level up, with **fully customizable** unlock tiers
 | Bow             | 50             |  
 | Trident         | 99             |  
 
+**Elytra requires level 50 Prayer by default.**
 
-Affected gear comes with **lore text** (e.g., *“Requires level 50 Defense”*), keeping things intuitive for players.
+Affected items comes with **lore text** (e.g., *“Requires level 50 Defense”*), keeping things intuitive for players.
+
+---
+
+## Rough Estimates for Cumulative Time-to-Tier
+
+Standard mode:
+* Level 10: 0 h 17 m 0 s
+* Level 25: 1 h 56 m 40 s 
+* Level 50: 9 h 35 m 27 s
+* Level 75: 23 h 42 m 11 s
+* Level 99: 42 h 31 m 44 s
+
+Ironman mode:
+* Level 10: 0 h 42 m 30 s
+* Level 25: 4 h 51 m 40 s
+* Level 50: 23 h 53 m 18 s
+* Level 75: 59 h 15 m 28 s
+* Level 99: 105 h 49 m 20 s
+
+Too slow? Too fast? Adjust `standard_xp_multiplier` and `ironman_xp_multiplier` in **config.json**!
 
 ---
 
@@ -128,7 +150,12 @@ Here’s a taste of what each skill offers:
 | Journeyman (25–49) | 80%  | 15%  | 5% (Bows, Rods, Saddles)   |  
 | Artisan (50–74) | 80%  | 13%  | 7% (Enchanted Gear)         |  
 | Expert (75–98)  | 85%  | 5%   | 10% (Books, Tridents)       |  
-| Grandmaster (99)| 79%  | 1%   | 15% (Rare Enchanted Items)  |  
+| Grandmaster (99)| 79%  | 1%   | 15% (Rare Enchanted Items)  |
+
+### NOTICE!
+**If you use a fishing mod that changes loot tables, set "custom_fishing_loot_enabled" to false in config.json and restart the server.**
+
+---
 
 ### Enchanting
 Lock powerful enchantments to specific levels, defaulted to:
@@ -138,6 +165,8 @@ Lock powerful enchantments to specific levels, defaulted to:
 - Mending: Level 99
 
 No more rushing and cycling trades for Mending villagers; you have to earn it! You can also offer your enchanting services to other players, creating an economy.
+
+---
 
 ### Cooking
 Players are rewarded with higher multipliers to saturation and hunger for foods created based on the players' Cooking level.
@@ -171,6 +200,8 @@ The customizable Cooking XP table is also designed to encourage other food types
 | Beetroot Soup       | 285 |
 | Rabbit Stew         | 350 |
 
+---
+
 ### Alchemy
 Brew potions with boosted durations, defaulted to:
 - Novice (1–24): 1x duration
@@ -178,6 +209,8 @@ Brew potions with boosted durations, defaulted to:
 - Artisan (50–74): 1.50x duration
 - Expert (75–98): 1.75x duration
 - Grandmaster (99): 3x duration
+
+---
 
 ### Crafting
 Gain XP by crafting tools and armor, as well as smelting ores.
@@ -189,6 +222,7 @@ Tools and armor crafted by players enjoy boosts to durability based on Crafting 
 - Expert (75–98): 15% durability bonus, 7.5% recovery chance
 - Grandmaster (99): 25% durability bonus, 15% recovery chance
 
+---
 
 ### Smithing
 Tools and armor are repaired at higher rates. All upgraded Netherite items are signed by the player and their rank, signifying the extent of the durability increase. 
@@ -199,6 +233,8 @@ The Smithing bonus stacks with the Crafting bonus: a Grandmaster Crafted Pickaxe
 - Artisan (50–74): 7.5% durability bonus for gear upgraded to Netherite
 - Expert (75–98): 10% durability bonus for gear upgraded to Netherite
 - Grandmaster (99): 20% durability bonus for gear upgraded to Netherite
+
+---
 
 ### Prayer
 Sacrifice rare items for powerful buffs:
@@ -220,6 +256,8 @@ Sacrifice rare items for powerful buffs:
 | 🏵️ Torchflower             | 99    | minecraft:night_vision   | 864000   | Prayer V: Night Vision        | 1            |
 | 🏆 Totem of Undying         | 99    | minecraft:invisibility    | 864000   | Prayer V: Invisibility        | 1            |
 | ⭐ Nether Star               | 99    | minecraft:haste          | 864000   | Prayer V: Haste 2             | 2            |
+
+Elytra unlocks at level 50 Prayer by default.
 
 Fully customizable: create your own sacrifices and effects!
 
