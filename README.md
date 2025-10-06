@@ -97,18 +97,18 @@ Unlock tools and armor as you level up, with **fully customizable** unlock tiers
 |---------------|----------------|  
 | Wood          | 0              |  
 | Gold          | 5              |  
-| Stone         | 15             |  
+| Stone         | 10             |  
 | Copper        | 25             |
 | Iron          | 50             |  
 | Diamond       | 75             |  
 | Netherite     | 99             |  
 
-| Weapon Material | Required Level |  
-|-----------------|----------------|  
-| Mace            | 80             |  
-| Crossbow        | 0              |  
-| Bow             | 50             |  
-| Trident         | 99             |  
+| Weapon | Required Level |  
+|----------------|----------------|  
+| Mace           | 80             |  
+| Crossbow       | 0              |  
+| Bow            | 50             |  
+| Trident        | 99             |  
 
 **Elytra requires level 50 Prayer by default.**
 
@@ -116,23 +116,11 @@ Affected items comes with **lore text** (e.g., *“Requires level 50 Defense”*
 
 ---
 
-## Rough Estimates for Cumulative Time-to-Tier
+## Quick Customizaton
 
-Standard mode:
-* Level 10: 0 h 17 m 0 s
-* Level 25: 1 h 56 m 40 s 
-* Level 50: 9 h 35 m 27 s
-* Level 75: 23 h 42 m 11 s
-* Level 99: 42 h 31 m 44 s
+1. Too slow? Too fast? Adjust `standard_xp_multiplier` and `ironman_xp_multiplier` in **config.json**!
 
-Ironman mode:
-* Level 10: 0 h 42 m 30 s
-* Level 25: 4 h 51 m 40 s
-* Level 50: 23 h 53 m 18 s
-* Level 75: 59 h 15 m 28 s
-* Level 99: 105 h 49 m 20 s
-
-Too slow? Too fast? Adjust `standard_xp_multiplier` and `ironman_xp_multiplier` in **config.json**!
+3. Reload config changes with /simpleskills reload (no restart necessary)
 
 ---
 

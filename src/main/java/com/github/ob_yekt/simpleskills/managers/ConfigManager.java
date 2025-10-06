@@ -143,8 +143,8 @@ public class ConfigManager {
         JsonObject json = new JsonObject();
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
-        json.addProperty("standard_xp_multiplier", 1.0);
-        json.addProperty("ironman_xp_multiplier", 0.4);
+        json.addProperty("standard_xp_multiplier", 2.0);
+        json.addProperty("ironman_xp_multiplier", 0.8);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
         json.addProperty("custom_fishing_loot_enabled", true);
