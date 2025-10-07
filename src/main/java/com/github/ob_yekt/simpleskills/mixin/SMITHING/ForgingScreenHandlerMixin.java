@@ -5,6 +5,7 @@ import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.LoreManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
+import com.github.ob_yekt.simpleskills.utils.AnvilScreenHandlerAccessor;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.player.PlayerEntity;
@@ -17,14 +18,17 @@ import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.screen.ForgingScreenHandler;
 import net.minecraft.screen.SmithingScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
@@ -32,6 +36,8 @@ import java.util.List;
 
 @Mixin(ForgingScreenHandler.class)
 public abstract class ForgingScreenHandlerMixin {
+
+    @Shadow protected Inventory input;
 
     @Inject(
             method = "quickMove",
@@ -110,9 +116,10 @@ public abstract class ForgingScreenHandlerMixin {
             return;
         }
 
-        // Get durability repaired from the anvil handler using reflection or access
-        int durabilityRepaired = getDurabilityRepaired(anvilHandler);
-        int repairItemUsage = getRepairItemUsage(anvilHandler);
+        // Get durability repaired from the anvil handler using accessor
+        int durabilityRepaired = ((AnvilScreenHandlerAccessor) anvilHandler).simpleskills$getDurabilityRepaired();
+        int repairItemUsage = ((AnvilScreenHandlerAccessor) anvilHandler).simpleskills$getRepairItemUsage();
+        int levelCost = ((AnvilScreenHandlerAccessor) anvilHandler).simpleskills$getLevelCost();
 
         // Detect material repair
         boolean isMaterialRepair = input1.getItem() == resultStack.getItem() &&
@@ -138,26 +145,22 @@ public abstract class ForgingScreenHandlerMixin {
                 return;
             }
             float xpMultiplier = ConfigManager.getSmithingXP(action, Skills.SMITHING);
-            int playerSmithingLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.SMITHING);
-            float skillScaling = 0.5f + 1.5f * (playerSmithingLevel / 99.0f);
-            int smithingXP = Math.round(durabilityRepaired * xpMultiplier * skillScaling * 10);
+            int smithingXP = Math.round(durabilityRepaired * xpMultiplier);
             if (smithingXP > 0) {
                 XPManager.addXPWithNotification(serverPlayer, Skills.SMITHING, smithingXP);
                 Simpleskills.LOGGER.debug(
-                        "Granted {} Smithing XP for material repair with {} (durability {}, multiplier {}, scaling {}) by player {} (level {})",
-                        smithingXP, materialId, durabilityRepaired, xpMultiplier, skillScaling,
-                        serverPlayer.getName().getString(), playerSmithingLevel
+                        "Granted {} Smithing XP for material repair with {} (durability {}, multiplier {}) by player {}",
+                        smithingXP, materialId, durabilityRepaired, xpMultiplier,
+                        serverPlayer.getName().getString()
                 );
             }
         } else if (isEnchantCombining) {
             // Grant enchanting XP based on vanilla level cost
-            int levelCost = getLevelCost(anvilHandler);
-            int enchantingXP = levelCost;
-            if (enchantingXP > 1) {
-                XPManager.addXPWithNotification(serverPlayer, Skills.ENCHANTING, enchantingXP * 100);
+            if (levelCost > 1) {
+                XPManager.addXPWithNotification(serverPlayer, Skills.ENCHANTING, levelCost * 100);
                 Simpleskills.LOGGER.debug(
                         "Granted {} Enchanting XP for combining enchantments by player {} (level {})",
-                        enchantingXP * 100, serverPlayer.getName().getString(),
+                        levelCost * 100, serverPlayer.getName().getString(),
                         XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.ENCHANTING)
                 );
             }
@@ -285,48 +288,5 @@ public abstract class ForgingScreenHandlerMixin {
 
         // Set the combined lore back to the stack
         stack.set(DataComponentTypes.LORE, new LoreComponent(currentLore));
-    }
-
-    // Helper methods to access anvil handler fields (you may need to use reflection or mixins to access these)
-    @Unique
-    private int getDurabilityRepaired(AnvilScreenHandler anvilHandler) {
-        // This would need to access the durabilityRepaired field from AnvilScreenHandlerMixin
-        // You might need to use reflection or create an interface/accessor for this
-        try {
-            // Reflection approach (you may need to adjust field names based on your obfuscation)
-            java.lang.reflect.Field field = anvilHandler.getClass().getDeclaredField("durabilityRepaired");
-            field.setAccessible(true);
-            return (int) field.get(anvilHandler);
-        } catch (Exception e) {
-            Simpleskills.LOGGER.warn("Could not access durabilityRepaired field: {}", e.getMessage());
-            return 0;
-        }
-    }
-
-    @Unique
-    private int getRepairItemUsage(AnvilScreenHandler anvilHandler) {
-        try {
-            // Reflection approach to access repairItemUsage
-            java.lang.reflect.Field field = anvilHandler.getClass().getDeclaredField("repairItemUsage");
-            field.setAccessible(true);
-            return (int) field.get(anvilHandler);
-        } catch (Exception e) {
-            Simpleskills.LOGGER.warn("Could not access repairItemUsage field: {}", e.getMessage());
-            return 0;
-        }
-    }
-
-    @Unique
-    private int getLevelCost(AnvilScreenHandler anvilHandler) {
-        try {
-            // Reflection approach to access levelCost Property
-            java.lang.reflect.Field field = anvilHandler.getClass().getDeclaredField("levelCost");
-            field.setAccessible(true);
-            net.minecraft.screen.Property levelCostProperty = (net.minecraft.screen.Property) field.get(anvilHandler);
-            return levelCostProperty.get();
-        } catch (Exception e) {
-            Simpleskills.LOGGER.warn("Could not access levelCost field: {}", e.getMessage());
-            return 0;
-        }
     }
 }

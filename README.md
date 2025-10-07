@@ -84,7 +84,7 @@ Unlock tools and armor as you level up, with **fully customizable** unlock tiers
 | Armor Material | Defense Level |  
 |----------------|---------------|  
 | Leather        | 0             |  
-| Gold           | 5             |  
+| Gold           | 10            |  
 | Copper         | 25            |  
 | Turtle Helmet  | 30            |  
 | Chainmail      | 35            |  
@@ -215,12 +215,14 @@ Tools and armor crafted by players enjoy boosts to durability based on Crafting 
 ### Smithing
 Tools and armor are repaired at higher rates. All upgraded Netherite items are signed by the player and their rank, signifying the extent of the durability increase. 
 
+Anvils no longer takes damage from repairing.
+
 The Smithing bonus stacks with the Crafting bonus: a Grandmaster Crafted Pickaxe upgraded by a Grandmaster Smith will have the highest durability.
-- Novice (1–24): 0% durability bonus for gear upgraded to Netherite
-- Journeyman (25–49): 5% durability bonus for gear upgraded to Netherite
-- Artisan (50–74): 7.5% durability bonus for gear upgraded to Netherite
-- Expert (75–98): 10% durability bonus for gear upgraded to Netherite
-- Grandmaster (99): 20% durability bonus for gear upgraded to Netherite
+- Novice (1–24): 0% durability bonus for gear diamond upgraded to Netherite
+- Journeyman (25–49): 5% durability bonus for diamond gear upgraded to Netherite
+- Artisan (50–74): 7.5% durability bonus for diamond gear upgraded to Netherite
+- Expert (75–98): 10% durability bonus for diamond gear upgraded to Netherite
+- Grandmaster (99): 20% durability bonus for diamond gear upgraded to Netherite
 
 ---
 
