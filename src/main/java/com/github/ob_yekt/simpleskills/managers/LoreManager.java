@@ -42,6 +42,11 @@ public class LoreManager {
             return;
         }
 
+        // Check if item requirements should be displayed in tooltips
+        if (!isItemRequirementsInTooltipsEnabled()) {
+            return;
+        }
+
         String itemId = Registries.ITEM.getId(stack.getItem()).toString();
         List<Text> newLore = new ArrayList<>();
 
@@ -122,5 +127,14 @@ public class LoreManager {
         else if (level >= 50) return new TierInfo("Artisan", 0x0070DD); // #0070dd (RGB: 0, 112, 221)
         else if (level >= 25) return new TierInfo("Journeyman", 0x1EFF00); // #1eff00 (RGB: 30, 255, 0)
         else return new TierInfo("Novice", 0x9D9D9D); // #9d9d9d (RGB: 157, 157, 157)
+    }
+
+    /**
+     * Checks if the display of item requirements in tooltips is enabled.
+     * This is controlled by a config option.
+     * @return True if the item requirements should be displayed, false otherwise.
+     */
+    private static boolean isItemRequirementsInTooltipsEnabled() {
+        return ConfigManager.getFeatureConfig().get("item_requirements_in_tooltips_enabled").getAsBoolean();
     }
 }

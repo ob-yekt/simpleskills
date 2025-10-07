@@ -116,8 +116,20 @@ public class ConfigManager {
     private static void loadFeatureConfig() {
         Path filePath = CONFIG_DIR.resolve("config.json");
         try {
-            featureConfig = loadJsonFile(filePath, getDefaultFeatureConfig());
-            Simpleskills.LOGGER.info("Loaded config.json");
+            JsonObject defaultConfig = getDefaultFeatureConfig();
+            JsonObject loadedConfig = loadJsonFile(filePath, defaultConfig);
+            // Merge defaults into loaded config for any missing keys
+            for (Map.Entry<String, JsonElement> entry : defaultConfig.entrySet()) {
+                if (!loadedConfig.has(entry.getKey())) {
+                    loadedConfig.add(entry.getKey(), entry.getValue());
+                }
+            }
+            featureConfig = loadedConfig;
+            // Save the merged config back to disk
+            try (FileWriter writer = new FileWriter(filePath.toFile())) {
+                GSON.toJson(loadedConfig, writer);
+            }
+            Simpleskills.LOGGER.info("Loaded and merged config.json");
         } catch (JsonSyntaxException e) {
             Simpleskills.LOGGER.error("JSON syntax error in config.json: {}", e.getMessage());
         } catch (IOException e) {
@@ -147,6 +159,10 @@ public class ConfigManager {
         json.addProperty("ironman_xp_multiplier", 0.8);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
+        json.addProperty("level_up_effects_enabled", true);
+        json.addProperty("level_up_notifications_enabled", true);
+        json.addProperty("item_requirements_in_tooltips_enabled", true);
+        json.addProperty("crafting_lore_in_tooltips_enabled", true);
         json.addProperty("custom_fishing_loot_enabled", true);
         json.addProperty("fishing_speed_bonus_enabled", true);
         return json;
@@ -1387,7 +1403,7 @@ public class ConfigManager {
                 new AlchemyMapping("lingering_potion.minecraft.weaving", 2750),
                 new AlchemyMapping("lingering_potion.minecraft.slow_falling", 2600),
                 new AlchemyMapping("lingering_potion.minecraft.long_slow_falling", 2750),
-                new AlchemyMapping("lingering_potion.minecraft.invisibility", 2500),
+                               new AlchemyMapping("lingering_potion.minecraft.invisibility", 2500),
                 new AlchemyMapping("lingering_potion.minecraft.long_invisibility", 2600),
                 new AlchemyMapping("lingering_potion.minecraft.regeneration", 2400),
                 new AlchemyMapping("lingering_potion.minecraft.long_regeneration", 2500),
@@ -1602,7 +1618,7 @@ public class ConfigManager {
         }
         return json;
     }
-
+    
     /**
      * Checks if the fishing speed bonus is enabled.
      */
