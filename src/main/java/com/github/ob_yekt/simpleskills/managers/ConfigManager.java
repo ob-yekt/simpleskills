@@ -43,6 +43,10 @@ public class ConfigManager {
     private static final Map<String, Float> ALCHEMY_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> AGILITY_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_XP_MAP = new HashMap<>();
+
+	// Farming
+	private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
+	private static final Map<String, Integer> FARMING_BLOCK_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> FISHING_XP_MAP = new HashMap<>();
     private static final Map<String, Identifier> FISHING_LOOT_TABLES = new HashMap<>();
@@ -76,6 +80,7 @@ public class ConfigManager {
             loadSmithingMultiplierConfig();
             loadFishingXPConfig();
             loadFishingLootConfig();
+			loadFarmingXPConfig();
             loadCombatConfig();
             Simpleskills.LOGGER.info("All configurations initialized successfully.");
         } catch (IOException e) {
@@ -371,7 +376,7 @@ public class ConfigManager {
     private static JsonObject getDefaultCombatConfig() {
         JsonObject json = new JsonObject();
         json.addProperty("slaying_xp_per_damage", 100.0f);
-        json.addProperty("ranged_xp_per_damage", 100.0f);
+        json.addProperty("ranged_xp_per_damage", 250.0f);
         json.addProperty("defense_xp_per_damage", 400.0f);
         json.addProperty("slaying_min_damage_threshold", 2.0f);
         json.addProperty("ranged_min_damage_threshold", 2.0f);
@@ -1024,19 +1029,6 @@ public class ConfigManager {
             defaults.add(new BlockMapping("block.minecraft." + color + "_concrete_powder", "EXCAVATING", 50));
         }
 
-        // === FARMING MAPPINGS ===
-
-        // Farming: Crops
-        defaults.add(new BlockMapping("block.minecraft.wheat", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.carrots", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.potatoes", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.beetroots", "FARMING", 250));
-        defaults.add(new BlockMapping("block.minecraft.melon", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.bamboo", "FARMING", 10));
-        defaults.add(new BlockMapping("block.minecraft.kelp", "FARMING", 10));
-        defaults.add(new BlockMapping("block.minecraft.nether_wart", "FARMING", 350));
-        defaults.add(new BlockMapping("block.minecraft.cocoa", "FARMING", 250));
-
         // Convert to JSON
         for (BlockMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -1602,11 +1594,11 @@ public class ConfigManager {
                 new WeaponRequirement("minecraft:netherite_axe", "SLAYING", 99),
 
                 // Unique / Misc Weapons
-                new WeaponRequirement("minecraft:mace", "SLAYING", 80),
+                new WeaponRequirement("minecraft:mace", "SLAYING", 50),
 
                 // Ranged Weapons (grouped separately)
                 new WeaponRequirement("minecraft:crossbow", "RANGED", 0),
-                new WeaponRequirement("minecraft:bow", "RANGED", 50),
+                new WeaponRequirement("minecraft:bow", "RANGED", 30),
                 new WeaponRequirement("minecraft:trident", "RANGED", 99)
         };
 
@@ -1683,6 +1675,82 @@ public class ConfigManager {
         }
     }
 
+	/**
+	 * Loads farming XP mappings from farming_xp.json.
+	 */
+	private static void loadFarmingXPConfig() {
+		Path filePath = CONFIG_DIR.resolve("farming_xp.json");
+		try {
+			JsonObject json = loadJsonFile(filePath, getDefaultFarmingXPConfig());
+			FARMING_ACTION_XP_MAP.clear();
+			FARMING_BLOCK_XP_MAP.clear();
+			if (json.has("actions") && json.get("actions").isJsonObject()) {
+				JsonObject actions = json.getAsJsonObject("actions");
+				for (Map.Entry<String, JsonElement> entry : actions.entrySet()) {
+					int xp = entry.getValue().getAsInt();
+					if (xp >= 0) {
+						FARMING_ACTION_XP_MAP.put(entry.getKey(), xp);
+					}
+				}
+			}
+			if (json.has("blocks") && json.get("blocks").isJsonArray()) {
+				for (JsonElement element : json.getAsJsonArray("blocks")) {
+					JsonObject mapping = element.getAsJsonObject();
+					String block = mapping.get("block").getAsString();
+					int xp = mapping.get("xp").getAsInt();
+					if (xp >= 0) {
+						FARMING_BLOCK_XP_MAP.put(block, xp);
+					}
+				}
+			}
+			Simpleskills.LOGGER.info("Loaded farming_xp.json");
+		} catch (JsonSyntaxException e) {
+			Simpleskills.LOGGER.error("JSON syntax error in farming_xp.json: {}", e.getMessage());
+		} catch (IOException e) {
+			Simpleskills.LOGGER.error("Error loading farming_xp.json: {}", e.getMessage());
+		}
+	}
+
+	/**
+	 * Default farming XP configuration.
+	 */
+	private static JsonObject getDefaultFarmingXPConfig() {
+		JsonObject json = new JsonObject();
+		JsonObject actions = new JsonObject();
+		actions.addProperty("animal_feed_breed", 250);
+		actions.addProperty("animal_feed_grow", 25);
+		actions.addProperty("shear_sheep", 150);
+		json.add("actions", actions);
+
+		JsonArray blocks = new JsonArray();
+		record FarmingBlock(String block, int xp) {}
+		FarmingBlock[] defaults = new FarmingBlock[] {
+			new FarmingBlock("block.minecraft.wheat", 275),
+			new FarmingBlock("block.minecraft.carrots", 275),
+			new FarmingBlock("block.minecraft.potatoes", 300),
+			new FarmingBlock("block.minecraft.beetroots", 250),
+			new FarmingBlock("block.minecraft.melon", 100),
+			new FarmingBlock("block.minecraft.nether_wart", 350),
+			new FarmingBlock("block.minecraft.cocoa", 250)
+		};
+		for (FarmingBlock fb : defaults) {
+			JsonObject entry = new JsonObject();
+			entry.addProperty("block", fb.block());
+			entry.addProperty("xp", fb.xp());
+			blocks.add(entry);
+		}
+		json.add("blocks", blocks);
+		return json;
+	}
+
+	public static int getFarmingActionXP(String actionKey, Skills skill) {
+		return FARMING_ACTION_XP_MAP.getOrDefault(actionKey, getBaseXP(skill));
+	}
+
+	public static int getFarmingBlockXP(String blockTranslationKey) {
+		return FARMING_BLOCK_XP_MAP.getOrDefault(blockTranslationKey, 0);
+	}
+
     private static JsonObject getDefaultFishingLootConfig() {
         JsonObject json = new JsonObject();
         json.addProperty("1-24", "simpleskills:fishing/simpleskills_fishing_novice");
@@ -1702,7 +1770,8 @@ public class ConfigManager {
         }
         EnchantmentRequirement[] defaults = {
                 new EnchantmentRequirement("minecraft:fortune", "ENCHANTING", 25, 3),
-                new EnchantmentRequirement("minecraft:protection", "ENCHANTING", 50, 4),
+                new EnchantmentRequirement("minecraft:sharpness", "ENCHANTING", 50, 5),
+                new EnchantmentRequirement("minecraft:power", "ENCHANTING", 50, 5),
                 new EnchantmentRequirement("minecraft:efficiency", "ENCHANTING", 75, 5),
                 new EnchantmentRequirement("minecraft:mending", "ENCHANTING", 99, 1)
         };
@@ -1774,25 +1843,25 @@ public class ConfigManager {
         }
         PrayerSacrificeConfig[] defaults = new PrayerSacrificeConfig[]{
                 // Tier 1: 2h (7200s = 144000 ticks), novice buffs
-                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 4000, 0, "minecraft:luck", 144000, "Prayer I: Luck", 1, true),
-                new PrayerSacrificeConfig("minecraft:blue_orchid", "PRAYER", 1000, 0, "minecraft:absorption", 144000, "Prayer I: Absorption", 3, true),
-                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 1000, 0, "minecraft:dolphins_grace", 144000, "Prayer I: Dolphin's Grace", 1, true),
+                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 10000, 0, "minecraft:luck", 144000, "Prayer I: Luck", 1, true),
+                new PrayerSacrificeConfig("minecraft:blue_orchid", "PRAYER", 8000, 0, "minecraft:absorption", 144000, "Prayer I: Absorption", 3, true),
+                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 8000, 0, "minecraft:dolphins_grace", 144000, "Prayer I: Dolphin's Grace", 1, true),
                 // Tier 2: 4h (14400s = 288000 ticks), journeyman buffs
-                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 6000, 25, "minecraft:conduit_power", 288000, "Prayer II: Conduit Power", 1, true),
-                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 6000, 25, "minecraft:health_boost", 288000, "Prayer II: Health Boost", 1, true),
-                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 5000, 25, "minecraft:water_breathing", 288000, "Prayer II: Water Breathing", 1, true),
+                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 20000, 25, "minecraft:conduit_power", 288000, "Prayer II: Conduit Power", 1, true),
+                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 18000, 25, "minecraft:health_boost", 288000, "Prayer II: Health Boost", 1, true),
+                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 18000, 25, "minecraft:water_breathing", 288000, "Prayer II: Water Breathing", 1, true),
                 // Tier 3: 6h (21600s = 432000 ticks), expert buffs
-                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 7000, 50, "minecraft:slow_falling", 432000, "Prayer III: Slow Falling", 1, true),
-                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 6500, 50, "minecraft:speed", 432000, "Prayer II: Speed", 2, true),
-                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 8000, 50, "minecraft:jump_boost", 432000, "Prayer III: Jump Boost", 2, true),
+                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 35000, 50, "minecraft:slow_falling", 432000, "Prayer III: Slow Falling", 1, true),
+                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 32000, 50, "minecraft:speed", 432000, "Prayer II: Speed", 2, true),
+                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 35000, 50, "minecraft:jump_boost", 432000, "Prayer III: Jump Boost", 2, true),
                 // Tier 4: 8h (28800s = 576000 ticks), artisan buffs
-                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 9500, 75, "minecraft:strength", 576000, "Prayer IV: Strength", 2, true),
-                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 9500, 75, "minecraft:resistance", 576000, "Prayer IV: Resistance", 2, true),
-                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 9500, 75, "minecraft:fire_resistance", 576000, "Prayer IV: Fire Resistance", 1, true),
+                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 30000, 75, "minecraft:strength", 576000, "Prayer IV: Strength", 2, true),
+                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 80000, 75, "minecraft:resistance", 576000, "Prayer IV: Resistance", 2, true),
+                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 55000, 75, "minecraft:fire_resistance", 576000, "Prayer IV: Fire Resistance", 1, true),
                 // Tier 5: 12h (43200 = 864000 ticks), grandmaster buffs
-                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 10000, 99, "minecraft:night_vision", 864000, "Prayer V: Night Vision", 1, true),
-                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 10000, 99, "minecraft:invisibility", 864000, "Prayer V: Invisibility", 1, true),
-                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 10000, 99, "minecraft:haste", 864000, "Prayer V: Haste 2", 2, true)
+                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 60000, 99, "minecraft:night_vision", 864000, "Prayer V: Night Vision", 1, true),
+                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 95000, 99, "minecraft:invisibility", 864000, "Prayer V: Invisibility", 1, true),
+                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 170000, 99, "minecraft:haste", 864000, "Prayer V: Haste 2", 2, true)
         };
         for (PrayerSacrificeConfig config : defaults) {
             JsonObject entry = new JsonObject();

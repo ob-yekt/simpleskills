@@ -35,7 +35,7 @@ Perfect for casual SMPs, lets-players, hardcore survival servers, streamers, or 
 1. **Mining**: Break stone and ores to level up and unlock better tools.
 2. **Woodcutting**: Chop trees to become a lumberjack legend.
 3. **Excavating**: Shovel dirt, sand, and gravel to dig your way to greatness.
-4. **Farming**: Till soil, compost, and harvest crops to feed your empire.
+4. **Farming**: Till soil, compost, shear/feed/breed animals, and harvest crops to feed your empire.
 5. **Fishing**: Reel in fish, treasures, and XP with faster and increasingly better catches as you level.
 6. **Defense**: Take hits in armor to equip improved gear.
 7. **Slaying**: Slay mobs with melee weapons to become a feared warrior.
@@ -77,6 +77,14 @@ Perfect for players who crave a brutal, rewarding challenge or want to stand out
 
 ---
 
+## Quick Customization
+
+1. Too slow? Too fast? Adjust `standard_xp_multiplier` and `ironman_xp_multiplier` in **config.json**!
+
+2. Reload config changes with `/simpleskills reload` (no restart necessary)
+
+---
+
 ## 🔓 Gear Progression: Earn Your Power
 
 Unlock tools and armor as you level up, with **fully customizable** unlock tiers:
@@ -103,24 +111,18 @@ Unlock tools and armor as you level up, with **fully customizable** unlock tiers
 | Diamond       | 75             |  
 | Netherite     | 99             |  
 
-| Weapon | Required Level |  
-|----------------|----------------|  
-| Mace           | 80             |  
-| Crossbow       | 0              |  
-| Bow            | 50             |  
-| Trident        | 99             |  
+### NOTE!: _simpleskills_ allows the Copper Pickaxe to mine the same ores as an [Iron Pickaxe](https://minecraft.wiki/w/Tiers#Mining_level).
+
+| Weapon   | Required Level |  
+|----------|----------------|  
+| Mace     | 50             |  
+| Crossbow | 0              |  
+| Bow      | 30             |  
+| Trident  | 99             |  
 
 **Elytra requires level 50 Prayer by default.**
 
 Affected items comes with **lore text** (e.g., *“Requires level 50 Defense”*), keeping things intuitive for players.
-
----
-
-## Quick Customizaton
-
-1. Too slow? Too fast? Adjust `standard_xp_multiplier` and `ironman_xp_multiplier` in **config.json**!
-
-3. Reload config changes with /simpleskills reload (no restart necessary)
 
 ---
 
@@ -132,13 +134,13 @@ Here’s a taste of what each skill offers:
 - **Faster Catches**: +0.5% speed per level (up to +49.5% at 99).
 - **Custom Loot Tables**: Unlock better treasures as you level:
 
-| Tier            | Fish | Junk | Treasure                     |  
-|-----------------|------|------|-----------------------------|  
-| Novice (1–24)   | 80%  | 20%  | None                        |  
+| Tier               | Fish | Junk | Treasure                   |  
+|--------------------|------|------|----------------------------|  
+| Novice (1–24)      | 80%  | 20%  | None                       |  
 | Journeyman (25–49) | 80%  | 15%  | 5% (Bows, Rods, Saddles)   |  
-| Artisan (50–74) | 80%  | 13%  | 7% (Enchanted Gear)         |  
-| Expert (75–98)  | 85%  | 5%   | 10% (Books, Tridents)       |  
-| Grandmaster (99)| 79%  | 1%   | 15% (Rare Enchanted Items)  |
+| Artisan (50–74)    | 80%  | 13%  | 7% (Enchanted Gear)        |  
+| Expert (75–98)     | 85%  | 5%   | 10% (Books, Tridents)      |  
+| Grandmaster (99)   | 79%  | 1%   | 15% (Rare Enchanted Items) |
 
 ### NOTICE!
 **If you use a fishing mod that changes loot tables, set "custom_fishing_loot_enabled" to false in config.json and restart the server.**
@@ -148,7 +150,8 @@ Here’s a taste of what each skill offers:
 ### Enchanting
 Lock powerful enchantments to specific levels, defaulted to:
 - Fortune III: Level 25
-- Protection IV: Level 50
+- Sharpness V: Level 50
+- Power V: Level 50
 - Efficiency V: Level 75
 - Mending: Level 99
 
@@ -227,29 +230,33 @@ The Smithing bonus stacks with the Crafting bonus: a Grandmaster Crafted Pickaxe
 ---
 
 ### Prayer
-Sacrifice rare items for powerful buffs:
-
-| Item                        | Level | Effect                  | Duration | Name                          | Effect Level |
-|-----------------------------|-------|-------------------------|----------|-------------------------------|--------------|
-| 🐇 Rabbit Foot              | 0     | minecraft:luck          | 144000   | Prayer I: Luck                | 1            |
-| 💠 Blue Orchid              | 0     | minecraft:absorption     | 144000   | Prayer I: Absorption          | 3            |
-| ✨ Glow Ink Sac             | 0     | minecraft:dolphins_grace | 144000   | Prayer I: Dolphin's Grace     | 1            |
-| 🌊 Heart of the Sea         | 25    | minecraft:conduit_power  | 288000   | Prayer II: Conduit Power      | 1            |
-| 🍏 Golden Apple             | 25    | minecraft:health_boost   | 288000   | Prayer II: Health Boost       | 1            |
-| 🐚 Nautilus Shell           | 25    | minecraft:water_breathing| 288000   | Prayer II: Water Breathing    | 1            |
-| 🦇 Phantom Membrane         | 50    | minecraft:slow_falling   | 432000   | Prayer III: Slow Falling      | 1            |
-| 💎 Diamond                  | 50    | minecraft:speed          | 432000   | Prayer II: Speed              | 2            |
-| 🐐 Goat Horn                | 50    | minecraft:jump_boost     | 432000   | Prayer III: Jump Boost        | 2            |
-| 🌿 Pitcher Plant            | 75    | minecraft:strength       | 576000   | Prayer IV: Strength           | 2            |
-| 🍎 Enchanted Golden Apple   | 75    | minecraft:resistance     | 576000   | Prayer IV: Resistance         | 2            |
-| ☠️ Wither Skeleton Skull    | 75    | minecraft:fire_resistance| 576000   | Prayer IV: Fire Resistance    | 1            |
-| 🏵️ Torchflower             | 99    | minecraft:night_vision   | 864000   | Prayer V: Night Vision        | 1            |
-| 🏆 Totem of Undying         | 99    | minecraft:invisibility    | 864000   | Prayer V: Invisibility        | 1            |
-| ⭐ Nether Star               | 99    | minecraft:haste          | 864000   | Prayer V: Haste 2             | 2            |
-
-Elytra unlocks at level 50 Prayer by default.
+Sacrifice rare items for powerful buffs.
 
 Fully customizable: create your own sacrifices and effects!
+
+| Item                      | Level | XP      | Effect                    | Duration | Name                       | Effect Level |
+|---------------------------|-------|---------|---------------------------|----------|----------------------------|--------------|
+| 🐇 Rabbit Foot            | 0     | 10 000  | minecraft:luck            | 2h       | Prayer I: Luck             | 1            |
+| 💠 Blue Orchid            | 0     | 8 000   | minecraft:absorption      | 2h       | Prayer I: Absorption       | 3            |
+| ✨ Glow Ink Sac            | 0     | 8 000   | minecraft:dolphins_grace  | 2h       | Prayer I: Dolphin's Grace  | 1            |
+| 🌊 Heart of the Sea       | 25    | 20 000  | minecraft:conduit_power   | 4h       | Prayer II: Conduit Power   | 1            |
+| 🍏 Golden Apple           | 25    | 18 000  | minecraft:health_boost    | 4h       | Prayer II: Health Boost    | 1            |
+| 🐚 Nautilus Shell         | 25    | 18 000  | minecraft:water_breathing | 4h       | Prayer II: Water Breathing | 1            |
+| 🦇 Phantom Membrane       | 50    | 35 000  | minecraft:slow_falling    | 6h       | Prayer III: Slow Falling   | 1            |
+| 💎 Diamond                | 50    | 32 000  | minecraft:speed           | 6h       | Prayer II: Speed           | 2            |
+| 🐐 Goat Horn              | 50    | 35 000  | minecraft:jump_boost      | 6h       | Prayer III: Jump Boost     | 2            |
+| 🌿 Pitcher Plant          | 75    | 30 000  | minecraft:strength        | 8h       | Prayer IV: Strength        | 2            |
+| 🍎 Enchanted Golden Apple | 75    | 80 000  | minecraft:resistance      | 8h       | Prayer IV: Resistance      | 2            |
+| ☠️ Wither Skeleton Skull  | 75    | 55 000  | minecraft:fire_resistance | 8h       | Prayer IV: Fire Resistance | 1            |
+| 🏵️ Torchflower           | 99    | 60 000  | minecraft:night_vision    | 12h      | Prayer V: Night Vision     | 1            |
+| 🏆 Totem of Undying       | 99    | 95 000  | minecraft:invisibility    | 12h      | Prayer V: Invisibility     | 1            |
+| ⭐ Nether Star             | 99    | 170 000 | minecraft:haste           | 12h      | Prayer V: Haste 2          | 2            |
+
+XP is awarded to the *Prayer* skill on sacrifice. Higher-level sacrifices require the corresponding Prayer level.
+
+### Elytra unlocks at level 50 Prayer by default. Adjustable in `armor_requirements.json`
+
+
 
 ---
 

@@ -93,12 +93,9 @@ public class EventHandlers {
 
             // --- 2) Then check if block itself has a skill requirement ---
             Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
-            if (relevantSkill != null) {
-                if (isCrop(blockTranslationKey)) {
-                    return true; // Crops bypass tool requirement
-                }
-
-                // Optional: You could still keep block-specific restrictions here if needed
+            boolean isFarmingBlock = ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0;
+            if ((relevantSkill != null && isCrop(blockTranslationKey)) || isFarmingBlock) {
+                return true; // Crops bypass tool requirement
             }
 
             return true;
@@ -112,7 +109,10 @@ public class EventHandlers {
 
             String blockTranslationKey = state.getBlock().getTranslationKey();
             Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
-
+            if (ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0) {
+                grantFarmingXP((ServerWorld) world, serverPlayer, state, blockTranslationKey);
+                return;
+            }
             if (relevantSkill == null) {
                 return;
             }
@@ -146,27 +146,27 @@ public class EventHandlers {
             if (state.contains(Properties.AGE_7)) {
                 int age = state.get(Properties.AGE_7);
                 if (age == 7 && (blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") || blockTranslationKey.contains("potatoes"))) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
+                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
                     XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
                     Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
                 }
             } else if (state.contains(Properties.AGE_3)) {
                 int age = state.get(Properties.AGE_3);
                 if (age == 3 && (blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("beetroots"))) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
+                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
                     XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
                     Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
                 }
             } else if (state.contains(Properties.AGE_2)) {
                 int age = state.get(Properties.AGE_2);
                 if (age == 2 && blockTranslationKey.contains("cocoa")) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
+                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
                     XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
                     Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
                 }
             } else if (blockTranslationKey.contains("melon")) {
                 // Silk Touch check already handled in outer block break event
-                int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
+                int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
                 XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
                 Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
             }
