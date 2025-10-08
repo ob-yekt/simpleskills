@@ -24,6 +24,8 @@ public class XPManager {
     private static double IRONMAN_XP_MULTIPLIER;
     private static boolean XP_NOTIFICATIONS_ENABLED;
     private static int XP_NOTIFICATION_THRESHOLD;
+    private static boolean LEVEL_UP_EFFECTS_ENABLED;
+    private static boolean LEVEL_UP_NOTIFICATIONS_ENABLED;
 
     static {
         JsonObject config = ConfigManager.getFeatureConfig();
@@ -31,6 +33,8 @@ public class XPManager {
         IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
         XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
         XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
+        LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);
+        LEVEL_UP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "level_up_notifications_enabled", true);
     }
 
     // Provide access to MAX_LEVEL
@@ -59,37 +63,33 @@ public class XPManager {
         return 1;
     }
 
-    // Updated XP LOGIC with refined curve
+    /// XP-SYSTEM
+
+    // Curve parameters
+    private static final double EXPONENT_P = 2.45;
+    private static final double SCALING_A  = 300.0;
+    private static final double FLOOR_B    = 500.0;
+
     public static int getExperienceForLevel(int level) {
         if (level <= 1) return 0;
-        if (level <= 15) {
-            double A = 200.0;
-            double p = 1.43819883963;
-            return (int) Math.floor(A * Math.pow(level - 1, p));
-        } else if (level <= 25) {
-            double XP15 = 8900.0;
-            double C = 600.34085713;
-            double p = 1.6;
-            return (int) Math.floor(XP15 + C * Math.pow(level - 15, p));
-        } else {
-            double XP25 = 32800.0;
-            double B = 425.11140846;
-            double p = 2.2;
-            return (int) Math.floor(XP25 + B * Math.pow(level - 25, p));
-        }
+        double L = level - 1;
+        return (int) Math.floor(SCALING_A * Math.pow(L, EXPONENT_P) + FLOOR_B * L);
     }
 
     public static int getLevelForExperience(int experience) {
         if (experience <= 0) return 1;
-        // Binary-search safe fallback for piecewise curves
-        int lo = 1;
-        int hi = MAX_LEVEL;
-        while (lo < hi) {
-            int mid = (lo + hi + 1) / 2;
-            if (getExperienceForLevel(mid) <= experience) lo = mid;
-            else hi = mid - 1;
+        int low = 1;
+        int high = MAX_LEVEL;
+        while (low < high) {
+            int mid = (low + high + 1) >>> 1; // bias upward
+            int xpForMid = getExperienceForLevel(mid);
+            if (xpForMid <= experience) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
         }
-        return Math.min(lo, MAX_LEVEL);
+        return low;
     }
 
     // Add XP to a player's skill silently (no notifications or level-up effects)
@@ -167,16 +167,26 @@ public class XPManager {
         boolean isMaxLevel = newLevel == MAX_LEVEL;
         if (isMaxLevel) {
             levelUpMessage = String.format("Congratulations! You have reached max level in %s!", skill.getDisplayName());
-            player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
-            serverWorld.playSound(null, player.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
-                    SoundCategory.PLAYERS, 0.9f, 1.2f);
+            if (LEVEL_UP_NOTIFICATIONS_ENABLED) {
+                player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
+            }
+            if (LEVEL_UP_EFFECTS_ENABLED) {
+                serverWorld.playSound(null, player.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
+                        SoundCategory.PLAYERS, 0.9f, 1.2f);
+            }
         } else {
             levelUpMessage = String.format("You leveled up in %s! New level: %d", skill.getDisplayName(), newLevel);
-            player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
-            serverWorld.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP,
-                    SoundCategory.PLAYERS, 0.7f, 1.3f);
+            if (LEVEL_UP_NOTIFICATIONS_ENABLED) {
+                player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
+            }
+            if (LEVEL_UP_EFFECTS_ENABLED) {
+                serverWorld.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP,
+                        SoundCategory.PLAYERS, 0.7f, 1.3f);
+            }
         }
-        spawnConfettiParticles(serverWorld, player.getX(), player.getY(), player.getZ(), isMaxLevel);
+        if (LEVEL_UP_EFFECTS_ENABLED) {
+            spawnConfettiParticles(serverWorld, player.getX(), player.getY(), player.getZ(), isMaxLevel);
+        }
     }
 
     // Spawn confetti particles with hardcoded values
@@ -218,6 +228,8 @@ public class XPManager {
         IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
         XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
         XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
+        LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);
+        LEVEL_UP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "level_up_notifications_enabled", true);
         Simpleskills.LOGGER.info("Reloaded XPManager config values.");
     }
 
