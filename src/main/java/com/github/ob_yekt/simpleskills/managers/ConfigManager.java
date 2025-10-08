@@ -370,9 +370,9 @@ public class ConfigManager {
 
     private static JsonObject getDefaultCombatConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("slaying_xp_per_damage", 25.0f);
-        json.addProperty("ranged_xp_per_damage", 25.0f);
-        json.addProperty("defense_xp_per_damage", 100.0f);
+        json.addProperty("slaying_xp_per_damage", 100.0f);
+        json.addProperty("ranged_xp_per_damage", 100.0f);
+        json.addProperty("defense_xp_per_damage", 400.0f);
         json.addProperty("slaying_min_damage_threshold", 2.0f);
         json.addProperty("ranged_min_damage_threshold", 2.0f);
         json.addProperty("defense_min_damage_threshold", 2.0f);
