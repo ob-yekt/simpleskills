@@ -71,6 +71,9 @@ public final class CraftingCommon {
     public static void applyCraftingLore(ItemStack stack, ServerPlayerEntity player) {
         if (!isValidStack(stack) || !isCraftableItem(stack)) return;
 
+        // Check if crafting lore should be displayed in tooltips
+        if (!isCraftingLoreInTooltipsEnabled()) return;
+
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
@@ -79,6 +82,9 @@ public final class CraftingCommon {
 
     public static void applyCookingLore(ItemStack stack, ServerPlayerEntity player) {
         if (!isValidStack(stack)) return;
+
+        // Check if cooking lore should be displayed in tooltips
+        if (!isCraftingLoreInTooltipsEnabled()) return;
 
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.COOKING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
@@ -149,5 +155,14 @@ public final class CraftingCommon {
 //                player.getName().getString(),
 //                level, multiplier
 //        );
+    }
+
+    /**
+     * Checks if crafting and cooking lore should be displayed in tooltips.
+     * This is controlled by a config option.
+     * @return True if the crafting/cooking lore should be displayed, false otherwise.
+     */
+    private static boolean isCraftingLoreInTooltipsEnabled() {
+        return ConfigManager.getFeatureConfig().get("crafting_lore_in_tooltips_enabled").getAsBoolean();
     }
 }
