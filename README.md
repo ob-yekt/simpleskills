@@ -209,8 +209,6 @@ Brew potions with boosted durations, defaulted to:
 * Farming unlocks the ability to use higher tiers of Hoe tools.
 * Players also gain 1% per level of farming to grant an **extra drop** when harvesting crops, to a max of 99% at level 99.
 
-### XP Sources
-
 **Animals:**
 - Breeding animals: **250 XP**
 - Feeding baby animals: **25 XP** (per food item)
