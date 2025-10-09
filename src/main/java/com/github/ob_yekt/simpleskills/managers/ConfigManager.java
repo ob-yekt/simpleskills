@@ -1842,21 +1842,21 @@ public class ConfigManager {
         }
         PrayerSacrificeConfig[] defaults = new PrayerSacrificeConfig[]{
                 // Tier 1: 1h (72,000 ticks), novice buffs
-                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 10000, 0, "minecraft:luck", 72000, "Prayer I: Luck", 1, true),
-                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 24000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
-                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 8000, 0, "minecraft:dolphins_grace", 72000, "Prayer I: Dolphin's Grace", 1, true),
+                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 15000, 0, "minecraft:luck", 72000, "Prayer I: Luck", 1, true),
+                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 30000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
+                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 12000, 0, "minecraft:dolphins_grace", 72000, "Prayer I: Dolphin's Grace", 1, true),
                 // Tier 2: 2h (144000 ticks), journeyman buffs
-                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 16000, 25, "minecraft:slow_falling", 216000, "Prayer III: Slow Falling", 1, true),
-                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 20000, 25, "minecraft:health_boost", 144000, "Prayer II: Health Boost", 1, true),
+                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 18000, 25, "minecraft:slow_falling", 216000, "Prayer III: Slow Falling", 1, true),
+                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 22000, 25, "minecraft:health_boost", 144000, "Prayer II: Health Boost", 1, true),
                 new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 9000, 25, "minecraft:water_breathing", 144000, "Prayer II: Water Breathing", 1, true),
                 // Tier 3: 3h (216000 ticks), expert buffs
-                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 20000, 50, "minecraft:conduit_power", 144000, "Prayer II: Conduit Power", 1, true),
+                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 30000, 50, "minecraft:conduit_power", 144000, "Prayer II: Conduit Power", 1, true),
                 new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 25000, 50, "minecraft:speed", 216000, "Prayer II: Speed II", 2, true),
-                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 35000, 50, "minecraft:jump_boost", 216000, "Prayer III: Jump Boost II", 2, true),
+                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 45000, 50, "minecraft:jump_boost", 216000, "Prayer III: Jump Boost II", 2, true),
                 // Tier 4: 4h (288000 ticks), artisan buffs
-                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 30000, 75, "minecraft:strength", 288000, "Prayer IV: Strength II", 2, true),
-                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 80000, 75, "minecraft:hero_of_the_village", 288000, "Prayer IV: Hero of the Village", 1, true),
-                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 60000, 75, "minecraft:fire_resistance", 288000, "Prayer IV: Fire Resistance", 1, true),
+                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 40000, 75, "minecraft:strength", 288000, "Prayer IV: Strength II", 2, true),
+                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 85000, 75, "minecraft:hero_of_the_village", 288000, "Prayer IV: Hero of the Village", 1, true),
+                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 75000, 75, "minecraft:fire_resistance", 288000, "Prayer IV: Fire Resistance", 1, true),
                 // Tier 5: 8h (57,6000 ticks), grandmaster buffs
                 new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 60000, 99, "minecraft:night_vision", 576000, "Prayer V: Night Vision", 1, true),
                 new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 95000, 99, "minecraft:invisibility", 576000, "Prayer V: Invisibility", 1, true),

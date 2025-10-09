@@ -12,15 +12,27 @@
         },
         {
           "type": "minecraft:loot_table",
+          "conditions": [
+            {
+              "condition": "minecraft:entity_properties",
+              "entity": "this",
+              "predicate": {
+                "type_specific": {
+                  "type": "minecraft:fishing_hook",
+                  "in_open_water": true
+                }
+              }
+            }
+          ],
           "quality": 2,
-          "value": "minecraft:gameplay/fishing/treasure",
-          "weight": 0
+          "value": "simpleskills:fishing/simpleskills_fishing_novice_treasure",
+          "weight": 2
         },
         {
           "type": "minecraft:loot_table",
           "quality": -1,
           "value": "simpleskills:fishing/simpleskills_fishing_novice_fish",
-          "weight": 80
+          "weight": 78
         }
       ],
       "rolls": 1.0

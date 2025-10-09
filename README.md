@@ -263,25 +263,25 @@ Fully customizable: create your own sacrifices and effects!
 | Item                      | Level | XP      | Effect              | Duration | Name                          | Effect Level |
 |---------------------------|-------|---------|---------------------|----------|-------------------------------|--------------|
 | **Tier 1: Novice (1h)**   |       |         |                     |          |                               |              |
-| 🐇 Rabbit Foot            | 0     | 10 000  | Luck                | 1h       | Prayer I: Luck                | 1            |
-| 🌼 Spore Blossom          | 0     | 24 000  | Absorption          | 1h       | Prayer I: Absorption          | 3            |
-| ✨ Glow Ink Sac           | 0     | 8 000   | Dolphins grace      | 1h       | Prayer I: Dolphin's Grace     | 1            |
+| 🐇 Rabbit Foot            | 0     | 15,000  | Luck                | 1h       | Prayer I: Luck                | 1            |
+| 🌼 Spore Blossom          | 0     | 30,000  | Absorption          | 1h       | Prayer I: Absorption          | 3            |
+| ✨ Glow Ink Sac           | 0     | 12,000  | Dolphins grace      | 1h       | Prayer I: Dolphin's Grace     | 1            |
 | **Tier 2: Journeyman (2h)** |     |         |                     |          |                               |              |
-| 🦇 Phantom Membrane       | 25    | 16 000  | Slow falling        | 2h       | Prayer III: Slow Falling      | 1            |
-| 🍎 Golden Apple           | 25    | 20 000  | Health boost        | 2h       | Prayer II: Health Boost       | 1            |
-| 🐚 Nautilus Shell         | 25    | 9 000   | Water breathing     | 2h       | Prayer II: Water Breathing    | 1            |
+| 🦇 Phantom Membrane       | 25    | 18,000  | Slow falling        | 2h       | Prayer III: Slow Falling      | 1            |
+| 🍎 Golden Apple           | 25    | 22,000  | Health boost        | 2h       | Prayer II: Health Boost       | 1            |
+| 🐚 Nautilus Shell         | 25    | 9,000   | Water breathing     | 2h       | Prayer II: Water Breathing    | 1            |
 | **Tier 3: Expert (3h)**   |       |         |                     |          |                               |              |
-| 🌊 Heart of the Sea       | 50    | 20 000  | Conduit power       | 3h       | Prayer II: Conduit Power      | 1            |
-| 💎 Diamond                | 50    | 25 000  | Speed               | 3h       | Prayer II: Speed II           | 2            |
-| 🐐 Goat Horn              | 50    | 35 000  | Jump boost          | 3h       | Prayer III: Jump Boost II     | 2            |
+| 🌊 Heart of the Sea       | 50    | 30,000  | Conduit power       | 3h       | Prayer II: Conduit Power      | 1            |
+| 💎 Diamond                | 50    | 25,000  | Speed               | 3h       | Prayer II: Speed II           | 2            |
+| 🐐 Goat Horn              | 50    | 45,000  | Jump boost          | 3h       | Prayer III: Jump Boost II     | 2            |
 | **Tier 4: Artisan (4h)**  |       |         |                     |          |                               |              |
-| 🌿 Pitcher Plant          | 75    | 30 000  | Strength            | 4h       | Prayer IV: Strength II        | 2            |
-| 🏆 Enchanted Golden Apple | 75    | 80 000  | Hero of the Village | 4h   | Prayer IV: Hero of the Village | 1            |
-| ☠️ Wither Skeleton Skull  | 75    | 60 000  | Fire Resistance     | 4h       | Prayer IV: Fire Resistance    | 1            |
+| 🌿 Pitcher Plant          | 75    | 40,000  | Strength            | 4h       | Prayer IV: Strength II        | 2            |
+| 🏆 Enchanted Golden Apple | 75    | 85,000  | Hero of the Village | 4h   | Prayer IV: Hero of the Village | 1            |
+| ☠️ Wither Skeleton Skull  | 75    | 75,000  | Fire Resistance     | 4h       | Prayer IV: Fire Resistance    | 1            |
 | **Tier 5: Grandmaster (8h)** |    |         |                     |          |                               |              |
-| 🏵️ Torchflower           | 99    | 60 000  | Night Vision        | 8h       | Prayer V: Night Vision        | 1            |
-| 💀 Totem of Undying       | 99    | 95 000  | Invisibility        | 8h       | Prayer V: Invisibility        | 1            |
-| ⭐ Nether Star            | 99    | 170 000 | Haste               | 8h       | Prayer V: Haste II            | 2            |
+| 🏵️ Torchflower           | 99    | 60,000  | Night Vision        | 8h       | Prayer V: Night Vision        | 1            |
+| 💀 Totem of Undying       | 99    | 95,000  | Invisibility        | 8h       | Prayer V: Invisibility        | 1            |
+| ⭐ Nether Star            | 99    | 170,000 | Haste               | 8h       | Prayer V: Haste II            | 2            |
 
 XP is awarded to the *Prayer* skill on sacrifice. Higher-level sacrifices require the corresponding Prayer level.
 

@@ -7,17 +7,17 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:glow_ink_sac",
-          "weight": 45
+          "weight": 35
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:turtle_egg",
-          "weight": 8
+          "weight": 28
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:turtle_scute",
-          "weight": 37
+          "weight": 27
         },
         {
           "type": "minecraft:item",

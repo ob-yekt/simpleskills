@@ -7,8 +7,8 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:lily_pad",
-          "weight": 13 
-          
+          "weight": 5
+
         },
         {
           "type": "minecraft:item",
@@ -24,7 +24,7 @@
             }
           ],
           "name": "minecraft:leather_boots",
-          "weight": 10
+          "weight": 5
         },
         {
           "type": "minecraft:item",
@@ -45,7 +45,7 @@
             }
           ],
           "name": "minecraft:potion",
-          "weight": 10
+          "weight": 6
         },
         {
           "type": "minecraft:item",
@@ -71,7 +71,7 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:bowl",
-          "weight": 5
+          "weight": 4
         },
         {
           "type": "minecraft:item",
@@ -87,18 +87,19 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "minecraft:ink_sac" 
+          "name": "minecraft:ink_sac",
+          "weight": 4
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:glow_ink_sac",
           "weight": 2
-          
+
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:tripwire_hook",
-          "weight": 10
+          "weight": 6
         },
         {
           "type": "minecraft:item",
@@ -107,9 +108,34 @@
         },
         {
           "type": "minecraft:item",
+          "functions": [
+            {
+              "add": false,
+              "count": {
+                "type": "minecraft:uniform",
+                "max": 4.0,
+                "min": 1.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
           "name": "minecraft:clay_ball",
-          "weight": 2 
-          
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:sea_pickle",
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_egg",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_scute",
+          "weight": 1
         },
         {
           "type": "minecraft:item",

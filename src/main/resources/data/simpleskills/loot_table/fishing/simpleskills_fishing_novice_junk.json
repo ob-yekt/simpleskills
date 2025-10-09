@@ -7,8 +7,7 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:lily_pad",
-          "weight": 14 
-          
+          "weight": 14
         },
         {
           "type": "minecraft:item",
@@ -24,12 +23,12 @@
             }
           ],
           "name": "minecraft:leather_boots",
-          "weight": 10
+          "weight": 7
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:leather",
-          "weight": 10
+          "weight": 12
         },
         {
           "type": "minecraft:item",
@@ -87,12 +86,13 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "minecraft:ink_sac" 
+          "name": "minecraft:ink_sac",
+          "weight": 1
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:tripwire_hook",
-          "weight": 10
+          "weight": 8
         },
         {
           "type": "minecraft:item",
@@ -103,7 +103,21 @@
           "type": "minecraft:item",
           "name": "minecraft:clay_ball",
           "weight": 3
-          
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:sea_pickle",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_egg",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_scute",
+          "weight": 1
         },
         {
           "type": "minecraft:item",
