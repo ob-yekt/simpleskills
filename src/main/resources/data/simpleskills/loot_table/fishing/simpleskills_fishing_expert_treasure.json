@@ -35,7 +35,7 @@
             }
           ],
           "name": "minecraft:bow",
-          "weight": 25
+          "weight": 15
         },
         {
           "type": "minecraft:item",
@@ -56,26 +56,86 @@
             }
           ],
           "name": "minecraft:fishing_rod",
-          "weight": 25
+          "weight": 15
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:name_tag",
-          "weight": 12
+          "weight": 15
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:nautilus_shell",
-          "weight": 12
+          "weight": 16
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:saddle",
-          "weight": 12
+          "weight": 8
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 4.0,
+                "max": 7.0
+              }
+            }
+          ],
+          "name": "minecraft:iron_ingot",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 3.0,
+                "max": 5.0
+              }
+            }
+          ],
+          "name": "minecraft:gold_ingot",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 4.0,
+                "max": 7.0
+              }
+            }
+          ],
+          "name": "minecraft:lapis_lazuli",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              }
+            }
+          ],
+          "name": "minecraft:emerald",
+          "weight": 1
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:simpleskills_fishing_expert_treasure"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_expert_treasure"
 }

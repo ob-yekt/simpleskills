@@ -32,6 +32,7 @@ public class ConfigManager {
     private static final Map<String, SkillRequirement> ARMOR_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> WEAPON_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
+
     public static final Map<String, PrayerSacrifice> PRAYER_SACRIFICES = new HashMap<>();
     private static final Map<String, Integer> COOKING_XP_MAP = new HashMap<>();
     private static final Map<String, Float> COOKING_MULTIPLIER_MAP = new HashMap<>();
@@ -43,8 +44,6 @@ public class ConfigManager {
     private static final Map<String, Float> ALCHEMY_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> AGILITY_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_XP_MAP = new HashMap<>();
-
-	// Farming
 	private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
 	private static final Map<String, Integer> FARMING_BLOCK_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_MULTIPLIER_MAP = new HashMap<>();
@@ -1842,26 +1841,26 @@ public class ConfigManager {
                                      String name, int effectLevel, boolean isAmbient) {
         }
         PrayerSacrificeConfig[] defaults = new PrayerSacrificeConfig[]{
-                // Tier 1: 2h (7200s = 144000 ticks), novice buffs
-                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 10000, 0, "minecraft:luck", 144000, "Prayer I: Luck", 1, true),
-                new PrayerSacrificeConfig("minecraft:blue_orchid", "PRAYER", 8000, 0, "minecraft:absorption", 144000, "Prayer I: Absorption", 3, true),
-                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 8000, 0, "minecraft:dolphins_grace", 144000, "Prayer I: Dolphin's Grace", 1, true),
-                // Tier 2: 4h (14400s = 288000 ticks), journeyman buffs
-                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 20000, 25, "minecraft:conduit_power", 288000, "Prayer II: Conduit Power", 1, true),
-                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 18000, 25, "minecraft:health_boost", 288000, "Prayer II: Health Boost", 1, true),
-                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 18000, 25, "minecraft:water_breathing", 288000, "Prayer II: Water Breathing", 1, true),
-                // Tier 3: 6h (21600s = 432000 ticks), expert buffs
-                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 35000, 50, "minecraft:slow_falling", 432000, "Prayer III: Slow Falling", 1, true),
-                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 32000, 50, "minecraft:speed", 432000, "Prayer II: Speed", 2, true),
-                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 35000, 50, "minecraft:jump_boost", 432000, "Prayer III: Jump Boost", 2, true),
-                // Tier 4: 8h (28800s = 576000 ticks), artisan buffs
-                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 30000, 75, "minecraft:strength", 576000, "Prayer IV: Strength", 2, true),
-                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 80000, 75, "minecraft:resistance", 576000, "Prayer IV: Resistance", 2, true),
-                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 55000, 75, "minecraft:fire_resistance", 576000, "Prayer IV: Fire Resistance", 1, true),
-                // Tier 5: 12h (43200 = 864000 ticks), grandmaster buffs
-                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 60000, 99, "minecraft:night_vision", 864000, "Prayer V: Night Vision", 1, true),
-                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 95000, 99, "minecraft:invisibility", 864000, "Prayer V: Invisibility", 1, true),
-                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 170000, 99, "minecraft:haste", 864000, "Prayer V: Haste 2", 2, true)
+                // Tier 1: 1h (72,000 ticks), novice buffs
+                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 10000, 0, "minecraft:luck", 72000, "Prayer I: Luck", 1, true),
+                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 24000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
+                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 8000, 0, "minecraft:dolphins_grace", 72000, "Prayer I: Dolphin's Grace", 1, true),
+                // Tier 2: 2h (144000 ticks), journeyman buffs
+                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 16000, 25, "minecraft:slow_falling", 216000, "Prayer III: Slow Falling", 1, true),
+                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 20000, 25, "minecraft:health_boost", 144000, "Prayer II: Health Boost", 1, true),
+                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 9000, 25, "minecraft:water_breathing", 144000, "Prayer II: Water Breathing", 1, true),
+                // Tier 3: 3h (216000 ticks), expert buffs
+                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 20000, 50, "minecraft:conduit_power", 144000, "Prayer II: Conduit Power", 1, true),
+                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 25000, 50, "minecraft:speed", 216000, "Prayer II: Speed II", 2, true),
+                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 35000, 50, "minecraft:jump_boost", 216000, "Prayer III: Jump Boost II", 2, true),
+                // Tier 4: 4h (288000 ticks), artisan buffs
+                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 30000, 75, "minecraft:strength", 288000, "Prayer IV: Strength II", 2, true),
+                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 80000, 75, "minecraft:hero_of_the_village", 288000, "Prayer IV: Hero of the Village", 1, true),
+                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 60000, 75, "minecraft:fire_resistance", 288000, "Prayer IV: Fire Resistance", 1, true),
+                // Tier 5: 8h (57,6000 ticks), grandmaster buffs
+                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 60000, 99, "minecraft:night_vision", 576000, "Prayer V: Night Vision", 1, true),
+                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 95000, 99, "minecraft:invisibility", 576000, "Prayer V: Invisibility", 1, true),
+                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 170000, 99, "minecraft:haste", 576000, "Prayer V: Haste II", 2, true)
         };
         for (PrayerSacrificeConfig config : defaults) {
             JsonObject entry = new JsonObject();

@@ -40,7 +40,7 @@ Perfect for casual SMPs, lets-players, hardcore survival servers, streamers, or 
 6. **Defense**: Take hits in armor to equip improved gear.
 7. **Slaying**: Slay mobs with melee weapons to become a feared warrior.
 8. **Ranged**: Master bows, crossbows, and tridents.
-9. **Enchanting**: Enhance your gear with level-locked enchantments like Mending.
+9. **Enchanting**: Enhance your gear with anvil level-locked enchantments like Mending.
 10. **Alchemy**: Brew potions with boosted durations as you rise through tiers.
 11. **Smithing**: Repair and upgrade gear with unmatched efficiency.
 12. **Cooking**: Cook meals that restore more hunger and saturation.
@@ -148,7 +148,7 @@ Here’s a taste of what each skill offers:
 ---
 
 ### Enchanting
-Lock powerful enchantments to specific levels, defaulted to:
+Lock powerful enchantments from being used at an anvil to specific levels, defaulted to:
 - Fortune III: Level 25
 - Sharpness V: Level 50
 - Power V: Level 50
@@ -203,6 +203,32 @@ Brew potions with boosted durations, defaulted to:
 
 ---
 
+## Farming
+
+* Gain XP from breeding and feeding animals, shearing sheep, and harvesting crops. Gain bonus drops on mature crops based on your Farming level (1% chance per level, up to 99%).
+* Farming unlocks the ability to use higher tiers of Hoe tools.
+* Players also gain 1% per level of farming to grant an **extra drop** when harvesting crops, to a max of 99% at level 99.
+
+### XP Sources
+
+**Animals:**
+- Breeding animals: **250 XP**
+- Feeding baby animals: **25 XP** (per food item)
+- Shearing sheep: **150 XP**
+
+**Crops** (when fully mature):
+- Wheat: **275 XP**
+- Carrots: **275 XP**
+- Potatoes: **300 XP**
+- Beetroots: **250 XP**
+- Melons: **100 XP**
+- Nether Wart: **350 XP**
+- Cocoa: **250 XP**
+
+You can customize these XP values in `farming_xp.json`.
+
+---
+
 ### Crafting
 Gain XP by crafting tools and armor, as well as smelting ores.
 
@@ -234,29 +260,32 @@ Sacrifice rare items for powerful buffs.
 
 Fully customizable: create your own sacrifices and effects!
 
-| Item                      | Level | XP      | Effect                    | Duration | Name                       | Effect Level |
-|---------------------------|-------|---------|---------------------------|----------|----------------------------|--------------|
-| 🐇 Rabbit Foot            | 0     | 10 000  | minecraft:luck            | 2h       | Prayer I: Luck             | 1            |
-| 💠 Blue Orchid            | 0     | 8 000   | minecraft:absorption      | 2h       | Prayer I: Absorption       | 3            |
-| ✨ Glow Ink Sac            | 0     | 8 000   | minecraft:dolphins_grace  | 2h       | Prayer I: Dolphin's Grace  | 1            |
-| 🌊 Heart of the Sea       | 25    | 20 000  | minecraft:conduit_power   | 4h       | Prayer II: Conduit Power   | 1            |
-| 🍏 Golden Apple           | 25    | 18 000  | minecraft:health_boost    | 4h       | Prayer II: Health Boost    | 1            |
-| 🐚 Nautilus Shell         | 25    | 18 000  | minecraft:water_breathing | 4h       | Prayer II: Water Breathing | 1            |
-| 🦇 Phantom Membrane       | 50    | 35 000  | minecraft:slow_falling    | 6h       | Prayer III: Slow Falling   | 1            |
-| 💎 Diamond                | 50    | 32 000  | minecraft:speed           | 6h       | Prayer II: Speed           | 2            |
-| 🐐 Goat Horn              | 50    | 35 000  | minecraft:jump_boost      | 6h       | Prayer III: Jump Boost     | 2            |
-| 🌿 Pitcher Plant          | 75    | 30 000  | minecraft:strength        | 8h       | Prayer IV: Strength        | 2            |
-| 🍎 Enchanted Golden Apple | 75    | 80 000  | minecraft:resistance      | 8h       | Prayer IV: Resistance      | 2            |
-| ☠️ Wither Skeleton Skull  | 75    | 55 000  | minecraft:fire_resistance | 8h       | Prayer IV: Fire Resistance | 1            |
-| 🏵️ Torchflower           | 99    | 60 000  | minecraft:night_vision    | 12h      | Prayer V: Night Vision     | 1            |
-| 🏆 Totem of Undying       | 99    | 95 000  | minecraft:invisibility    | 12h      | Prayer V: Invisibility     | 1            |
-| ⭐ Nether Star             | 99    | 170 000 | minecraft:haste           | 12h      | Prayer V: Haste 2          | 2            |
+| Item                      | Level | XP      | Effect              | Duration | Name                          | Effect Level |
+|---------------------------|-------|---------|---------------------|----------|-------------------------------|--------------|
+| **Tier 1: Novice (1h)**   |       |         |                     |          |                               |              |
+| 🐇 Rabbit Foot            | 0     | 10 000  | Luck                | 1h       | Prayer I: Luck                | 1            |
+| 🌼 Spore Blossom          | 0     | 24 000  | Absorption          | 1h       | Prayer I: Absorption          | 3            |
+| ✨ Glow Ink Sac           | 0     | 8 000   | Dolphins grace      | 1h       | Prayer I: Dolphin's Grace     | 1            |
+| **Tier 2: Journeyman (2h)** |     |         |                     |          |                               |              |
+| 🦇 Phantom Membrane       | 25    | 16 000  | Slow falling        | 2h       | Prayer III: Slow Falling      | 1            |
+| 🍎 Golden Apple           | 25    | 20 000  | Health boost        | 2h       | Prayer II: Health Boost       | 1            |
+| 🐚 Nautilus Shell         | 25    | 9 000   | Water breathing     | 2h       | Prayer II: Water Breathing    | 1            |
+| **Tier 3: Expert (3h)**   |       |         |                     |          |                               |              |
+| 🌊 Heart of the Sea       | 50    | 20 000  | Conduit power       | 3h       | Prayer II: Conduit Power      | 1            |
+| 💎 Diamond                | 50    | 25 000  | Speed               | 3h       | Prayer II: Speed II           | 2            |
+| 🐐 Goat Horn              | 50    | 35 000  | Jump boost          | 3h       | Prayer III: Jump Boost II     | 2            |
+| **Tier 4: Artisan (4h)**  |       |         |                     |          |                               |              |
+| 🌿 Pitcher Plant          | 75    | 30 000  | Strength            | 4h       | Prayer IV: Strength II        | 2            |
+| 🏆 Enchanted Golden Apple | 75    | 80 000  | Hero of the Village | 4h   | Prayer IV: Hero of the Village | 1            |
+| ☠️ Wither Skeleton Skull  | 75    | 60 000  | Fire Resistance     | 4h       | Prayer IV: Fire Resistance    | 1            |
+| **Tier 5: Grandmaster (8h)** |    |         |                     |          |                               |              |
+| 🏵️ Torchflower           | 99    | 60 000  | Night Vision        | 8h       | Prayer V: Night Vision        | 1            |
+| 💀 Totem of Undying       | 99    | 95 000  | Invisibility        | 8h       | Prayer V: Invisibility        | 1            |
+| ⭐ Nether Star            | 99    | 170 000 | Haste               | 8h       | Prayer V: Haste II            | 2            |
 
 XP is awarded to the *Prayer* skill on sacrifice. Higher-level sacrifices require the corresponding Prayer level.
 
 ### Elytra unlocks at level 50 Prayer by default. Adjustable in `armor_requirements.json`
-
-
 
 ---
 

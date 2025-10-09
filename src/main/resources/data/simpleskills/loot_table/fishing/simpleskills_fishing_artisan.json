@@ -7,23 +7,11 @@
         {
           "type": "minecraft:loot_table",
           "quality": -2,
-          "value": "simpleskills:fishing/simpleskills_fishing_vanilla_junk",
+          "value": "simpleskills:fishing/simpleskills_fishing_artisan_junk",
           "weight": 13
         },
         {
           "type": "minecraft:loot_table",
-          "conditions": [
-            {
-              "condition": "minecraft:entity_properties",
-              "entity": "this",
-              "predicate": {
-                "type_specific": {
-                  "type": "minecraft:fishing_hook",
-                  "in_open_water": true
-                }
-              }
-            }
-          ],
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_artisan_treasure",
           "weight": 7
@@ -38,5 +26,5 @@
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:simpleskills_fishing_artisan"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_artisan"
 }

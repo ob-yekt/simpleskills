@@ -7,7 +7,7 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:lily_pad",
-          "weight": 14 
+          "weight": 10 
           
         },
         {
@@ -24,7 +24,8 @@
             }
           ],
           "name": "minecraft:leather_boots",
-          "weight": 10
+          "weight": 5 
+          
         },
         {
           "type": "minecraft:item",
@@ -91,6 +92,12 @@
         },
         {
           "type": "minecraft:item",
+          "name": "minecraft:glow_ink_sac",
+          "weight": 5 
+          
+        },
+        {
+          "type": "minecraft:item",
           "name": "minecraft:tripwire_hook",
           "weight": 10
         },
@@ -102,7 +109,24 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:clay_ball",
-          "weight": 3
+          "weight": 2,
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": 2.0 
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_egg",
+          "weight": 1
+          
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:sea_pickle",
+          "weight": 4
           
         },
         {
@@ -120,11 +144,12 @@
             }
           ],
           "name": "minecraft:bamboo",
-          "weight": 10
+          "weight": 5 
+          
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:fishing/simpleskills_fishing_novice_junk"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_artisan_junk"
 }

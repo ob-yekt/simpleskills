@@ -25,6 +25,7 @@
     "FURNACES.AbstractFurnaceScreenHandlerMixin",
     "FURNACES.FurnaceOutputSlotMixin",
     "LORE.CraftingResultInventoryMixin",
+    "LORE.ItemEntityMixin",
     "LORE.PlayerInventoryMixin",
     "LORE.SimpleInventoryMixin",
     "SMITHING.AnvilScreenHandlerMixin",

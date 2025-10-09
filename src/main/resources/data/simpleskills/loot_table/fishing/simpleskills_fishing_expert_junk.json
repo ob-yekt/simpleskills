@@ -7,34 +7,15 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:lily_pad",
-          "weight": 14 
+          "weight": 11 
           
         },
-        {
-          "type": "minecraft:item",
-          "functions": [
-            {
-              "add": false,
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 0.9,
-                "min": 0.0
-              },
-              "function": "minecraft:set_damage"
-            }
-          ],
-          "name": "minecraft:leather_boots",
-          "weight": 10
-        },
+        
         {
           "type": "minecraft:item",
           "name": "minecraft:leather",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:bone",
-          "weight": 10
+          "weight": 12
+          
         },
         {
           "type": "minecraft:item",
@@ -45,12 +26,8 @@
             }
           ],
           "name": "minecraft:potion",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:string",
-          "weight": 5
+          "weight": 12
+          
         },
         {
           "type": "minecraft:item",
@@ -66,17 +43,8 @@
             }
           ],
           "name": "minecraft:fishing_rod",
-          "weight": 2
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:bowl",
-          "weight": 5
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:stick",
-          "weight": 5
+          "weight": 7
+          
         },
         {
           "type": "minecraft:item",
@@ -91,19 +59,31 @@
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:tripwire_hook",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:rotten_flesh",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:clay_ball",
-          "weight": 3
+          "name": "minecraft:glow_ink_sac",
+          "weight": 18 
           
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tripwire_hook",
+          "weight": 12
+          
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_egg",
+          "weight": 5 
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_scute",
+          "weight": 12
+          
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:sea_pickle",
+          "weight": 4
         },
         {
           "type": "minecraft:item",
@@ -120,11 +100,12 @@
             }
           ],
           "name": "minecraft:bamboo",
-          "weight": 10
+          "weight": 6 
+          
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:fishing/simpleskills_fishing_novice_junk"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_expert_junk"
 }

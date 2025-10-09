@@ -9,12 +9,12 @@
           "functions": [
             {
               "function": "minecraft:enchant_with_levels",
-              "levels": 35.0,
+              "levels": 32.0,
               "options": "#minecraft:on_random_loot"
             }
           ],
           "name": "minecraft:book",
-          "weight": 24
+          "weight": 25
         },
         {
           "type": "minecraft:item",
@@ -23,29 +23,8 @@
               "add": false,
               "damage": {
                 "type": "minecraft:uniform",
-                "max": 0.2,
-                "min": 0.0
-              },
-              "function": "minecraft:set_damage"
-            },
-            {
-              "function": "minecraft:enchant_with_levels",
-              "levels": 35,
-              "options": "#minecraft:on_random_loot"
-            }
-          ],
-          "name": "minecraft:bow",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "functions": [
-            {
-              "add": false,
-              "damage": {
-                "type": "minecraft:uniform",
-                "max": 0.2,
-                "min": 0.0
+                "max": 1.0,
+                "min": 0.8
               },
               "function": "minecraft:set_damage"
             },
@@ -55,8 +34,8 @@
               "options": "#minecraft:on_random_loot"
             }
           ],
-          "name": "minecraft:crossbow",
-          "weight": 10
+          "name": "minecraft:bow",
+          "weight": 18
         },
         {
           "type": "minecraft:item",
@@ -65,24 +44,24 @@
               "add": false,
               "damage": {
                 "type": "minecraft:uniform",
-                "max": 0.2,
-                "min": 0.0
+                "max": 1.0,
+                "min": 0.8
               },
               "function": "minecraft:set_damage"
             },
             {
               "function": "minecraft:enchant_with_levels",
-              "levels": 35,
+              "levels": 35.0,
               "options": "#minecraft:on_random_loot"
             }
           ],
           "name": "minecraft:fishing_rod",
-          "weight": 20
+          "weight": 15
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:name_tag",
-          "weight": 11
+          "weight": 10
         },
         {
           "type": "minecraft:item",
@@ -91,8 +70,53 @@
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:saddle",
-          "weight": 11
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 4.0,
+                "max": 7.0
+              }
+            }
+          ],
+          "name": "minecraft:gold_ingot",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 5.0,
+                "max": 10.0
+              }
+            }
+          ],
+          "name": "minecraft:lapis_lazuli",
+          "weight": 7
+        },
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 2.0,
+                "max": 3.0
+              }
+            }
+          ],
+          "name": "minecraft:emerald",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond",
+          "weight": 3
         },
         {
           "type": "minecraft:item",
@@ -101,19 +125,19 @@
               "add": false,
               "damage": {
                 "type": "minecraft:uniform",
-                "max": 0.2,
-                "min": 0.0
+                "max": 1.0,
+                "min": 0.8
               },
               "function": "minecraft:set_damage"
             },
             {
               "function": "minecraft:enchant_with_levels",
-              "levels": 35,
+              "levels": 35.0,
               "options": "#minecraft:on_random_loot"
             }
           ],
           "name": "minecraft:trident",
-          "weight": 3
+          "weight": 1
         }
       ],
       "rolls": 1.0

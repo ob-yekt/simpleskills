@@ -23,6 +23,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EquipmentSlot;
 
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -47,6 +48,8 @@ import net.minecraft.util.Identifier;
 
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.Objects;
 
@@ -101,33 +104,34 @@ public class EventHandlers {
             return true;
         });
 
-        // AFTER block break event (unchanged)
+        // AFTER block break event
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
             if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
                 return;
             }
 
             String blockTranslationKey = state.getBlock().getTranslationKey();
-            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
-            if (ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0) {
-                grantFarmingXP((ServerWorld) world, serverPlayer, state, blockTranslationKey);
+
+            // Check for Silk Touch on ores, melons (before doing anything else)
+            if ((blockTranslationKey.contains("_ore") || blockTranslationKey.contains("melon")) && hasSilkTouch(serverPlayer)) {
+                Simpleskills.LOGGER.debug("No XP granted for {} to player {} due to Silk Touch", blockTranslationKey, serverPlayer.getName().getString());
                 return;
             }
+
+            // Check if it's a farming block
+            if (ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0) {
+                grantFarmingXP((ServerWorld) world, serverPlayer, pos, state, blockTranslationKey);
+                return;
+            }
+
+            // Check for other skill-based blocks
+            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
             if (relevantSkill == null) {
                 return;
             }
 
-            // Check for Silk Touch on ores, melons
-            if (blockTranslationKey.contains("_ore") || blockTranslationKey.contains("melon")) {
-                if (hasSilkTouch(serverPlayer)) {
-                    Simpleskills.LOGGER.debug("No XP granted for {} to player {} due to Silk Touch", blockTranslationKey, serverPlayer.getName().getString());
-                    return;
-                }
-            }
-
-            if (relevantSkill == Skills.FARMING) {
-                grantFarmingXP((ServerWorld) world, serverPlayer, state, blockTranslationKey);
-            } else {
+            // Grant XP for non-farming skills
+            if (relevantSkill != Skills.FARMING) {
                 int xp = ConfigManager.getBlockXP(blockTranslationKey, relevantSkill);
                 XPManager.addXPWithNotification(serverPlayer, relevantSkill, xp);
             }
@@ -141,37 +145,79 @@ public class EventHandlers {
                 blockTranslationKey.contains("melon");
     }
 
-    private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockState state, String blockTranslationKey) {
-        if (isCrop(blockTranslationKey)) {
-            if (state.contains(Properties.AGE_7)) {
-                int age = state.get(Properties.AGE_7);
-                if (age == 7 && (blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") || blockTranslationKey.contains("potatoes"))) {
-                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (state.contains(Properties.AGE_3)) {
-                int age = state.get(Properties.AGE_3);
-                if (age == 3 && (blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("beetroots"))) {
-                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (state.contains(Properties.AGE_2)) {
-                int age = state.get(Properties.AGE_2);
-                if (age == 2 && blockTranslationKey.contains("cocoa")) {
-                    int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (blockTranslationKey.contains("melon")) {
-                // Silk Touch check already handled in outer block break event
-                int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
-                XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
+    private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockPos pos, BlockState state, String blockTranslationKey) {
+        if (!isCrop(blockTranslationKey)) {
+            return;
+        }
+
+        boolean isMatured = false;
+
+        if (state.contains(Properties.AGE_7)) {
+            int age = state.get(Properties.AGE_7);
+            if (age == 7 && (blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") || blockTranslationKey.contains("potatoes"))) {
+                isMatured = true;
             }
+        } else if (state.contains(Properties.AGE_3)) {
+            int age = state.get(Properties.AGE_3);
+            if (age == 3 && (blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("beetroots"))) {
+                isMatured = true;
+            }
+        } else if (state.contains(Properties.AGE_2)) {
+            int age = state.get(Properties.AGE_2);
+            if (age == 2 && blockTranslationKey.contains("cocoa")) {
+                isMatured = true;
+            }
+        } else if (blockTranslationKey.contains("melon")) {
+            isMatured = true;
+        }
+
+        if (!isMatured) {
+            return;
+        }
+
+        int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
+        XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
+        applyBonusDrops(world, serverPlayer, pos, state, blockTranslationKey);
+        Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
+    }
+
+    private static void applyBonusDrops(ServerWorld world, ServerPlayerEntity player, BlockPos pos, BlockState state, String blockTranslationKey) {
+        // Calculate bonus drop chance: 1% per farming level, capped at 99%
+        int farmingLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.FARMING);
+        double dropChance = Math.min(farmingLevel, 99) / 100.0;
+
+        if (world.random.nextDouble() < dropChance) {
+            spawnBonusDrops(world, pos, state);
+            Simpleskills.LOGGER.debug("Granted bonus drops to {} for {} (farming level: {})",
+                    player.getName().getString(), blockTranslationKey, farmingLevel);
         }
     }
+
+    private static void spawnBonusDrops(ServerWorld world, BlockPos pos, BlockState state) {
+        // Get the drops that would normally be produced
+        java.util.List<ItemStack> drops = net.minecraft.block.Block.getDroppedStacks(state, world, pos, null);
+
+        Vec3d dropPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+
+        for (ItemStack drop : drops) {
+            if (drop.isEmpty()) {
+                continue;
+            }
+
+            ItemStack bonus = drop.copy();
+            ItemEntity itemEntity = new ItemEntity(world, dropPos.x, dropPos.y, dropPos.z, bonus);
+
+            // Add slight random velocity for visual effect
+            itemEntity.setVelocity(
+                    (world.random.nextDouble() - 0.5) * 0.1,
+                    world.random.nextDouble() * 0.1,
+                    (world.random.nextDouble() - 0.5) * 0.1
+            );
+
+            world.spawnEntity(itemEntity);
+        }
+    }
+
     private static void registerCombatHandlers() {
         // Prevent melee attacks if weapon requirement not met
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {

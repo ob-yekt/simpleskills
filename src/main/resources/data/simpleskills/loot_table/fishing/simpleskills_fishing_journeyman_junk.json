@@ -7,7 +7,8 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:lily_pad",
-          "weight": 17
+          "weight": 13 
+          
         },
         {
           "type": "minecraft:item",
@@ -70,7 +71,7 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:bowl",
-          "weight": 10
+          "weight": 5
         },
         {
           "type": "minecraft:item",
@@ -86,7 +87,13 @@
               "function": "minecraft:set_count"
             }
           ],
-          "name": "minecraft:ink_sac"
+          "name": "minecraft:ink_sac" 
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:glow_ink_sac",
+          "weight": 2
+          
         },
         {
           "type": "minecraft:item",
@@ -97,6 +104,12 @@
           "type": "minecraft:item",
           "name": "minecraft:rotten_flesh",
           "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:clay_ball",
+          "weight": 2 
+          
         },
         {
           "type": "minecraft:item",
@@ -119,5 +132,5 @@
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:fishing/simpleskills_fishing_vanilla_junk"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_journeyman_junk"
 }

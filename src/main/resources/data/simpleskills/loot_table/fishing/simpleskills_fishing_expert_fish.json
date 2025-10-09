@@ -28,5 +28,5 @@
       "rolls": 1.0
     }
   ],
-  "random_sequence": "simpleskills:simpleskills_fishing_expert_fish"
+  "random_sequence": "simpleskills:fishing/simpleskills_fishing_expert_fish"
 }
