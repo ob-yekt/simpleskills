@@ -8,31 +8,19 @@
           "type": "minecraft:loot_table",
           "quality": -2,
           "value": "simpleskills:fishing/simpleskills_fishing_journeyman_junk",
-          "weight": 15
+          "weight": 20
         },
         {
           "type": "minecraft:loot_table",
-          "conditions": [
-            {
-              "condition": "minecraft:entity_properties",
-              "entity": "this",
-              "predicate": {
-                "type_specific": {
-                  "type": "minecraft:fishing_hook",
-                  "in_open_water": true
-                }
-              }
-            }
-          ],
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_journeyman_treasure",
-          "weight": 5
+          "weight": 10
         },
         {
           "type": "minecraft:loot_table",
           "quality": -1,
           "value": "simpleskills:fishing/simpleskills_fishing_journeyman_fish",
-          "weight": 80
+          "weight": 70
         }
       ],
       "rolls": 1.0

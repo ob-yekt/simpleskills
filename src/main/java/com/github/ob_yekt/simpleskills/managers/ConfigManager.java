@@ -512,25 +512,25 @@ public class ConfigManager {
         record CookingMapping(String item, int xp) {
         }
         CookingMapping[] defaults = {
-                new CookingMapping("item.minecraft.cooked_porkchop", 180),
-                new CookingMapping("item.minecraft.cooked_beef", 180),
-                new CookingMapping("item.minecraft.cooked_mutton", 180),
-                new CookingMapping("item.minecraft.cooked_chicken", 225),     // Boosted to compete with baseline meats
-                new CookingMapping("item.minecraft.cooked_salmon", 150),     // Higher to reward fishing effort
-                new CookingMapping("item.minecraft.cooked_cod", 150),        // Same as salmon
+                new CookingMapping("item.minecraft.cooked_porkchop", 185),
+                new CookingMapping("item.minecraft.cooked_beef", 185),
+                new CookingMapping("item.minecraft.cooked_mutton", 185),
+                new CookingMapping("item.minecraft.cooked_chicken", 185),     // Nerfed to compete with baseline meats
+                new CookingMapping("item.minecraft.cooked_salmon", 200),     // Higher than meats to reward fishing effort
+                new CookingMapping("item.minecraft.cooked_cod", 190),        // Same as salmon
                 new CookingMapping("item.minecraft.cooked_rabbit", 285),     // Increased for rarity and biome specificity
 
-                new CookingMapping("item.minecraft.baked_potato", 130),      // Commonly eaten, easy to get
+                new CookingMapping("item.minecraft.baked_potato", 150),      // Commonly eaten, easy to get
                 new CookingMapping("item.minecraft.golden_carrot", 230),     // Slightly higher for gold and carrot effort
-                new CookingMapping("item.minecraft.golden_apple", 450),     // Increased for rare apples and gold ingots
+                new CookingMapping("item.minecraft.golden_apple", 800),     // Increased for rare apples and gold ingots
 
-                new CookingMapping("item.minecraft.bread", 130),             // Commonly eaten, easy to get
-                new CookingMapping("item.minecraft.cookie", 40),             // Per-cookie, total 320 for 8, for cocoa rarity
+                new CookingMapping("item.minecraft.bread", 210),             // Commonly eaten, but need 3 wheat
+                new CookingMapping("item.minecraft.cookie", 35),             // Per-cookie, total 280 for 8, for cocoa rarity is just same recipe with bread but one coco and one wheat less
                 new CookingMapping("item.minecraft.cake", 750),             // Higher for complex ingredients
-                new CookingMapping("item.minecraft.pumpkin_pie", 350),       // Never made/eaten
-                new CookingMapping("item.minecraft.mushroom_stew", 285),     // Boosted for biome-specific mushrooms
-                new CookingMapping("item.minecraft.beetroot_soup", 285),     // Never made/eaten
-                new CookingMapping("item.minecraft.rabbit_stew", 350)        // Never made/eaten
+                new CookingMapping("item.minecraft.pumpkin_pie", 400),       // Buffed for complexity and for needing 3 ingredients
+                new CookingMapping("item.minecraft.mushroom_stew", 300),     // Boosted for biome-specific mushrooms
+                new CookingMapping("item.minecraft.beetroot_soup", 300),     // Never made/eaten
+                new CookingMapping("item.minecraft.rabbit_stew", 750)        // Never made/eaten
         };
         for (CookingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -1007,17 +1007,17 @@ public class ConfigManager {
 
         // Excavation: Dirt-type blocks
         defaults.add(new BlockMapping("block.minecraft.dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.grass_block", "EXCAVATING", 50));
+        defaults.add(new BlockMapping("block.minecraft.grass_block", "EXCAVATING", 55));
         defaults.add(new BlockMapping("block.minecraft.podzol", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.coarse_dirt", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.rooted_dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.mycelium", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.farmland", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 50));
+        defaults.add(new BlockMapping("block.minecraft.mycelium", "EXCAVATING", 55));
+        defaults.add(new BlockMapping("block.minecraft.farmland", "EXCAVATING", 55));
+        defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 55));
         defaults.add(new BlockMapping("block.minecraft.mud", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.clay", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.sand", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.gravel", "EXCAVATING", 50));
+        defaults.add(new BlockMapping("block.minecraft.gravel", "EXCAVATING", 55));
         defaults.add(new BlockMapping("block.minecraft.red_sand", "EXCAVATING", 50));
 
         // Concrete powder blocks
@@ -1651,7 +1651,7 @@ public class ConfigManager {
 
     private static JsonObject getDefaultFishingXPConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("catch", 750);
+        json.addProperty("catch", 1250);
         return json;
     }
 
