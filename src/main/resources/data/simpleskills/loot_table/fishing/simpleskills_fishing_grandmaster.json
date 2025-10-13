@@ -8,13 +8,13 @@
           "type": "minecraft:loot_table",
           "quality": -2,
           "value": "simpleskills:fishing/simpleskills_fishing_grandmaster_junk",
-          "weight": 5
+          "weight": 10
         },
         {
           "type": "minecraft:loot_table",
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_grandmaster_treasure",
-          "weight": 25
+          "weight": 20
         },
         {
           "type": "minecraft:loot_table",

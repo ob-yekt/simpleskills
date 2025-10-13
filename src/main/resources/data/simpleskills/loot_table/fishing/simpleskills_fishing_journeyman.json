@@ -8,13 +8,13 @@
           "type": "minecraft:loot_table",
           "quality": -2,
           "value": "simpleskills:fishing/simpleskills_fishing_journeyman_junk",
-          "weight": 20
+          "weight": 22
         },
         {
           "type": "minecraft:loot_table",
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_journeyman_treasure",
-          "weight": 10
+          "weight": 8
         },
         {
           "type": "minecraft:loot_table",

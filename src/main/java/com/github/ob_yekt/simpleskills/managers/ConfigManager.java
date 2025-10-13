@@ -501,8 +501,6 @@ public class ConfigManager {
         }
     }
 
-
-
     /**
      * Default cooking XP configuration.
      */
@@ -526,7 +524,6 @@ public class ConfigManager {
 
                 new CookingMapping("item.minecraft.bread", 210),             // Commonly eaten, but need 3 wheat
                 new CookingMapping("item.minecraft.cookie", 35),             // Per-cookie, total 280 for 8, for cocoa rarity is just same recipe with bread but one coco and one wheat less
-                new CookingMapping("item.minecraft.cake", 750),             // Higher for complex ingredients
                 new CookingMapping("item.minecraft.pumpkin_pie", 400),       // Buffed for complexity and for needing 3 ingredients
                 new CookingMapping("item.minecraft.mushroom_stew", 300),     // Boosted for biome-specific mushrooms
                 new CookingMapping("item.minecraft.beetroot_soup", 300),     // Never made/eaten
@@ -960,6 +957,9 @@ public class ConfigManager {
             if (stone.contains("sandstone")) {
                 xp = 30; // override sandstone family
             }
+            if (stone.contains("deepslate")) {
+                xp = 200; // override deepslate family
+            }
 
             defaults.add(new BlockMapping("block.minecraft." + stone, "MINING", xp));
 
@@ -979,7 +979,7 @@ public class ConfigManager {
             }
         }
 
-        defaults.add(new BlockMapping("block.minecraft.netherrack", "MINING", 10));
+        defaults.add(new BlockMapping("block.minecraft.netherrack", "MINING", 30));
 
         // Mining: Overworld and Deepslate Ores (keeping original values)
         defaults.add(new BlockMapping("block.minecraft.coal_ore", "MINING", 250));           // 100 * 2.5

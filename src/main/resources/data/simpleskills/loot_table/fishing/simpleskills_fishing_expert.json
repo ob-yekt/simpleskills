@@ -8,13 +8,13 @@
           "type": "minecraft:loot_table",
           "quality": -2,
           "value": "simpleskills:fishing/simpleskills_fishing_expert_junk",
-          "weight": 10
+          "weight": 16
         },
         {
           "type": "minecraft:loot_table",
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_expert_treasure",
-          "weight": 20
+          "weight": 14
         },
         {
           "type": "minecraft:loot_table",
