@@ -6,11 +6,144 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:lily_pad",
-          "weight": 14
+          "name": "minecraft:coal",
+          "weight": 12,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
         },
         {
           "type": "minecraft:item",
+          "name": "minecraft:clay_ball",
+          "weight": 12,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 5.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:bone",
+          "weight": 10,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:leather",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tripwire_hook",
+          "weight": 10
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:sea_pickle",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:tube_coral",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:bubble_coral",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:fishing_rod",
+          "weight": 5,
+          "functions": [
+            {
+              "add": false,
+              "damage": {
+                "type": "minecraft:uniform",
+                "max": 0.9,
+                "min": 0.5
+              },
+              "function": "minecraft:set_damage"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:feather",
+          "weight": 5,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:flint",
+          "weight": 5,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ink_sac",
+          "weight": 5,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:stick",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:leather_boots",
+          "weight": 4,
           "functions": [
             {
               "add": false,
@@ -21,30 +154,48 @@
               },
               "function": "minecraft:set_damage"
             }
-          ],
-          "name": "minecraft:leather_boots",
-          "weight": 7
+          ]
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:leather",
-          "weight": 12
+          "name": "minecraft:rotten_flesh",
+          "weight": 4,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:bone",
-          "weight": 10
+          "name": "minecraft:lily_pad",
+          "weight": 4
         },
         {
           "type": "minecraft:item",
+          "name": "minecraft:potion",
+          "weight": 4,
           "functions": [
             {
               "function": "minecraft:set_potion",
               "id": "minecraft:water"
             }
-          ],
-          "name": "minecraft:potion",
-          "weight": 10
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:bowl",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:seagrass",
+          "weight": 3
         },
         {
           "type": "minecraft:item",
@@ -53,88 +204,18 @@
         },
         {
           "type": "minecraft:item",
+          "name": "minecraft:kelp",
+          "weight": 5,
           "functions": [
             {
-              "add": false,
-              "damage": {
+              "count": {
                 "type": "minecraft:uniform",
-                "max": 0.9,
-                "min": 0.0
+                "min": 1.0,
+                "max": 5.0
               },
-              "function": "minecraft:set_damage"
-            }
-          ],
-          "name": "minecraft:fishing_rod",
-          "weight": 2
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:bowl",
-          "weight": 5
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:stick",
-          "weight": 5
-        },
-        {
-          "type": "minecraft:item",
-          "functions": [
-            {
-              "add": false,
-              "count": 10.0,
               "function": "minecraft:set_count"
             }
-          ],
-          "name": "minecraft:ink_sac",
-          "weight": 1
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:tripwire_hook",
-          "weight": 8
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:rotten_flesh",
-          "weight": 10
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:clay_ball",
-          "weight": 3
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:sea_pickle",
-          "weight": 1
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:turtle_egg",
-          "weight": 1
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:turtle_scute",
-          "weight": 1
-        },
-        {
-          "type": "minecraft:item",
-          "conditions": [
-            {
-              "condition": "minecraft:location_check",
-              "predicate": {
-                "biomes": [
-                  "minecraft:jungle",
-                  "minecraft:sparse_jungle",
-                  "minecraft:bamboo_jungle"
-                ]
-              }
-            }
-          ],
-          "name": "minecraft:bamboo",
-          "weight": 10
+          ]
         }
       ],
       "rolls": 1.0

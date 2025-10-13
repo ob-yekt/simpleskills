@@ -7,26 +7,77 @@
         {
           "type": "minecraft:item",
           "name": "minecraft:glow_ink_sac",
-          "weight": 35
+          "weight": 25,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 3.0,
+                "max": 8.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:turtle_egg",
-          "weight": 28
+          "weight": 20,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:turtle_scute",
-          "weight": 27
+          "weight": 20
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:sea_pickle",
-          "weight": 10
+          "weight": 17,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:iron_ingot",
+          "weight": 9
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:gold_nugget",
+          "weight": 9,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+
         }
       ],
       "rolls": 1.0
     }
   ],
   "random_sequence": "simpleskills:fishing/simpleskills_fishing_grandmaster_junk"
-  }
+}

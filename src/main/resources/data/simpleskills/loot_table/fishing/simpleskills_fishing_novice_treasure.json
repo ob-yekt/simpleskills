@@ -6,6 +6,8 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "name": "minecraft:fishing_rod",
+          "weight": 22,
           "functions": [
             {
               "add": false,
@@ -25,59 +27,44 @@
               },
               "options": "#minecraft:on_random_loot"
             }
-          ],
-          "name": "minecraft:fishing_rod",
-          "weight": 24
+          ]
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:name_tag",
-          "weight": 24
+          "weight": 14
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:nautilus_shell",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:saddle",
-          "weight": 24
-        },
-        {
-          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "weight": 2,
           "functions": [
             {
               "function": "minecraft:enchant_with_levels",
               "levels": 15.0,
               "options": "#minecraft:on_random_loot"
             }
-          ],
-          "name": "minecraft:book",
-          "weight": 1
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:saddle",
+          "weight": 15
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:nautilus_shell",
+          "weight": 5
         },
         {
           "type": "minecraft:item",
           "name": "minecraft:copper_ingot",
-          "weight": 1
+          "weight": 8
         },
         {
           "type": "minecraft:item",
-          "functions": [
-            {
-              "count": {
-                "type": "minecraft:uniform",
-                "min": 1.0,
-                "max": 4.0
-              },
-              "function": "minecraft:set_count"
-            }
-          ],
           "name": "minecraft:gold_nugget",
-          "weight": 1
-        },
-        {
-          "type": "minecraft:item",
+          "weight": 4,
           "functions": [
             {
               "count": {
@@ -87,9 +74,62 @@
               },
               "function": "minecraft:set_count"
             }
-          ],
+          ]
+        },
+        {
+          "type": "minecraft:item",
           "name": "minecraft:iron_nugget",
-          "weight": 1
+          "weight": 7,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 4.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:experience_bottle",
+          "weight": 4
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_scute",
+          "weight": 6
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:turtle_egg",
+          "weight": 3,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 2.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:glow_ink_sac",
+          "weight": 10,
+          "functions": [
+            {
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1.0,
+                "max": 3.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ]
         }
       ],
       "rolls": 1.0

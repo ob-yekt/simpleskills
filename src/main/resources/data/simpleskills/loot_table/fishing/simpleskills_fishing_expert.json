@@ -8,31 +8,19 @@
           "type": "minecraft:loot_table",
           "quality": -2,
           "value": "simpleskills:fishing/simpleskills_fishing_expert_junk",
-          "weight": 5
+          "weight": 10
         },
         {
           "type": "minecraft:loot_table",
-          "conditions": [
-            {
-              "condition": "minecraft:entity_properties",
-              "entity": "this",
-              "predicate": {
-                "type_specific": {
-                  "type": "minecraft:fishing_hook",
-                  "in_open_water": true
-                }
-              }
-            }
-          ],
           "quality": 2,
           "value": "simpleskills:fishing/simpleskills_fishing_expert_treasure",
-          "weight": 10
+          "weight": 20
         },
         {
           "type": "minecraft:loot_table",
           "quality": -1,
           "value": "simpleskills:fishing/simpleskills_fishing_expert_fish",
-          "weight": 85
+          "weight": 70
         }
       ],
       "rolls": 1.0
