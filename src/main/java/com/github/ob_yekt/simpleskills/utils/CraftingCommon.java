@@ -138,23 +138,27 @@ public final class CraftingCommon {
         FoodComponent originalFood = stack.get(DataComponentTypes.FOOD);
         if (originalFood == null) return;
 
-        int newHunger = Math.max(1, Math.round(originalFood.nutrition() * multiplier));
-        float newSaturation = originalFood.saturation() * multiplier;
+        // FoodComponent stores: nutrition (int) and saturation (float)
+        // The saturation is the ACTUAL saturation value, not a modifier
+        int originalNutrition = originalFood.nutrition();
+        float originalSaturation = originalFood.saturation();
 
-        FoodComponent scaledFood = new FoodComponent.Builder()
-                .nutrition(newHunger)
-                .saturationModifier(newSaturation)
-                .build();
+        // Scale both values directly
+        int newNutrition = Math.max(1, Math.round(originalNutrition * multiplier));
+        float newSaturation = originalSaturation * multiplier;
+
+        // Cap saturation at reasonable values (Minecraft's max is 20.0)
+        newSaturation = Math.min(20.0f, newSaturation);
+
+        // Create new FoodComponent directly with the scaled values
+        // We bypass the Builder since it would apply HungerConstants.calculateSaturation again
+        FoodComponent scaledFood = new FoodComponent(
+                newNutrition,
+                newSaturation,
+                originalFood.canAlwaysEat()
+        );
 
         stack.set(DataComponentTypes.FOOD, scaledFood);
-
-//        Simpleskills.LOGGER.debug(
-//                "Scaled food {} -> hunger {} sat {} for player {} (lvl {}, multiplier {})",
-//                stack.getItem().getTranslationKey(),
-//                newHunger, newSaturation,
-//                player.getName().getString(),
-//                level, multiplier
-//        );
     }
 
     /**
