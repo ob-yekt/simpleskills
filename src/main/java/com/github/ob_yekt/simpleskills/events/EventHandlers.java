@@ -64,6 +64,8 @@ public class EventHandlers {
         registerPrayerHandlers();
     }
 
+// Replace the farming-related methods in EventHandlers class:
+
     private static void registerBlockHandlers() {
         // BEFORE block break event
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
@@ -95,10 +97,9 @@ public class EventHandlers {
             }
 
             // --- 2) Then check if block itself has a skill requirement ---
-            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
-            boolean isFarmingBlock = ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0;
-            if ((relevantSkill != null && isCrop(blockTranslationKey)) || isFarmingBlock) {
-                return true; // Crops bypass tool requirement
+            // Crops bypass tool requirement check
+            if (ConfigManager.isCropBlock(blockTranslationKey)) {
+                return true;
             }
 
             return true;
@@ -118,8 +119,8 @@ public class EventHandlers {
                 return;
             }
 
-            // Check if it's a farming block
-            if (ConfigManager.getFarmingBlockXP(blockTranslationKey) > 0) {
+            // Check if it's a configured farming block
+            if (ConfigManager.isCropBlock(blockTranslationKey)) {
                 grantFarmingXP((ServerWorld) world, serverPlayer, pos, state, blockTranslationKey);
                 return;
             }
@@ -138,44 +139,64 @@ public class EventHandlers {
         });
     }
 
-    private static boolean isCrop(String blockTranslationKey) {
-        return blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") ||
-                blockTranslationKey.contains("potatoes") || blockTranslationKey.contains("beetroots") ||
-                blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("cocoa") ||
-                blockTranslationKey.contains("melon");
-    }
-
+    /**
+     * Grants farming XP for harvesting crops based on configuration.
+     * Now fully config-driven to support custom crops from other mods.
+     */
     private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockPos pos, BlockState state, String blockTranslationKey) {
-        if (!isCrop(blockTranslationKey)) {
+        ConfigManager.CropConfig cropConfig = ConfigManager.getCropConfig(blockTranslationKey);
+        if (cropConfig == null) {
             return;
         }
 
         boolean isMatured = false;
 
-        if (state.contains(Properties.AGE_7)) {
-            int age = state.get(Properties.AGE_7);
-            if (age == 7 && (blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") || blockTranslationKey.contains("potatoes"))) {
+        // Check maturity based on configured age property
+        switch (cropConfig.ageProperty()) {
+            case "AGE_7":
+                if (state.contains(Properties.AGE_7)) {
+                    int age = state.get(Properties.AGE_7);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_3":
+                if (state.contains(Properties.AGE_3)) {
+                    int age = state.get(Properties.AGE_3);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_2":
+                if (state.contains(Properties.AGE_2)) {
+                    int age = state.get(Properties.AGE_2);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_5":
+                if (state.contains(Properties.AGE_5)) {
+                    int age = state.get(Properties.AGE_5);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_25":
+                if (state.contains(Properties.AGE_25)) {
+                    int age = state.get(Properties.AGE_25);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "NONE":
+                // No age property - always mature (e.g., melon blocks)
                 isMatured = true;
-            }
-        } else if (state.contains(Properties.AGE_3)) {
-            int age = state.get(Properties.AGE_3);
-            if (age == 3 && (blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("beetroots"))) {
-                isMatured = true;
-            }
-        } else if (state.contains(Properties.AGE_2)) {
-            int age = state.get(Properties.AGE_2);
-            if (age == 2 && blockTranslationKey.contains("cocoa")) {
-                isMatured = true;
-            }
-        } else if (blockTranslationKey.contains("melon")) {
-            isMatured = true;
+                break;
+            default:
+                Simpleskills.LOGGER.warn("Unknown age property '{}' for crop {}", cropConfig.ageProperty(), blockTranslationKey);
+                return;
         }
 
         if (!isMatured) {
             return;
         }
 
-        int xp = ConfigManager.getFarmingBlockXP(blockTranslationKey);
+        int xp = cropConfig.xp();
         XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
         applyBonusDrops(world, serverPlayer, pos, state, blockTranslationKey);
         Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());

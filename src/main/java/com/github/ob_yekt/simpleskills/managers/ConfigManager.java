@@ -45,7 +45,7 @@ public class ConfigManager {
     private static final Map<String, Integer> AGILITY_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_XP_MAP = new HashMap<>();
 	private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
-	private static final Map<String, Integer> FARMING_BLOCK_XP_MAP = new HashMap<>();
+    private static final Map<String, CropConfig> CROP_CONFIGS = new HashMap<>();
     private static final Map<String, Float> SMITHING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> FISHING_XP_MAP = new HashMap<>();
     private static final Map<String, Identifier> FISHING_LOOT_TABLES = new HashMap<>();
@@ -1609,6 +1609,107 @@ public class ConfigManager {
         }
         return json;
     }
+
+    /**
+     * Loads farming XP mappings from farming_xp.json with enhanced crop configuration.
+     */
+    private static void loadFarmingXPConfig() {
+        Path filePath = CONFIG_DIR.resolve("farming_xp.json");
+        try {
+            JsonObject json = loadJsonFile(filePath, getDefaultFarmingXPConfig());
+            FARMING_ACTION_XP_MAP.clear();
+            CROP_CONFIGS.clear();
+
+            if (json.has("actions") && json.get("actions").isJsonObject()) {
+                JsonObject actions = json.getAsJsonObject("actions");
+                for (Map.Entry<String, JsonElement> entry : actions.entrySet()) {
+                    int xp = entry.getValue().getAsInt();
+                    if (xp >= 0) {
+                        FARMING_ACTION_XP_MAP.put(entry.getKey(), xp);
+                    }
+                }
+            }
+
+            if (json.has("blocks") && json.get("blocks").isJsonArray()) {
+                for (JsonElement element : json.getAsJsonArray("blocks")) {
+                    JsonObject mapping = element.getAsJsonObject();
+                    String block = mapping.get("block").getAsString();
+                    int xp = mapping.get("xp").getAsInt();
+
+                    // New fields for crop configuration
+                    String ageProperty = mapping.has("age_property") ? mapping.get("age_property").getAsString() : "NONE";
+                    int maturityAge = mapping.has("maturity_age") ? mapping.get("maturity_age").getAsInt() : -1;
+
+                    if (xp >= 0) {
+                        CROP_CONFIGS.put(block, new CropConfig(block, ageProperty, maturityAge, xp));
+                    }
+                }
+            }
+            Simpleskills.LOGGER.info("Loaded farming_xp.json with {} crop configurations", CROP_CONFIGS.size());
+        } catch (JsonSyntaxException e) {
+            Simpleskills.LOGGER.error("JSON syntax error in farming_xp.json: {}", e.getMessage());
+        } catch (IOException e) {
+            Simpleskills.LOGGER.error("Error loading farming_xp.json: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Represents a crop configuration with age property and maturity threshold.
+     */
+    public record CropConfig(
+            String block,
+            String ageProperty, // "AGE_7", "AGE_3", "AGE_2", or "NONE"
+            int maturityAge,
+            int xp
+    ) {}
+
+    /**
+     * Default farming XP configuration with age properties.
+     */
+    private static JsonObject getDefaultFarmingXPConfig() {
+        JsonObject json = new JsonObject();
+        JsonObject actions = new JsonObject();
+        actions.addProperty("animal_feed_breed", 250);
+        actions.addProperty("animal_feed_grow", 25);
+        actions.addProperty("shear_sheep", 150);
+        json.add("actions", actions);
+
+        JsonArray blocks = new JsonArray();
+        record FarmingBlock(String block, int xp, String ageProperty, int maturityAge) {}
+        FarmingBlock[] defaults = new FarmingBlock[] {
+                new FarmingBlock("block.minecraft.wheat", 275, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.carrots", 275, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.potatoes", 300, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.beetroots", 250, "AGE_3", 3),
+                new FarmingBlock("block.minecraft.melon", 100, "NONE", -1),
+                new FarmingBlock("block.minecraft.nether_wart", 350, "AGE_3", 3),
+                new FarmingBlock("block.minecraft.cocoa", 250, "AGE_2", 2)
+        };
+        for (FarmingBlock fb : defaults) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("block", fb.block());
+            entry.addProperty("xp", fb.xp());
+            entry.addProperty("age_property", fb.ageProperty());
+            entry.addProperty("maturity_age", fb.maturityAge());
+            blocks.add(entry);
+        }
+        json.add("blocks", blocks);
+        return json;
+    }
+
+    /**
+     * Gets the crop configuration for a block translation key.
+     */
+    public static CropConfig getCropConfig(String blockTranslationKey) {
+        return CROP_CONFIGS.get(blockTranslationKey);
+    }
+
+    /**
+     * Checks if a block is configured as a crop.
+     */
+    public static boolean isCropBlock(String blockTranslationKey) {
+        return CROP_CONFIGS.containsKey(blockTranslationKey);
+    }
     
     /**
      * Checks if the fishing speed bonus is enabled.
@@ -1673,82 +1774,6 @@ public class ConfigManager {
             Simpleskills.LOGGER.warn("Error loading fishing_loot.json: {}", e.getMessage());
         }
     }
-
-	/**
-	 * Loads farming XP mappings from farming_xp.json.
-	 */
-	private static void loadFarmingXPConfig() {
-		Path filePath = CONFIG_DIR.resolve("farming_xp.json");
-		try {
-			JsonObject json = loadJsonFile(filePath, getDefaultFarmingXPConfig());
-			FARMING_ACTION_XP_MAP.clear();
-			FARMING_BLOCK_XP_MAP.clear();
-			if (json.has("actions") && json.get("actions").isJsonObject()) {
-				JsonObject actions = json.getAsJsonObject("actions");
-				for (Map.Entry<String, JsonElement> entry : actions.entrySet()) {
-					int xp = entry.getValue().getAsInt();
-					if (xp >= 0) {
-						FARMING_ACTION_XP_MAP.put(entry.getKey(), xp);
-					}
-				}
-			}
-			if (json.has("blocks") && json.get("blocks").isJsonArray()) {
-				for (JsonElement element : json.getAsJsonArray("blocks")) {
-					JsonObject mapping = element.getAsJsonObject();
-					String block = mapping.get("block").getAsString();
-					int xp = mapping.get("xp").getAsInt();
-					if (xp >= 0) {
-						FARMING_BLOCK_XP_MAP.put(block, xp);
-					}
-				}
-			}
-			Simpleskills.LOGGER.info("Loaded farming_xp.json");
-		} catch (JsonSyntaxException e) {
-			Simpleskills.LOGGER.error("JSON syntax error in farming_xp.json: {}", e.getMessage());
-		} catch (IOException e) {
-			Simpleskills.LOGGER.error("Error loading farming_xp.json: {}", e.getMessage());
-		}
-	}
-
-	/**
-	 * Default farming XP configuration.
-	 */
-	private static JsonObject getDefaultFarmingXPConfig() {
-		JsonObject json = new JsonObject();
-		JsonObject actions = new JsonObject();
-		actions.addProperty("animal_feed_breed", 250);
-		actions.addProperty("animal_feed_grow", 25);
-		actions.addProperty("shear_sheep", 150);
-		json.add("actions", actions);
-
-		JsonArray blocks = new JsonArray();
-		record FarmingBlock(String block, int xp) {}
-		FarmingBlock[] defaults = new FarmingBlock[] {
-			new FarmingBlock("block.minecraft.wheat", 275),
-			new FarmingBlock("block.minecraft.carrots", 275),
-			new FarmingBlock("block.minecraft.potatoes", 300),
-			new FarmingBlock("block.minecraft.beetroots", 250),
-			new FarmingBlock("block.minecraft.melon", 100),
-			new FarmingBlock("block.minecraft.nether_wart", 350),
-			new FarmingBlock("block.minecraft.cocoa", 250)
-		};
-		for (FarmingBlock fb : defaults) {
-			JsonObject entry = new JsonObject();
-			entry.addProperty("block", fb.block());
-			entry.addProperty("xp", fb.xp());
-			blocks.add(entry);
-		}
-		json.add("blocks", blocks);
-		return json;
-	}
-
-	public static int getFarmingActionXP(String actionKey, Skills skill) {
-		return FARMING_ACTION_XP_MAP.getOrDefault(actionKey, getBaseXP(skill));
-	}
-
-	public static int getFarmingBlockXP(String blockTranslationKey) {
-		return FARMING_BLOCK_XP_MAP.getOrDefault(blockTranslationKey, 0);
-	}
 
     private static JsonObject getDefaultFishingLootConfig() {
         JsonObject json = new JsonObject();
@@ -1878,18 +1903,11 @@ public class ConfigManager {
     }
 
     /**
-     * Gets the prayer display name for a given status effect ID.
-     *
-     * @param effectId The ID of the status effect (e.g., "minecraft:luck").
-     * @return The custom prayer name, or null if not found.
+     * Gets the prayer sacrifice configuration for an item.
      */
-    public static String getPrayerName(String effectId) {
-        for (PrayerSacrifice sacrifice : PRAYER_SACRIFICES.values()) {
-            if (sacrifice.effect().equals(effectId)) {
-                return sacrifice.displayName();
-            }
-        }
-        return null;
+    public static int getFarmingActionXP(String actionKey, Skills skill) {
+        return FARMING_ACTION_XP_MAP.getOrDefault(actionKey, getBaseXP(skill));
+
     }
 
     /**
