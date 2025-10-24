@@ -1016,8 +1016,9 @@ public class ConfigManager {
         defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 55));
         defaults.add(new BlockMapping("block.minecraft.mud", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.clay", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.sand", "EXCAVATING", 50));
         defaults.add(new BlockMapping("block.minecraft.gravel", "EXCAVATING", 55));
+        defaults.add(new BlockMapping("block.minecraft.sand", "EXCAVATING", 50));
+        defaults.add(new BlockMapping("block.minecraft.soul_sand", "EXCAVATING", 55));
         defaults.add(new BlockMapping("block.minecraft.red_sand", "EXCAVATING", 50));
 
         // Concrete powder blocks

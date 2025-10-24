@@ -262,7 +262,7 @@ The Smithing bonus stacks with the Crafting bonus: a Grandmaster Crafted Pickaxe
 ---
 
 ### Prayer
-Sacrifice rare items for powerful buffs.
+Sacrifice rare items for powerful buffs by right-clicking on a lit candle of any size or color with the selected item.
 
 Fully customizable: create your own sacrifices and effects!
 
