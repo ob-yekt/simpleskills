@@ -15,6 +15,7 @@
     "CRAFTING.CraftingScreenHandlerMixin",
     "DEFENSE.ArmorRestrictionMixin",
     "DEFENSE.InventoryCheckMixin",
+    "DEFENSE.LivingEntityShieldMixin",
     "FARMING.AnimalFeedingXPMixin",
     "FARMING.ComposterBlockMixin",
     "FARMING.HoeItemMixin",

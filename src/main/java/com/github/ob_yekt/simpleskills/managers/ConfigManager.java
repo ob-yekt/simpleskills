@@ -31,8 +31,8 @@ public class ConfigManager {
     private static final Map<String, SkillRequirement> TOOL_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> ARMOR_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> WEAPON_REQUIREMENTS = new HashMap<>();
-    private static final Map<String, SkillRequirement> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
-
+    private static final Map<String, List<SkillRequirement>> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
+    private static int enchantmentXpPerLevelSquared = 100;
     public static final Map<String, PrayerSacrifice> PRAYER_SACRIFICES = new HashMap<>();
     private static final Map<String, Integer> COOKING_XP_MAP = new HashMap<>();
     private static final Map<String, Float> COOKING_MULTIPLIER_MAP = new HashMap<>();
@@ -334,23 +334,43 @@ public class ConfigManager {
         Path filePath = CONFIG_DIR.resolve("enchantment_requirements.json");
         try {
             JsonObject json = loadJsonFile(filePath, getDefaultEnchantmentRequirements());
-            for (var entry : json.entrySet()) {
-                String enchantmentId = entry.getKey();
-                JsonObject data = entry.getValue().getAsJsonObject();
-                String skillId = data.get("skill").getAsString();
-                int level = data.get("level").getAsInt();
-                Integer enchantmentLevel = data.has("enchantmentLevel") ? data.get("enchantmentLevel").getAsInt() : null;
-                try {
-                    Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        ENCHANTMENT_REQUIREMENTS.put(enchantmentId, new SkillRequirement(skill, level, enchantmentLevel));
-                    } else {
-                        Simpleskills.LOGGER.warn("Invalid level for enchantment {} in enchantment_requirements.json", enchantmentId);
+            ENCHANTMENT_REQUIREMENTS.clear();
+
+            // Load XP multiplier
+            if (json.has("enchantment_xp_per_level_squared")) {
+                enchantmentXpPerLevelSquared = json.get("enchantment_xp_per_level_squared").getAsInt();
+            }
+
+            // Load requirements
+            if (json.has("requirements")) {
+                JsonObject requirements = json.getAsJsonObject("requirements");
+                for (var entry : requirements.entrySet()) {
+                    String enchantmentId = entry.getKey();
+                    JsonArray reqArray = entry.getValue().getAsJsonArray();
+                    List<SkillRequirement> reqList = new ArrayList<>();
+
+                    for (JsonElement reqElement : reqArray) {
+                        JsonObject reqObj = reqElement.getAsJsonObject();
+                        String skillId = reqObj.get("skill").getAsString();
+                        int level = reqObj.get("level").getAsInt();
+                        int enchLevel = reqObj.get("enchantmentLevel").getAsInt();
+
+                        try {
+                            Skills skill = Skills.valueOf(skillId.toUpperCase());
+                            if (level >= 0 && enchLevel > 0) {
+                                reqList.add(new SkillRequirement(skill, level, enchLevel));
+                            }
+                        } catch (IllegalArgumentException e) {
+                            Simpleskills.LOGGER.warn("Invalid skill {} for enchantment {}", skillId, enchantmentId);
+                        }
                     }
-                } catch (IllegalArgumentException e) {
-                    Simpleskills.LOGGER.warn("Invalid skill {} for enchantment {} in enchantment_requirements.json", skillId, enchantmentId);
+
+                    if (!reqList.isEmpty()) {
+                        ENCHANTMENT_REQUIREMENTS.put(enchantmentId, reqList);
+                    }
                 }
             }
+            Simpleskills.LOGGER.info("Loaded enchantment_requirements.json");
         } catch (JsonSyntaxException e) {
             Simpleskills.LOGGER.error("JSON syntax error in enchantment_requirements.json: {}", e.getMessage());
         } catch (IOException e) {
@@ -515,7 +535,7 @@ public class ConfigManager {
                 new CookingMapping("item.minecraft.cooked_mutton", 185),
                 new CookingMapping("item.minecraft.cooked_chicken", 185),     // Nerfed to compete with baseline meats
                 new CookingMapping("item.minecraft.cooked_salmon", 200),     // Higher than meats to reward fishing effort
-                new CookingMapping("item.minecraft.cooked_cod", 190),        // Same as salmon
+                new CookingMapping("item.minecraft.cooked_cod", 195),        // Same as salmon
                 new CookingMapping("item.minecraft.cooked_rabbit", 285),     // Increased for rarity and biome specificity
 
                 new CookingMapping("item.minecraft.baked_potato", 150),      // Commonly eaten, easy to get
@@ -527,7 +547,9 @@ public class ConfigManager {
                 new CookingMapping("item.minecraft.pumpkin_pie", 400),       // Buffed for complexity and for needing 3 ingredients
                 new CookingMapping("item.minecraft.mushroom_stew", 300),     // Boosted for biome-specific mushrooms
                 new CookingMapping("item.minecraft.beetroot_soup", 300),     // Never made/eaten
-                new CookingMapping("item.minecraft.rabbit_stew", 750)        // Never made/eaten
+                new CookingMapping("item.minecraft.rabbit_stew", 750),        // Never made/eaten
+                new CookingMapping("item.minecraft.suspicious_stew", 250),        // Never made/eaten
+                new CookingMapping("block.minecraft.cake", 1250)        // Never made/eaten
         };
         for (CookingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -621,6 +643,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:diamond_axe", 4500),        // 3 diamonds
 
                 // Special Items
+                new CraftingMapping("minecraft:shield", 750),
                 new CraftingMapping("minecraft:mace", 7500),
                 new CraftingMapping("minecraft:crossbow", 1500),
                 new CraftingMapping("minecraft:bow", 700)
@@ -1482,7 +1505,10 @@ public class ConfigManager {
                 new ToolRequirement("minecraft:netherite_pickaxe", "MINING", 99),
                 new ToolRequirement("minecraft:netherite_axe", "WOODCUTTING", 99),
                 new ToolRequirement("minecraft:netherite_shovel", "EXCAVATING", 99),
-                new ToolRequirement("minecraft:netherite_hoe", "FARMING", 99)
+                new ToolRequirement("minecraft:netherite_hoe", "FARMING", 99),
+
+                // Shield
+                new ToolRequirement("minecraft:shield", "DEFENSE", 5)
         };
 
         for (ToolRequirement req : defaults) {
@@ -1791,26 +1817,65 @@ public class ConfigManager {
      */
     private static JsonObject getDefaultEnchantmentRequirements() {
         JsonObject json = new JsonObject();
-        record EnchantmentRequirement(String id, String skill, int level, int enchantmentLevel) {
-        }
-        EnchantmentRequirement[] defaults = {
-                new EnchantmentRequirement("minecraft:fortune", "ENCHANTING", 25, 3),
-                new EnchantmentRequirement("minecraft:sharpness", "ENCHANTING", 50, 5),
-                new EnchantmentRequirement("minecraft:power", "ENCHANTING", 50, 5),
-                new EnchantmentRequirement("minecraft:efficiency", "ENCHANTING", 75, 5),
-                new EnchantmentRequirement("minecraft:mending", "ENCHANTING", 99, 1)
-        };
-        for (EnchantmentRequirement req : defaults) {
-            JsonObject entry = new JsonObject();
-            entry.addProperty("skill", req.skill);
-            entry.addProperty("level", req.level);
-            if (req.enchantmentLevel > 0) {
-                entry.addProperty("enchantmentLevel", req.enchantmentLevel);
-            }
-            json.add(req.id, entry);
-        }
+        json.addProperty("enchantment_xp_per_level_squared", 100);
+
+        JsonObject requirements = new JsonObject();
+
+        // Efficiency
+        JsonArray efficiencyReqs = new JsonArray();
+        JsonObject eff1 = new JsonObject();
+        eff1.addProperty("enchantmentLevel", 4);
+        eff1.addProperty("skill", "ENCHANTING");
+        eff1.addProperty("level", 15);
+        efficiencyReqs.add(eff1);
+
+        JsonObject eff5 = new JsonObject();
+        eff5.addProperty("enchantmentLevel", 5);
+        eff5.addProperty("skill", "ENCHANTING");
+        eff5.addProperty("level", 75);
+        efficiencyReqs.add(eff5);
+        requirements.add("minecraft:efficiency", efficiencyReqs);
+
+        // Fortune
+        JsonArray fortuneReqs = new JsonArray();
+        JsonObject fort3 = new JsonObject();
+        fort3.addProperty("enchantmentLevel", 3);
+        fort3.addProperty("skill", "ENCHANTING");
+        fort3.addProperty("level", 25);
+        fortuneReqs.add(fort3);
+        requirements.add("minecraft:fortune", fortuneReqs);
+
+        // Sharpness
+        JsonArray sharpReqs = new JsonArray();
+        JsonObject sharp5 = new JsonObject();
+        sharp5.addProperty("enchantmentLevel", 5);
+        sharp5.addProperty("skill", "ENCHANTING");
+        sharp5.addProperty("level", 50);
+        sharpReqs.add(sharp5);
+        requirements.add("minecraft:sharpness", sharpReqs);
+
+        // Power
+        JsonArray powerReqs = new JsonArray();
+        JsonObject pow5 = new JsonObject();
+        pow5.addProperty("enchantmentLevel", 5);
+        pow5.addProperty("skill", "ENCHANTING");
+        pow5.addProperty("level", 50);
+        powerReqs.add(pow5);
+        requirements.add("minecraft:power", powerReqs);
+
+        // Mending
+        JsonArray mendingReqs = new JsonArray();
+        JsonObject mend1 = new JsonObject();
+        mend1.addProperty("enchantmentLevel", 1);
+        mend1.addProperty("skill", "ENCHANTING");
+        mend1.addProperty("level", 99);
+        mendingReqs.add(mend1);
+        requirements.add("minecraft:mending", mendingReqs);
+
+        json.add("requirements", requirements);
         return json;
     }
+
     /**
      * Represents a prayer sacrifice configuration with effect level and ambient status.
      */
@@ -1961,10 +2026,31 @@ public class ConfigManager {
     }
 
     /**
-     * Gets the requirement for an enchantment or related block.
+     * Gets the requirement for an enchantment at a specific level.
+     * Returns the requirement that matches the exact enchantment level, or null if none exists.
      */
-    public static SkillRequirement getEnchantmentRequirement(String id) {
-        return ENCHANTMENT_REQUIREMENTS.get(id);
+    public static SkillRequirement getEnchantmentRequirement(String enchantmentId, int enchantmentLevel) {
+        List<SkillRequirement> requirements = ENCHANTMENT_REQUIREMENTS.get(enchantmentId);
+        if (requirements == null || requirements.isEmpty()) {
+            return null;
+        }
+
+        // Look for an exact match first
+        for (SkillRequirement req : requirements) {
+            if (req.getEnchantmentLevel() != null && req.getEnchantmentLevel() == enchantmentLevel) {
+                return req;
+            }
+        }
+
+        // No exact match found - no requirement for this level
+        return null;
+    }
+
+    /**
+     * Add getter for XP multiplier:
+     */
+    public static int getEnchantmentXpPerLevelSquared() {
+        return enchantmentXpPerLevelSquared;
     }
 
     /**

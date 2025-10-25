@@ -66,40 +66,67 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
 
     @Unique
     private void processSmithingOperation(ServerPlayerEntity serverPlayer, ItemStack stack) {
+        if (!isNetheriteToolUpgrade(stack)) {
+            Simpleskills.LOGGER.debug("processSmithingOperation: Not a netherite upgrade, skipping");
+            return;
+        }
+
+        // Check if lore already exists to prevent duplication
+        if (hasSmithingLore(stack)) {
+            Simpleskills.LOGGER.debug("processSmithingOperation: Item already has smithing lore, skipping");
+            return;
+        }
+
         XPManager.addXPWithNotification(serverPlayer, Skills.SMITHING, 20000);
         applySmithingLore(stack, serverPlayer);
 
-        if (isNetheriteToolUpgrade(stack)) {
-            ItemStack newStack = applySmithingDurabilityScaling(stack, serverPlayer);
-            SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
-            handler.getSlot(3).setStack(newStack);
+        ItemStack newStack = applySmithingDurabilityScaling(stack, serverPlayer);
+        SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
+        handler.getSlot(3).setStack(newStack);
 
-            if (stack != newStack) {
-                stack.set(DataComponentTypes.MAX_DAMAGE, newStack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null));
-                stack.set(DataComponentTypes.LORE, newStack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of())));
-            }
-        } else {
-            Simpleskills.LOGGER.debug("processSmithingOperation: Not a netherite tool or armor upgrade for output: {}", stack.getItem());
+        if (stack != newStack) {
+            stack.set(DataComponentTypes.MAX_DAMAGE, newStack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null));
+            stack.set(DataComponentTypes.LORE, newStack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of())));
         }
     }
 
     @Unique
     private boolean isNetheriteToolUpgrade(ItemStack outputStack) {
         SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
-        Slot inputSlot0 = handler.getSlot(1);
-        Slot inputSlot1 = handler.getSlot(2);
-        Item outputItem = outputStack.getItem();
-        Item inputItem0 = inputSlot0.getStack().getItem();
-        Item inputItem1 = inputSlot1.getStack().getItem();
+        Slot templateSlot = handler.getSlot(0); // Template slot (index 0)
+        Slot materialSlot = handler.getSlot(2); // Material slot (index 2)
 
-        boolean isUpgrade = inputItem1 == Items.NETHERITE_INGOT;
+        Item templateItem = templateSlot.getStack().getItem();
+        Item materialItem = materialSlot.getStack().getItem();
+
+        // Check if it's specifically a netherite upgrade (not trims or other smithing operations)
+        boolean isUpgrade = templateItem == Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE
+                && materialItem == Items.NETHERITE_INGOT;
 
         Simpleskills.LOGGER.debug(
-                "isNetheriteToolUpgrade: output={}, input0={}, input1={}, result={}",
-                outputItem, inputItem0, inputItem1, isUpgrade
+                "isNetheriteToolUpgrade: output={}, template={}, material={}, result={}",
+                outputStack.getItem(), templateItem, materialItem, isUpgrade
         );
 
         return isUpgrade;
+    }
+
+    @Unique
+    private boolean hasSmithingLore(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+
+        LoreComponent loreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
+        List<Text> loreLines = loreComponent.lines();
+
+        // Check if any lore line contains "Upgraded by" to detect existing smithing lore
+        for (Text line : loreLines) {
+            String loreText = line.getString();
+            if (loreText.contains("Upgraded by") && loreText.contains("Smith)")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Unique
@@ -133,7 +160,6 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         float smithingMultiplier = ConfigManager.getSmithingMultiplier(smithingLevel);
 
         int newMax = Math.max(1, Math.round((vanillaNetheriteDurability + craftingBonus) * smithingMultiplier));
-        Integer currentOutputDurability = stack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null);
 
         Simpleskills.LOGGER.debug(
                 "applySmithingDurabilityScaling: Input durability={}, Vanilla diamond durability={}, Crafting bonus={}, Vanilla Netherite durability={}, Final durability={} for {} (player={}, smithing lvl={}, smithing multiplier={})",

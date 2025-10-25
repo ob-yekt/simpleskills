@@ -26,6 +26,9 @@ Welcome to **simpleskills**, the ultimate server-side Fabric mod that transforms
 
 Perfect for casual SMPs, lets-players, hardcore survival servers, streamers, or solo players who want a richer Minecraft experience.
 
+### Want longer days and shorter nights or stonecutter that works on wood etc.? I highly recommend also checking out my compatible mod 'simpleqol' on [Modrinth](https://modrinth.com/mod/simpleqol) or [GitHub](https://github.com/ob-yekt/simpleqol)!
+
+
 ---
 
 ## 🛠 Skills to Master
@@ -154,10 +157,24 @@ Lock powerful enchantments from being used at an anvil to specific levels, defau
 - Fortune III: Level 25
 - Sharpness V: Level 50
 - Power V: Level 50
+- Efficiency IV: Level 15
 - Efficiency V: Level 75
 - Mending: Level 99
 
 No more rushing and cycling trades for Mending villagers; you have to earn it! You can also offer your enchanting services to other players, creating an economy.
+
+Enchanting XP is earned through applying enchantments to items on an Anvil or Enchanting Table.
+
+Enchanting Table XP logic:
+
+`int XP = multiplier * level * level;`
+
+So:
+* 1 level as the enchantment table cost → 50 × 1² = 50 XP -> 100 XP with standard mode XP multiplier (2x)
+* 10 levels as the enchantment table cost → 50 × 10² = 5,000 XP -> 10,000 XP with standard mode XP multiplier (2x)
+* 30 levels as the enchantment table cost → 50 × 30² = 45,000 XP -> 90,000 XP with standard mode XP multiplier (2x)
+
+Customizable by adjusting `enchantment_xp_per_level_squared": 100` in enchantment_requirements.json
 
 ---
 
@@ -173,24 +190,24 @@ Default (customizable):
 
 The customizable Cooking XP table is also designed to encourage other food types, not just the usual porkchops, mutton, and beef.
 
-| Item                | XP  |
-|---------------------|-----|
-| Cooked Porkchop     | 185 |
-| Cooked Beef         | 185 |
-| Cooked Mutton       | 185 |
-| Cooked Chicken      | 185 |
-| Cooked Salmon       | 200 |
-| Cooked Cod          | 190 |
-| Cooked Rabbit       | 285 |
-| Baked Potato        | 150 |
-| Golden Carrot       | 230 |
-| Golden Apple        | 800 |
-| Bread               | 210 |
-| Cookie              | 35  |
-| Pumpkin Pie         | 400 |
-| Mushroom Stew       | 300 |
-| Beetroot Soup       | 300 |
-| Rabbit Stew         | 750 |
+| Item                | XP (2x these for standard mode) |
+|---------------------|---------------------------------|
+| Cooked Porkchop     | 185                             |
+| Cooked Beef         | 185                             |
+| Cooked Mutton       | 185                             |
+| Cooked Chicken      | 185                             |
+| Cooked Salmon       | 200                             |
+| Cooked Cod          | 190                             |
+| Cooked Rabbit       | 285                             |
+| Baked Potato        | 150                             |
+| Golden Carrot       | 230                             |
+| Golden Apple        | 800                             |
+| Bread               | 210                             |
+| Cookie              | 35                              |
+| Pumpkin Pie         | 400                             |
+| Mushroom Stew       | 300                             |
+| Beetroot Soup       | 300                             |
+| Rabbit Stew         | 750                             |
 
 ---
 
@@ -210,7 +227,7 @@ Brew potions with boosted durations, defaulted to:
 * Farming unlocks the ability to use higher tiers of Hoe tools.
 * Players also gain 1% per level of farming to grant an **extra drop** when harvesting crops, to a max of 99% at level 99.
 
-**Animals:**
+**Animals:** 
 - Breeding animals: **250 XP**
 - Feeding baby animals: **25 XP** (per food item)
 - Shearing sheep: **150 XP**
@@ -224,6 +241,7 @@ Brew potions with boosted durations, defaulted to:
 - Nether Wart: **350 XP**
 - Cocoa: **250 XP**
 
+(2x these for standard mode)
 You can customize these XP values in `farming_xp.json`.
 
 ---
@@ -331,7 +349,5 @@ Configs live in `server_root\config\simpleskills`, making it easy to craft the p
 4. **Play**: Jump in and start leveling up!
 
 **Questions?** You can message me on Discord: **obyekt**, or check out the [GitHub](https://github.com/ob-yekt/simpleskills).
-
-### I highly recommend checking out my compatible mod 'simpleqol' on [Modrinth](https://modrinth.com/mod/simpleqol) or [GitHub](https://github.com/ob-yekt/simpleqol)!
 
 ## Level up your world with simpleskills.

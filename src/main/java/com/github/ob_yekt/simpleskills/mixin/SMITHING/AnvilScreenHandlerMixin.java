@@ -193,12 +193,15 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler imple
                     .getId(enchantment);
             if (enchantmentId == null) continue;
 
-            SkillRequirement requirement = ConfigManager.getEnchantmentRequirement(enchantmentId.toString());
+            // Pass the enchantment level to check for the appropriate requirement
+            SkillRequirement requirement = ConfigManager.getEnchantmentRequirement(enchantmentId.toString(), enchantmentLevel);
             int playerEnchantingLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.ENCHANTING);
 
-            if (requirement != null && enchantmentLevel >= requirement.getEnchantmentLevel() && playerEnchantingLevel < requirement.getLevel()) {
+            if (requirement != null && playerEnchantingLevel < requirement.getLevel()) {
                 hasRestrictedEnchantment = true;
-                serverPlayer.sendMessage(Text.literal("§6[simpleskills]§f You need ENCHANTING level " + requirement.getLevel() + " to apply " + enchantmentId.getPath() + " level " + enchantmentLevel + "!"), true);
+                String enchantName = enchantmentId.getPath().replace("_", " ");
+                serverPlayer.sendMessage(Text.literal("§6[simpleskills]§f You need ENCHANTING level " +
+                        requirement.getLevel() + " to apply " + enchantName + " " + enchantmentLevel + "!"), true);
                 break;
             }
         }

@@ -64,6 +64,12 @@ public abstract class ForgingScreenHandlerMixin {
     private void handleSmithingQuickMove(ServerPlayerEntity serverPlayer, SmithingScreenHandler handler, ItemStack resultStack) {
         // Check if this is a netherite tool upgrade
         if (isNetheriteToolUpgrade(handler, resultStack)) {
+            // Check if lore already exists to prevent duplication
+            if (hasSmithingLore(resultStack)) {
+                Simpleskills.LOGGER.debug("ForgingScreenHandlerMixin: Item already has smithing lore, skipping");
+                return;
+            }
+
             Simpleskills.LOGGER.debug("ForgingScreenHandlerMixin: Handling smithing quick move for player {}, output: {}",
                     serverPlayer.getName().getString(), resultStack.getItem());
 
@@ -85,8 +91,33 @@ public abstract class ForgingScreenHandlerMixin {
 
     @Unique
     private boolean isNetheriteToolUpgrade(SmithingScreenHandler handler, ItemStack outputStack) {
-        Slot inputSlot1 = handler.getSlot(2); // Material (e.g., netherite ingot)
-        return inputSlot1.getStack().isOf(Items.NETHERITE_INGOT);
+        Slot templateSlot = handler.getSlot(0); // Template slot (index 0)
+        Slot materialSlot = handler.getSlot(2); // Material slot (index 2)
+
+        Item templateItem = templateSlot.getStack().getItem();
+        Item materialItem = materialSlot.getStack().getItem();
+
+        // Check if it's specifically a netherite upgrade (not trims or other smithing operations)
+        return templateItem == Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE
+                && materialItem == Items.NETHERITE_INGOT;
+    }
+
+    @Unique
+    private boolean hasSmithingLore(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+
+        LoreComponent loreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
+        List<Text> loreLines = loreComponent.lines();
+
+        // Check if any lore line contains "Upgraded by" to detect existing smithing lore
+        for (Text line : loreLines) {
+            String loreText = line.getString();
+            if (loreText.contains("Upgraded by") && loreText.contains("Smith)")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Unique

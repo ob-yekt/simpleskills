@@ -29,8 +29,9 @@ public class EnchantingScreenHandlerMixin {
         // Get the enchantment level for the selected option (buttonId is 0-2)
         int level = handler.enchantmentPower[buttonId];
         if (level > 0) {
-            // Grant XP based on the enchantment level
-            int XP = 100 * level * level; // Level = level requirement of enchant (max level table enchant = 30)
+            // Grant XP based on the enchantment level using the configurable multiplier from config
+            int multiplier = ConfigManager.getEnchantmentXpPerLevelSquared();
+            int XP = multiplier * level * level;
             XPManager.addXPWithNotification(player, Skills.ENCHANTING, XP);
         }
     }
