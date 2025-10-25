@@ -114,7 +114,8 @@ Unlock tools and armor as you level up, with **fully customizable** unlock tiers
 | Diamond       | 75             |  
 | Netherite     | 99             |  
 
-### NOTE!: _simpleskills_ allows the Copper Pickaxe to mine the same ores as an [Iron Pickaxe](https://minecraft.wiki/w/Tiers#Mining_level).
+### NOTE!: _simpleskills_ allows the Copper Pickaxe to mine the _same ores_ as an [Iron Pickaxe](https://minecraft.wiki/w/Tiers#Mining_level) for balancing reasons.
+Shields require level 5 DEFENSE by default and can be adjusted in `tool_requirements.json`
 
 | Weapon   | Required Level |  
 |----------|----------------|  
