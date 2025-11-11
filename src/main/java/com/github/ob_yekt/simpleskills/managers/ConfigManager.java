@@ -159,8 +159,8 @@ public class ConfigManager {
         JsonObject json = new JsonObject();
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
-        json.addProperty("standard_xp_multiplier", 2.0);
-        json.addProperty("ironman_xp_multiplier", 0.8);
+        json.addProperty("standard_xp_multiplier", 1.0);
+        json.addProperty("ironman_xp_multiplier", 0.5);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
         json.addProperty("level_up_effects_enabled", true);
@@ -919,25 +919,7 @@ public class ConfigManager {
                 "mangrove", "cherry", "bamboo", "pale_oak", "crimson", "warped"
         };
 
-        // Stone/mineral types for pattern matching
-        String[] stoneTypes = {
-                "stone", "cobblestone", "mossy_cobblestone", "smooth_stone",
-                "granite", "polished_granite", "diorite", "polished_diorite",
-                "andesite", "polished_andesite", "deepslate", "cobbled_deepslate",
-                "polished_deepslate", "deepslate_bricks", "cracked_deepslate_bricks",
-                "deepslate_tiles", "cracked_deepslate_tiles", "chiseled_deepslate",
-                "tuff", "polished_tuff", "tuff_bricks", "chiseled_tuff",
-                "basalt", "smooth_basalt", "polished_basalt", "blackstone",
-                "polished_blackstone", "polished_blackstone_bricks",
-                "chiseled_polished_blackstone", "cracked_polished_blackstone",
-                "gilded_blackstone", "obsidian", "crying_obsidian",
-                "quartz_block", "smooth_quartz", "chiseled_quartz_block",
-                "quartz_bricks", "prismarine", "prismarine_bricks", "dark_prismarine",
-                "purpur_block", "purpur_pillar", "end_stone", "end_stone_bricks",
-                "sandstone", "red_sandstone", "smooth_sandstone", "smooth_red_sandstone",
-                "chiseled_sandstone", "chiseled_red_sandstone", "cut_sandstone",
-                "cut_red_sandstone", "calcite", "dripstone_block"
-        };
+        // Stone/mineral pattern list removed to allow hardness-based defaults for mining
 
         List<BlockMapping> defaults = new ArrayList<>();
 
@@ -952,105 +934,39 @@ public class ConfigManager {
             }
         }
 
-        for (String wood : woodTypes) {
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_planks", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_stairs", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_slab", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_fence", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_fence_gate", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_door", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_trapdoor", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_shelf", "WOODCUTTING", 100));
+        defaults.add(new BlockMapping("block.minecraft.bamboo_sapling", "WOODCUTTING", 10));
+        defaults.add(new BlockMapping("block.minecraft.bamboo", "WOODCUTTING", 10));
 
-            if (!wood.equals("crimson") && !wood.equals("warped")) {
-                defaults.add(new BlockMapping("block.minecraft." + wood + "_wood", "WOODCUTTING", 100));
-                defaults.add(new BlockMapping("block.minecraft.stripped_" + wood + "_wood", "WOODCUTTING", 100));
-            } else {
-                defaults.add(new BlockMapping("block.minecraft." + wood + "_hyphae", "WOODCUTTING", 100));
-                defaults.add(new BlockMapping("block.minecraft.stripped_" + wood + "_hyphae", "WOODCUTTING", 100));
-            }
-        }
-
-        defaults.add(new BlockMapping("block.minecraft.bamboo_block", "WOODCUTTING", 100));
-        defaults.add(new BlockMapping("block.minecraft.stripped_bamboo_block", "WOODCUTTING", 100));
-
-        // === MINING MAPPINGS ===
-        for (String stone : stoneTypes) {
-            int xp = 100;
-            if (stone.contains("sandstone")) {
-                xp = 30; // override sandstone family
-            }
-            if (stone.contains("deepslate")) {
-                xp = 200; // override deepslate family
-            }
-
-            defaults.add(new BlockMapping("block.minecraft." + stone, "MINING", xp));
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_slab", "MINING", xp));
-            }
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite") &&
-                    !stone.equals("obsidian") && !stone.endsWith("_pillar")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_stairs", "MINING", xp));
-            }
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite") &&
-                    !stone.equals("obsidian") && !stone.endsWith("_pillar") &&
-                    !stone.contains("smooth") && !stone.contains("cut")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_wall", "MINING", xp));
-            }
-        }
-
-        defaults.add(new BlockMapping("block.minecraft.netherrack", "MINING", 30));
+        // === MINING MAPPINGS (ORE OVERRIDES ONLY) ===
 
         // Mining: Overworld and Deepslate Ores (keeping original values)
         defaults.add(new BlockMapping("block.minecraft.coal_ore", "MINING", 250));           // 100 * 2.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_coal_ore", "MINING", 250));
+
         defaults.add(new BlockMapping("block.minecraft.copper_ore", "MINING", 250));         // 100 * 2.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_copper_ore", "MINING", 250));
+
         defaults.add(new BlockMapping("block.minecraft.iron_ore", "MINING", 350));           // 100 * 3.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_iron_ore", "MINING", 350));
+
         defaults.add(new BlockMapping("block.minecraft.redstone_ore", "MINING", 450));       // 100 * 4.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_redstone_ore", "MINING", 450));
+
         defaults.add(new BlockMapping("block.minecraft.gold_ore", "MINING", 550));           // 100 * 5.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_gold_ore", "MINING", 550));
+
         defaults.add(new BlockMapping("block.minecraft.lapis_ore", "MINING", 550));          // 100 * 5.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_lapis_ore", "MINING", 550));
+
         defaults.add(new BlockMapping("block.minecraft.emerald_ore", "MINING", 850));        // 100 * 8.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_emerald_ore", "MINING", 850));
-        defaults.add(new BlockMapping("block.minecraft.diamond_ore", "MINING", 1500));       // 100 * 10.5
+
+        defaults.add(new BlockMapping("block.minecraft.diamond_ore", "MINING", 1500));       // 100 * 15
         defaults.add(new BlockMapping("block.minecraft.deepslate_diamond_ore", "MINING", 1500));
 
         // Mining: Nether Ores
         defaults.add(new BlockMapping("block.minecraft.nether_quartz_ore", "MINING", 150));  // 100 * 1.5
         defaults.add(new BlockMapping("block.minecraft.nether_gold_ore", "MINING", 150));    // More common than overworld gold
-
-        // === EXCAVATION MAPPINGS ===
-
-        // Excavation: Dirt-type blocks
-        defaults.add(new BlockMapping("block.minecraft.dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.grass_block", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.podzol", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.coarse_dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.rooted_dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.mycelium", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.farmland", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.mud", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.clay", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.gravel", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.sand", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.soul_sand", "EXCAVATING", 55));
-        defaults.add(new BlockMapping("block.minecraft.red_sand", "EXCAVATING", 50));
-
-        // Concrete powder blocks
-        String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime",
-                "pink", "gray", "light_gray", "cyan", "purple", "blue",
-                "brown", "green", "red", "black"};
-        for (String color : colors) {
-            defaults.add(new BlockMapping("block.minecraft." + color + "_concrete_powder", "EXCAVATING", 50));
-        }
 
         // Convert to JSON
         for (BlockMapping mapping : defaults) {
@@ -2002,6 +1918,15 @@ public class ConfigManager {
      */
     public static int getBlockXP(String blockTranslationKey, Skills skill) {
         return BLOCK_XP_MAP.getOrDefault(blockTranslationKey, getBaseXP(skill));
+    }
+
+    /**
+     * Returns the configured XP override for a specific block if present,
+     * otherwise null. Useful for allowing dynamic defaults (e.g., hardness-based)
+     * with explicit per-block overrides via block_mappings.json.
+     */
+    public static Integer getBlockXPOverride(String blockTranslationKey) {
+        return BLOCK_XP_MAP.containsKey(blockTranslationKey) ? BLOCK_XP_MAP.get(blockTranslationKey) : null;
     }
 
     /**

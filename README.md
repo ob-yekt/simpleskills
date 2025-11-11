@@ -130,11 +130,18 @@ Affected items comes with **lore text** (e.g., *“Requires level 50 Defense”*
 
 ---
 
-## 🎣 Skill Highlights: Your Path to Mastery
+## Skill Highlights: Your Path to Mastery
 
 Here’s a taste of what each skill offers:
 
-### Fishing
+### ⛏️ Mining, 🥄 Excavating, and 🪓 Woodcutting
+- Gain XP based on the hardness and required tool of broken blocks.
+- Customize block overrides in block_mappings.json
+- Ores do not grant XP if mined with Silk Touch.
+
+---
+
+### 🎣 Fishing
 - **Faster Catches**: +0.5% speed per level (up to +49.5% at 99).
 - **Fully Reworked Loot Tables**: Unlock better treasures as you level:
 

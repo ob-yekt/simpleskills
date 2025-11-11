@@ -30,7 +30,7 @@ public class XPManager {
     static {
         JsonObject config = ConfigManager.getFeatureConfig();
         STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
-        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
+        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.5);
         XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
         XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
         LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);
@@ -63,17 +63,17 @@ public class XPManager {
         return 1;
     }
 
-    /// XP-SYSTEM
+    /// IMPROVED XP-SYSTEM
 
-    // Curve parameters
-    private static final double EXPONENT_P = 2.45;
-    private static final double SCALING_A  = 300.0;
-    private static final double FLOOR_B    = 500.0;
+// Curve parameters tuned for ~45 min to level 25 (wood+stone) and exactly 20.4 hours to level 99
+    private static final double SCALING_A  = 50.751;
+    private static final double EXPONENT_P = 2.672;
+    private static final double OFFSET_K   = 0.295;
 
     public static int getExperienceForLevel(int level) {
         if (level <= 1) return 0;
-        double L = level - 1;
-        return (int) Math.floor(SCALING_A * Math.pow(L, EXPONENT_P) + FLOOR_B * L);
+        double base = Math.pow(1.0 + OFFSET_K, EXPONENT_P);
+        return (int) Math.floor(SCALING_A * (Math.pow((double) level + OFFSET_K, EXPONENT_P) - base));
     }
 
     public static int getLevelForExperience(int experience) {
@@ -225,7 +225,7 @@ public class XPManager {
     public static void reloadConfig() {
         JsonObject config = ConfigManager.getFeatureConfig();
         STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
-        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
+        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.5);
         XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
         XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
         LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);

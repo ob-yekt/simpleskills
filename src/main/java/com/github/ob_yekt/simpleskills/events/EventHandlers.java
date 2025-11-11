@@ -125,15 +125,31 @@ public class EventHandlers {
                 return;
             }
 
-            // Check for other skill-based blocks
+            // Determine skill: prefer explicit config; otherwise infer by mineable tool tag
             Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
+            Integer overrideXP = ConfigManager.getBlockXPOverride(blockTranslationKey);
             if (relevantSkill == null) {
-                return;
+                if (state.isIn(BlockTags.PICKAXE_MINEABLE)) {
+                    relevantSkill = Skills.MINING;
+                } else if (state.isIn(BlockTags.SHOVEL_MINEABLE)) {
+                    relevantSkill = Skills.EXCAVATING;
+                } else if (state.isIn(BlockTags.AXE_MINEABLE)) {
+                    relevantSkill = Skills.WOODCUTTING;
+                } else {
+                    return;
+                }
             }
 
             // Grant XP for non-farming skills
             if (relevantSkill != Skills.FARMING) {
-                int xp = ConfigManager.getBlockXP(blockTranslationKey, relevantSkill);
+                int xp;
+                if (overrideXP != null) {
+                    xp = overrideXP;
+                } else {
+                    // Hardness-based default: hardness 1.5 -> 100 XP
+                    float hardness = state.getHardness(world, pos);
+                    xp = Math.max(0, Math.round(hardness * (100.0f / 1.5f)));
+                }
                 XPManager.addXPWithNotification(serverPlayer, relevantSkill, xp);
             }
         });
@@ -288,7 +304,7 @@ public class EventHandlers {
             Skills skill = requirement.getSkill();
             int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), skill);
             if (playerLevel < requirement.getLevel()) {
-                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this!",
+                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
                 return ActionResult.FAIL;
             }
