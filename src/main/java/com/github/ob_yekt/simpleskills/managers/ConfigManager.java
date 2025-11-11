@@ -394,9 +394,9 @@ public class ConfigManager {
 
     private static JsonObject getDefaultCombatConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("slaying_xp_per_damage", 100.0f);
-        json.addProperty("ranged_xp_per_damage", 250.0f);
-        json.addProperty("defense_xp_per_damage", 400.0f);
+        json.addProperty("slaying_xp_per_damage", 50.0f);
+        json.addProperty("ranged_xp_per_damage", 125.0f);
+        json.addProperty("defense_xp_per_damage", 200.0f);
         json.addProperty("slaying_min_damage_threshold", 2.0f);
         json.addProperty("ranged_min_damage_threshold", 2.0f);
         json.addProperty("defense_min_damage_threshold", 2.0f);
@@ -1850,7 +1850,7 @@ public class ConfigManager {
         PrayerSacrificeConfig[] defaults = new PrayerSacrificeConfig[]{
                 // Tier 1: 1h (72,000 ticks), novice buffs
                 new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 15000, 0, "minecraft:luck", 72000, "Prayer I: Luck", 1, true),
-                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 30000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
+                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 20000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
                 new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 12000, 0, "minecraft:dolphins_grace", 72000, "Prayer I: Dolphin's Grace", 1, true),
                 // Tier 2: 2h (144000 ticks), journeyman buffs
                 new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 18000, 25, "minecraft:slow_falling", 216000, "Prayer III: Slow Falling", 1, true),
