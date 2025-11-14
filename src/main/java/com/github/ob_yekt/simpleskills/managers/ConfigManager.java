@@ -260,8 +260,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        TOOL_REQUIREMENTS.put(toolId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        TOOL_REQUIREMENTS.put(toolId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for tool {} in tool_requirements.json", toolId);
                     }
@@ -287,8 +288,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        ARMOR_REQUIREMENTS.put(armorId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        ARMOR_REQUIREMENTS.put(armorId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for armor {} in armor_requirements.json", armorId);
                     }
@@ -314,8 +316,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        WEAPON_REQUIREMENTS.put(weaponId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        WEAPON_REQUIREMENTS.put(weaponId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for weapon {} in weapon_requirements.json", weaponId);
                     }
@@ -1431,6 +1434,7 @@ public class ConfigManager {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;
@@ -1494,6 +1498,7 @@ public class ConfigManager {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;
@@ -1548,6 +1553,7 @@ public class ConfigManager {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;

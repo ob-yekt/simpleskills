@@ -85,6 +85,7 @@ public class EventHandlers {
             if (requirement != null) {
                 Skills requiredSkill = requirement.getSkill();
                 int requiredLevel = requirement.getLevel();
+                int requiredPrestige = requirement.getRequiredPrestige();
 
                 int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), requiredSkill);
                 if (playerLevel < requiredLevel) {
@@ -93,6 +94,18 @@ public class EventHandlers {
                             requiredSkill.getDisplayName(), requiredLevel
                     )), true);
                     return false; // Block breaking canceled
+                }
+
+                // Prestige gate (optional)
+                if (requiredPrestige > 0) {
+                    int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                    if (playerPrestige < requiredPrestige) {
+                        serverPlayer.sendMessage(Text.literal(String.format(
+                                "§6[simpleskills]§f You need Prestige ★%d to use this tool!",
+                                requiredPrestige
+                        )), true);
+                        return false;
+                    }
                 }
             }
 
@@ -281,6 +294,16 @@ public class EventHandlers {
                 return ActionResult.FAIL;
             }
 
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                            requiredPrestige)), true);
+                    return ActionResult.FAIL;
+                }
+            }
+
             return ActionResult.PASS;
         });
 
@@ -307,6 +330,16 @@ public class EventHandlers {
                 serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
                 return ActionResult.FAIL;
+            }
+
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                            requiredPrestige)), true);
+                    return ActionResult.FAIL;
+                }
             }
 
             return ActionResult.PASS;

@@ -2,6 +2,7 @@ package com.github.ob_yekt.simpleskills.mixin.DEFENSE;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
+import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import net.minecraft.entity.EquipmentSlot;
@@ -61,6 +62,28 @@ public abstract class InventoryCheckMixin {
 
                 Simpleskills.LOGGER.debug("Removed armor {} from player {} due to insufficient {} level (required: {}, actual: {})",
                         itemId, serverPlayer.getName().getString(), requirement.getSkill().getDisplayName(), requirement.getLevel(), playerLevel);
+                continue;
+            }
+
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    String removalReason = String.format("(requires Prestige ★%d)", requiredPrestige);
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f Removed invalid armor: %s %s",
+                            equippedItem.getName().getString(), removalReason)), true);
+
+                    ItemStack armorToMove = equippedItem.copy();
+                    serverPlayer.equipStack(slot, ItemStack.EMPTY);
+                    boolean addedToInventory = serverPlayer.getInventory().insertStack(armorToMove);
+
+                    if (!addedToInventory) {
+                        serverPlayer.dropItem(armorToMove, false);
+                    }
+
+                    Simpleskills.LOGGER.debug("Removed armor {} from player {} due to insufficient prestige (required: ★{}, actual: ★{})",
+                            itemId, serverPlayer.getName().getString(), requiredPrestige, playerPrestige);
+                }
             }
         }
     }

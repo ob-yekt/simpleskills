@@ -2,6 +2,7 @@ package com.github.ob_yekt.simpleskills.mixin.DEFENSE;
 
 import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
+import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import net.minecraft.entity.LivingEntity;
@@ -61,6 +62,22 @@ public abstract class LivingEntityShieldMixin {
             // Stop blocking
             serverPlayer.stopUsingItem();
             cir.setReturnValue(false);
+            return;
+        }
+
+        int requiredPrestige = requirement.getRequiredPrestige();
+        if (requiredPrestige > 0) {
+            int playerPrestige = DatabaseManager.getInstance().getPrestige(serverPlayer.getUuidAsString());
+            if (playerPrestige < requiredPrestige) {
+                int currentTick = serverPlayer.age;
+                if (currentTick - lastShieldMessageTick > 60) {
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use a shield!",
+                            requiredPrestige)), true);
+                    lastShieldMessageTick = currentTick;
+                }
+                serverPlayer.stopUsingItem();
+                cir.setReturnValue(false);
+            }
         }
     }
 }

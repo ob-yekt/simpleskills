@@ -82,6 +82,12 @@ public class SimpleskillsCommands {
                                                         .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                         .then(CommandManager.argument("level", IntegerArgumentType.integer(1, XPManager.getMaxLevel()))
                                                                 .executes(SimpleskillsCommands::setLevel)))))
+                                .then(CommandManager.literal("setprestige")
+                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .then(CommandManager.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
+                                                .then(CommandManager.argument("value", IntegerArgumentType.integer(0))
+                                                        .executes(SimpleskillsCommands::setPrestige))))
                                 .then(CommandManager.literal("query")
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
@@ -280,6 +286,34 @@ public class SimpleskillsCommands {
         source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Set " + playerName + "'s '" + skill.getDisplayName() + "' to level " + newLevel + "."), true);
         targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your skill '" + skill.getDisplayName() + "' is now level " + newLevel + "!"), false);
         Simpleskills.LOGGER.debug("Set skill {} to level {} for player {}", skill.getDisplayName(), newLevel, playerName);
+        return 1;
+    }
+
+    private static int setPrestige(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        String playerName = StringArgumentType.getString(context, "targets");
+        int value = IntegerArgumentType.getInteger(context, "value");
+
+        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
+        if (targetPlayer == null) {
+            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
+            return 0;
+        }
+
+        DatabaseManager db = DatabaseManager.getInstance();
+        String playerUuid = targetPlayer.getUuidAsString();
+        db.ensurePlayerInitialized(playerUuid);
+
+        db.setPrestige(playerUuid, value);
+
+        // Refresh UI/attributes/name decorations to reflect new prestige
+        AttributeManager.refreshAllAttributes(targetPlayer);
+        SkillTabMenu.updateTabMenu(targetPlayer);
+        com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(targetPlayer);
+
+        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Set prestige for " + playerName + " to §6★" + value + "§f."), true);
+        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your prestige is now §6★" + value + "§f."), false);
+        Simpleskills.LOGGER.info("Set prestige for {} to {}", playerName, value);
         return 1;
     }
 
