@@ -57,7 +57,9 @@ public class LoreManager {
             String action = isSacrifice ? TO_SACRIFICE : TO_USE;
             String skillName = requirement.getSkill().getId().substring(0, 1).toUpperCase() +
                     requirement.getSkill().getId().substring(1).toLowerCase();
-            String loreText = String.format("Requires %d %s%s", requirement.getLevel(), skillName, action);
+            String prestigePart = requirement.getRequiredPrestige() > 0 ? String.format(
+                    " and Prestige ★%d", requirement.getRequiredPrestige()) : "";
+            String loreText = String.format("Requires %d %s%s%s", requirement.getLevel(), skillName, prestigePart, action);
 
             // Check existing lore to avoid duplicates
             LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));

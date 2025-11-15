@@ -2,6 +2,7 @@ package com.github.ob_yekt.simpleskills.mixin.DEFENSE;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
+import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import net.minecraft.entity.EquipmentSlot;
@@ -67,6 +68,20 @@ public abstract class ArmorRestrictionMixin {
             ci.cancel();
             Simpleskills.LOGGER.info("Prevented player {} from equipping {} due to insufficient {} level (required: {}, actual: {})",
                     player.getName().getString(), itemId, requirement.getSkill().getDisplayName(), requiredLevel, playerLevel);
+            return;
+        }
+
+        int requiredPrestige = requirement.getRequiredPrestige();
+        if (requiredPrestige > 0) {
+            int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+            if (playerPrestige < requiredPrestige) {
+                String preventReason = String.format("§6[simpleskills]§f You need Prestige ★%d to equip this item!", requiredPrestige);
+                player.sendMessage(Text.literal(preventReason), true);
+                player.dropItem(stack.copy(), false);
+                ci.cancel();
+                Simpleskills.LOGGER.info("Prevented player {} from equipping {} due to insufficient prestige (required: ★{}, actual: ★{})",
+                        player.getName().getString(), itemId, requiredPrestige, playerPrestige);
+            }
         }
     }
 }
