@@ -24,6 +24,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.particle.ParticleTypes;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,6 +109,9 @@ public class SimpleskillsCommands {
                                         .then(CommandManager.argument("skill", StringArgumentType.word())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                 .executes(SimpleskillsCommands::showIronmanSkillLeaderboard)))
+                                .then(CommandManager.literal("migratexp")
+                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .executes(SimpleskillsCommands::migrateXP))
                 ));
     }
 
@@ -226,23 +230,15 @@ public class SimpleskillsCommands {
         String skillName = StringArgumentType.getString(context, "skill");
         int amount = IntegerArgumentType.getInteger(context, "amount");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         XPManager.addXPWithNotification(targetPlayer, skill, amount);
         AttributeManager.refreshAllAttributes(targetPlayer);
@@ -260,23 +256,15 @@ public class SimpleskillsCommands {
         String skillName = StringArgumentType.getString(context, "skill");
         int newLevel = IntegerArgumentType.getInteger(context, "level");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         int newXP = XPManager.getExperienceForLevel(newLevel);
         db.savePlayerSkill(playerUuid, skill.getId(), newXP, newLevel);
@@ -294,11 +282,8 @@ public class SimpleskillsCommands {
         String playerName = StringArgumentType.getString(context, "targets");
         int value = IntegerArgumentType.getInteger(context, "value");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
@@ -322,23 +307,15 @@ public class SimpleskillsCommands {
         String playerName = StringArgumentType.getString(context, "targets");
         String skillName = StringArgumentType.getString(context, "skill");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         int level = XPManager.getSkillLevel(playerUuid, skill);
         source.sendFeedback(() -> Text.literal("§6[simpleskills]§f " + playerName + "'s '" + skill.getDisplayName() + "' level: " + level), false);
@@ -349,12 +326,8 @@ public class SimpleskillsCommands {
     private static int queryTotalLevel(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
@@ -370,13 +343,8 @@ public class SimpleskillsCommands {
         ServerCommandSource source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getSkillLeaderboard(skill.getId(), 5);
@@ -436,13 +404,8 @@ public class SimpleskillsCommands {
         ServerCommandSource source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getIronmanSkillLeaderboard(skill.getId(), 5);
@@ -504,5 +467,99 @@ public class SimpleskillsCommands {
         return Stream.of(Skills.values())
                 .map(Skills::getId)
                 .toList();
+    }
+
+    /**
+     * Helper method to get a player by name with error handling.
+     * @return The player if found, null otherwise (and sends error message)
+     */
+    private static ServerPlayerEntity getPlayerByName(ServerCommandSource source, String playerName) {
+        ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(playerName);
+        if (player == null) {
+            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
+        }
+        return player;
+    }
+
+    /**
+     * Helper method to parse a skill name with error handling.
+     * @return The skill if valid, null otherwise (and sends error message)
+     */
+    private static Skills parseSkillName(ServerCommandSource source, String skillName) {
+        try {
+            return Skills.valueOf(skillName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
+            return null;
+        }
+    }
+
+    /**
+     * Migration command to recalculate XP for all players based on the old XP system.
+     * This ensures players maintain their level from the old system in the new system.
+     * Should only be run once after updating the XP calculation formula.
+     */
+    private static int migrateXP(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        DatabaseManager db = DatabaseManager.getInstance();
+
+        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Starting XP migration... This may take a moment."), false);
+        Simpleskills.LOGGER.info("Starting XP migration for all players...");
+
+        try {
+            List<String> allPlayerUuids = db.getAllPlayerUuids();
+            int processedPlayers = 0;
+            int totalSkillsUpdated = 0;
+
+            for (String playerUuid : allPlayerUuids) {
+                Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuid);
+                int skillsUpdatedForPlayer = 0;
+
+                for (Map.Entry<String, DatabaseManager.SkillData> entry : skills.entrySet()) {
+                    String skillId = entry.getKey();
+                    DatabaseManager.SkillData skillData = entry.getValue();
+                    int currentXP = skillData.xp();
+
+                    // Skip if player has no XP
+                    if (currentXP <= 0) {
+                        continue;
+                    }
+
+                    // Calculate what level this XP would give in the OLD system
+                    int oldLevel = XPManager.getLevelForExperienceOld(currentXP);
+
+                    // Calculate what XP is needed for that level in the NEW system
+                    // The new XP will give the same level, so we can use oldLevel directly
+                    int newXP = XPManager.getExperienceForLevel(oldLevel);
+
+                    // Update database with new XP and preserved level
+                    db.savePlayerSkill(playerUuid, skillId, newXP, oldLevel);
+                    skillsUpdatedForPlayer++;
+                    totalSkillsUpdated++;
+                }
+
+                if (skillsUpdatedForPlayer > 0) {
+                    processedPlayers++;
+                    Simpleskills.LOGGER.debug("Migrated {} skills for player UUID: {}", skillsUpdatedForPlayer, playerUuid);
+                }
+            }
+
+            // Clear caches to ensure fresh data
+            // Note: We can't directly clear the cache, but the database is updated
+            // Players will get fresh data on next login or when their data is accessed
+
+            String message = String.format("§6[simpleskills]§f Migration complete! Processed %d players, updated %d skill entries.", 
+                    processedPlayers, totalSkillsUpdated);
+            source.sendFeedback(() -> Text.literal(message), true);
+            Simpleskills.LOGGER.info("XP migration complete. Processed {} players, updated {} skill entries.", 
+                    processedPlayers, totalSkillsUpdated);
+
+            return 1;
+        } catch (Exception e) {
+            String errorMsg = "§6[simpleskills]§c Migration failed: " + e.getMessage();
+            source.sendFeedback(() -> Text.literal(errorMsg).formatted(Formatting.RED), false);
+            Simpleskills.LOGGER.error("XP migration failed", e);
+            return 0;
+        }
     }
 }
