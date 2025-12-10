@@ -31,7 +31,8 @@ public class ConfigManager {
     private static final Map<String, SkillRequirement> TOOL_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> ARMOR_REQUIREMENTS = new HashMap<>();
     private static final Map<String, SkillRequirement> WEAPON_REQUIREMENTS = new HashMap<>();
-    private static final Map<String, SkillRequirement> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
+    private static final Map<String, List<SkillRequirement>> ENCHANTMENT_REQUIREMENTS = new HashMap<>();
+    private static int enchantmentXpPerLevelSquared = 100;
     public static final Map<String, PrayerSacrifice> PRAYER_SACRIFICES = new HashMap<>();
     private static final Map<String, Integer> COOKING_XP_MAP = new HashMap<>();
     private static final Map<String, Float> COOKING_MULTIPLIER_MAP = new HashMap<>();
@@ -43,6 +44,8 @@ public class ConfigManager {
     private static final Map<String, Float> ALCHEMY_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> AGILITY_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_XP_MAP = new HashMap<>();
+	private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
+    private static final Map<String, CropConfig> CROP_CONFIGS = new HashMap<>();
     private static final Map<String, Float> SMITHING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> FISHING_XP_MAP = new HashMap<>();
     private static final Map<String, Identifier> FISHING_LOOT_TABLES = new HashMap<>();
@@ -76,6 +79,7 @@ public class ConfigManager {
             loadSmithingMultiplierConfig();
             loadFishingXPConfig();
             loadFishingLootConfig();
+			loadFarmingXPConfig();
             loadCombatConfig();
             Simpleskills.LOGGER.info("All configurations initialized successfully.");
         } catch (IOException e) {
@@ -155,10 +159,11 @@ public class ConfigManager {
         JsonObject json = new JsonObject();
         json.addProperty("xp_notifications_enabled", true);
         json.addProperty("xp_notification_threshold", 10);
-        json.addProperty("standard_xp_multiplier", 2.0);
-        json.addProperty("ironman_xp_multiplier", 0.8);
+        json.addProperty("standard_xp_multiplier", 1.0);
+        json.addProperty("ironman_xp_multiplier", 0.5);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
+        json.addProperty("force_ironman_mode", false);
         json.addProperty("level_up_effects_enabled", true);
         json.addProperty("level_up_notifications_enabled", true);
         json.addProperty("item_requirements_in_tooltips_enabled", true);
@@ -166,6 +171,13 @@ public class ConfigManager {
         json.addProperty("custom_fishing_loot_enabled", true);
         json.addProperty("fishing_speed_bonus_enabled", true);
         return json;
+    }
+
+    /**
+     * Get force_ironman_mode setting.
+     */
+    public static boolean isForceIronmanModeEnabled() {
+        return featureConfig.get("force_ironman_mode").getAsBoolean();
     }
 
     /**
@@ -256,8 +268,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        TOOL_REQUIREMENTS.put(toolId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        TOOL_REQUIREMENTS.put(toolId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for tool {} in tool_requirements.json", toolId);
                     }
@@ -283,8 +296,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        ARMOR_REQUIREMENTS.put(armorId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        ARMOR_REQUIREMENTS.put(armorId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for armor {} in armor_requirements.json", armorId);
                     }
@@ -310,8 +324,9 @@ public class ConfigManager {
                 int level = data.get("level").getAsInt();
                 try {
                     Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        WEAPON_REQUIREMENTS.put(weaponId, new SkillRequirement(skill, level, null));
+                    int prestige = data.has("prestige") ? data.get("prestige").getAsInt() : 0;
+                    if (level >= 0 && prestige >= 0) {
+                        WEAPON_REQUIREMENTS.put(weaponId, new SkillRequirement(skill, level, null, prestige));
                     } else {
                         Simpleskills.LOGGER.warn("Invalid level for weapon {} in weapon_requirements.json", weaponId);
                     }
@@ -330,23 +345,43 @@ public class ConfigManager {
         Path filePath = CONFIG_DIR.resolve("enchantment_requirements.json");
         try {
             JsonObject json = loadJsonFile(filePath, getDefaultEnchantmentRequirements());
-            for (var entry : json.entrySet()) {
-                String enchantmentId = entry.getKey();
-                JsonObject data = entry.getValue().getAsJsonObject();
-                String skillId = data.get("skill").getAsString();
-                int level = data.get("level").getAsInt();
-                Integer enchantmentLevel = data.has("enchantmentLevel") ? data.get("enchantmentLevel").getAsInt() : null;
-                try {
-                    Skills skill = Skills.valueOf(skillId.toUpperCase());
-                    if (level >= 0) {
-                        ENCHANTMENT_REQUIREMENTS.put(enchantmentId, new SkillRequirement(skill, level, enchantmentLevel));
-                    } else {
-                        Simpleskills.LOGGER.warn("Invalid level for enchantment {} in enchantment_requirements.json", enchantmentId);
+            ENCHANTMENT_REQUIREMENTS.clear();
+
+            // Load XP multiplier
+            if (json.has("enchantment_xp_per_level_squared")) {
+                enchantmentXpPerLevelSquared = json.get("enchantment_xp_per_level_squared").getAsInt();
+            }
+
+            // Load requirements
+            if (json.has("requirements")) {
+                JsonObject requirements = json.getAsJsonObject("requirements");
+                for (var entry : requirements.entrySet()) {
+                    String enchantmentId = entry.getKey();
+                    JsonArray reqArray = entry.getValue().getAsJsonArray();
+                    List<SkillRequirement> reqList = new ArrayList<>();
+
+                    for (JsonElement reqElement : reqArray) {
+                        JsonObject reqObj = reqElement.getAsJsonObject();
+                        String skillId = reqObj.get("skill").getAsString();
+                        int level = reqObj.get("level").getAsInt();
+                        int enchLevel = reqObj.get("enchantmentLevel").getAsInt();
+
+                        try {
+                            Skills skill = Skills.valueOf(skillId.toUpperCase());
+                            if (level >= 0 && enchLevel > 0) {
+                                reqList.add(new SkillRequirement(skill, level, enchLevel));
+                            }
+                        } catch (IllegalArgumentException e) {
+                            Simpleskills.LOGGER.warn("Invalid skill {} for enchantment {}", skillId, enchantmentId);
+                        }
                     }
-                } catch (IllegalArgumentException e) {
-                    Simpleskills.LOGGER.warn("Invalid skill {} for enchantment {} in enchantment_requirements.json", skillId, enchantmentId);
+
+                    if (!reqList.isEmpty()) {
+                        ENCHANTMENT_REQUIREMENTS.put(enchantmentId, reqList);
+                    }
                 }
             }
+            Simpleskills.LOGGER.info("Loaded enchantment_requirements.json");
         } catch (JsonSyntaxException e) {
             Simpleskills.LOGGER.error("JSON syntax error in enchantment_requirements.json: {}", e.getMessage());
         } catch (IOException e) {
@@ -370,9 +405,9 @@ public class ConfigManager {
 
     private static JsonObject getDefaultCombatConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("slaying_xp_per_damage", 25.0f);
-        json.addProperty("ranged_xp_per_damage", 25.0f);
-        json.addProperty("defense_xp_per_damage", 100.0f);
+        json.addProperty("slaying_xp_per_damage", 50.0f);
+        json.addProperty("ranged_xp_per_damage", 125.0f);
+        json.addProperty("defense_xp_per_damage", 200.0f);
         json.addProperty("slaying_min_damage_threshold", 2.0f);
         json.addProperty("ranged_min_damage_threshold", 2.0f);
         json.addProperty("defense_min_damage_threshold", 2.0f);
@@ -497,8 +532,6 @@ public class ConfigManager {
         }
     }
 
-
-
     /**
      * Default cooking XP configuration.
      */
@@ -508,25 +541,26 @@ public class ConfigManager {
         record CookingMapping(String item, int xp) {
         }
         CookingMapping[] defaults = {
-                new CookingMapping("item.minecraft.cooked_porkchop", 180),
-                new CookingMapping("item.minecraft.cooked_beef", 180),
-                new CookingMapping("item.minecraft.cooked_mutton", 180),
-                new CookingMapping("item.minecraft.cooked_chicken", 225),     // Boosted to compete with baseline meats
-                new CookingMapping("item.minecraft.cooked_salmon", 150),     // Higher to reward fishing effort
-                new CookingMapping("item.minecraft.cooked_cod", 150),        // Same as salmon
+                new CookingMapping("item.minecraft.cooked_porkchop", 185),
+                new CookingMapping("item.minecraft.cooked_beef", 185),
+                new CookingMapping("item.minecraft.cooked_mutton", 185),
+                new CookingMapping("item.minecraft.cooked_chicken", 185),     // Nerfed to compete with baseline meats
+                new CookingMapping("item.minecraft.cooked_salmon", 200),     // Higher than meats to reward fishing effort
+                new CookingMapping("item.minecraft.cooked_cod", 195),        // Same as salmon
                 new CookingMapping("item.minecraft.cooked_rabbit", 285),     // Increased for rarity and biome specificity
 
-                new CookingMapping("item.minecraft.baked_potato", 130),      // Commonly eaten, easy to get
+                new CookingMapping("item.minecraft.baked_potato", 150),      // Commonly eaten, easy to get
                 new CookingMapping("item.minecraft.golden_carrot", 230),     // Slightly higher for gold and carrot effort
-                new CookingMapping("item.minecraft.golden_apple", 450),     // Increased for rare apples and gold ingots
+                new CookingMapping("item.minecraft.golden_apple", 800),     // Increased for rare apples and gold ingots
 
-                new CookingMapping("item.minecraft.bread", 130),             // Commonly eaten, easy to get
-                new CookingMapping("item.minecraft.cookie", 40),             // Per-cookie, total 320 for 8, for cocoa rarity
-                new CookingMapping("item.minecraft.cake", 750),             // Higher for complex ingredients
-                new CookingMapping("item.minecraft.pumpkin_pie", 350),       // Never made/eaten
-                new CookingMapping("item.minecraft.mushroom_stew", 285),     // Boosted for biome-specific mushrooms
-                new CookingMapping("item.minecraft.beetroot_soup", 285),     // Never made/eaten
-                new CookingMapping("item.minecraft.rabbit_stew", 350)        // Never made/eaten
+                new CookingMapping("item.minecraft.bread", 210),             // Commonly eaten, but need 3 wheat
+                new CookingMapping("item.minecraft.cookie", 35),             // Per-cookie, total 280 for 8, for cocoa rarity is just same recipe with bread but one coco and one wheat less
+                new CookingMapping("item.minecraft.pumpkin_pie", 400),       // Buffed for complexity and for needing 3 ingredients
+                new CookingMapping("item.minecraft.mushroom_stew", 300),     // Boosted for biome-specific mushrooms
+                new CookingMapping("item.minecraft.beetroot_soup", 300),     // Never made/eaten
+                new CookingMapping("item.minecraft.rabbit_stew", 750),        // Never made/eaten
+                new CookingMapping("item.minecraft.suspicious_stew", 250),        // Never made/eaten
+                new CookingMapping("block.minecraft.cake", 1250)        // Never made/eaten
         };
         for (CookingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -557,6 +591,7 @@ public class ConfigManager {
         CraftingMapping[] defaults = {
         // Wood (Base XP: 100 per plank)
         new CraftingMapping("minecraft:wood_shovel", 100),     // 1 plank
+                new CraftingMapping("minecraft:wood_spear", 100),     // 1 plank
                 new CraftingMapping("minecraft:wood_hoe", 200),        // 2 planks
                 new CraftingMapping("minecraft:wood_sword", 200),      // 2 planks
                 new CraftingMapping("minecraft:wood_pickaxe", 300),    // 3 planks
@@ -570,6 +605,7 @@ public class ConfigManager {
 
                 // Stone (Base XP: 150 per cobblestone)
                 new CraftingMapping("minecraft:stone_shovel", 150),    // 1 cobblestone
+                new CraftingMapping("minecraft:stone_spear", 150),    // 1 cobblestone
                 new CraftingMapping("minecraft:stone_hoe", 300),       // 2 cobblestone
                 new CraftingMapping("minecraft:stone_sword", 300),     // 2 cobblestone
                 new CraftingMapping("minecraft:stone_pickaxe", 450),   // 3 cobblestone
@@ -581,6 +617,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:golden_leggings", 5600),    // 7 gold ingots
                 new CraftingMapping("minecraft:golden_boots", 3200),       // 4 gold ingots
                 new CraftingMapping("minecraft:golden_shovel", 800),       // 1 gold ingot
+                new CraftingMapping("minecraft:golden_spear", 800),       // 1 gold ingot
                 new CraftingMapping("minecraft:golden_hoe", 1600),         // 2 gold ingots
                 new CraftingMapping("minecraft:golden_sword", 1600),       // 2 gold ingots
                 new CraftingMapping("minecraft:golden_pickaxe", 2400),     // 3 gold ingots
@@ -592,6 +629,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:copper_leggings", 2450),    // 7 copper ingots
                 new CraftingMapping("minecraft:copper_boots", 1400),       // 4 copper ingots
                 new CraftingMapping("minecraft:copper_shovel", 350),       // 1 copper ingot
+                new CraftingMapping("minecraft:copper_spear", 350),       // 1 copper ingot
                 new CraftingMapping("minecraft:copper_hoe", 700),          // 2 copper ingots
                 new CraftingMapping("minecraft:copper_sword", 700),        // 2 copper ingots
                 new CraftingMapping("minecraft:copper_pickaxe", 1050),     // 3 copper ingots
@@ -603,6 +641,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:iron_leggings", 4900),      // 7 iron ingots
                 new CraftingMapping("minecraft:iron_boots", 2800),         // 4 iron ingots
                 new CraftingMapping("minecraft:iron_shovel", 700),         // 1 iron ingot
+                new CraftingMapping("minecraft:iron_spear", 700),         // 1 iron ingot
                 new CraftingMapping("minecraft:iron_hoe", 1400),           // 2 iron ingots
                 new CraftingMapping("minecraft:iron_sword", 1400),         // 2 iron ingots
                 new CraftingMapping("minecraft:iron_pickaxe", 2100),       // 3 iron ingots
@@ -614,12 +653,14 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:diamond_leggings", 10500),   // 7 diamonds
                 new CraftingMapping("minecraft:diamond_boots", 6000),      // 4 diamonds
                 new CraftingMapping("minecraft:diamond_shovel", 1500),     // 1 diamond
+                new CraftingMapping("minecraft:diamond_spear", 1500),     // 1 diamond
                 new CraftingMapping("minecraft:diamond_hoe", 3000),        // 2 diamonds
                 new CraftingMapping("minecraft:diamond_sword", 3000),      // 2 diamonds
                 new CraftingMapping("minecraft:diamond_pickaxe", 4500),    // 3 diamonds
                 new CraftingMapping("minecraft:diamond_axe", 4500),        // 3 diamonds
 
                 // Special Items
+                new CraftingMapping("minecraft:shield", 750),
                 new CraftingMapping("minecraft:mace", 7500),
                 new CraftingMapping("minecraft:crossbow", 1500),
                 new CraftingMapping("minecraft:bow", 700)
@@ -895,25 +936,7 @@ public class ConfigManager {
                 "mangrove", "cherry", "bamboo", "pale_oak", "crimson", "warped"
         };
 
-        // Stone/mineral types for pattern matching
-        String[] stoneTypes = {
-                "stone", "cobblestone", "mossy_cobblestone", "smooth_stone",
-                "granite", "polished_granite", "diorite", "polished_diorite",
-                "andesite", "polished_andesite", "deepslate", "cobbled_deepslate",
-                "polished_deepslate", "deepslate_bricks", "cracked_deepslate_bricks",
-                "deepslate_tiles", "cracked_deepslate_tiles", "chiseled_deepslate",
-                "tuff", "polished_tuff", "tuff_bricks", "chiseled_tuff",
-                "basalt", "smooth_basalt", "polished_basalt", "blackstone",
-                "polished_blackstone", "polished_blackstone_bricks",
-                "chiseled_polished_blackstone", "cracked_polished_blackstone",
-                "gilded_blackstone", "obsidian", "crying_obsidian",
-                "quartz_block", "smooth_quartz", "chiseled_quartz_block",
-                "quartz_bricks", "prismarine", "prismarine_bricks", "dark_prismarine",
-                "purpur_block", "purpur_pillar", "end_stone", "end_stone_bricks",
-                "sandstone", "red_sandstone", "smooth_sandstone", "smooth_red_sandstone",
-                "chiseled_sandstone", "chiseled_red_sandstone", "cut_sandstone",
-                "cut_red_sandstone", "calcite", "dripstone_block"
-        };
+        // Stone/mineral pattern list removed to allow hardness-based defaults for mining
 
         List<BlockMapping> defaults = new ArrayList<>();
 
@@ -928,114 +951,39 @@ public class ConfigManager {
             }
         }
 
-        for (String wood : woodTypes) {
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_planks", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_stairs", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_slab", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_fence", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_fence_gate", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_door", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_trapdoor", "WOODCUTTING", 100));
-            defaults.add(new BlockMapping("block.minecraft." + wood + "_shelf", "WOODCUTTING", 100));
+        defaults.add(new BlockMapping("block.minecraft.bamboo_sapling", "WOODCUTTING", 10));
+        defaults.add(new BlockMapping("block.minecraft.bamboo", "WOODCUTTING", 10));
 
-            if (!wood.equals("crimson") && !wood.equals("warped")) {
-                defaults.add(new BlockMapping("block.minecraft." + wood + "_wood", "WOODCUTTING", 100));
-                defaults.add(new BlockMapping("block.minecraft.stripped_" + wood + "_wood", "WOODCUTTING", 100));
-            } else {
-                defaults.add(new BlockMapping("block.minecraft." + wood + "_hyphae", "WOODCUTTING", 100));
-                defaults.add(new BlockMapping("block.minecraft.stripped_" + wood + "_hyphae", "WOODCUTTING", 100));
-            }
-        }
-
-        defaults.add(new BlockMapping("block.minecraft.bamboo_block", "WOODCUTTING", 100));
-        defaults.add(new BlockMapping("block.minecraft.stripped_bamboo_block", "WOODCUTTING", 100));
-
-        // === MINING MAPPINGS ===
-        for (String stone : stoneTypes) {
-            int xp = 100;
-            if (stone.contains("sandstone")) {
-                xp = 30; // override sandstone family
-            }
-
-            defaults.add(new BlockMapping("block.minecraft." + stone, "MINING", xp));
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_slab", "MINING", xp));
-            }
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite") &&
-                    !stone.equals("obsidian") && !stone.endsWith("_pillar")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_stairs", "MINING", xp));
-            }
-
-            if (!stone.equals("crying_obsidian") && !stone.equals("calcite") &&
-                    !stone.equals("obsidian") && !stone.endsWith("_pillar") &&
-                    !stone.contains("smooth") && !stone.contains("cut")) {
-                defaults.add(new BlockMapping("block.minecraft." + stone + "_wall", "MINING", xp));
-            }
-        }
-
-        defaults.add(new BlockMapping("block.minecraft.netherrack", "MINING", 10));
+        // === MINING MAPPINGS (ORE OVERRIDES ONLY) ===
 
         // Mining: Overworld and Deepslate Ores (keeping original values)
         defaults.add(new BlockMapping("block.minecraft.coal_ore", "MINING", 250));           // 100 * 2.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_coal_ore", "MINING", 250));
+
         defaults.add(new BlockMapping("block.minecraft.copper_ore", "MINING", 250));         // 100 * 2.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_copper_ore", "MINING", 250));
+
         defaults.add(new BlockMapping("block.minecraft.iron_ore", "MINING", 350));           // 100 * 3.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_iron_ore", "MINING", 350));
+
         defaults.add(new BlockMapping("block.minecraft.redstone_ore", "MINING", 450));       // 100 * 4.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_redstone_ore", "MINING", 450));
+
         defaults.add(new BlockMapping("block.minecraft.gold_ore", "MINING", 550));           // 100 * 5.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_gold_ore", "MINING", 550));
+
         defaults.add(new BlockMapping("block.minecraft.lapis_ore", "MINING", 550));          // 100 * 5.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_lapis_ore", "MINING", 550));
+
         defaults.add(new BlockMapping("block.minecraft.emerald_ore", "MINING", 850));        // 100 * 8.5
         defaults.add(new BlockMapping("block.minecraft.deepslate_emerald_ore", "MINING", 850));
-        defaults.add(new BlockMapping("block.minecraft.diamond_ore", "MINING", 1500));       // 100 * 10.5
+
+        defaults.add(new BlockMapping("block.minecraft.diamond_ore", "MINING", 1500));       // 100 * 15
         defaults.add(new BlockMapping("block.minecraft.deepslate_diamond_ore", "MINING", 1500));
 
         // Mining: Nether Ores
         defaults.add(new BlockMapping("block.minecraft.nether_quartz_ore", "MINING", 150));  // 100 * 1.5
         defaults.add(new BlockMapping("block.minecraft.nether_gold_ore", "MINING", 150));    // More common than overworld gold
-
-        // === EXCAVATION MAPPINGS ===
-
-        // Excavation: Dirt-type blocks
-        defaults.add(new BlockMapping("block.minecraft.dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.grass_block", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.podzol", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.coarse_dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.rooted_dirt", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.mycelium", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.farmland", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.dirt_path", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.mud", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.clay", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.sand", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.gravel", "EXCAVATING", 50));
-        defaults.add(new BlockMapping("block.minecraft.red_sand", "EXCAVATING", 50));
-
-        // Concrete powder blocks
-        String[] colors = {"white", "orange", "magenta", "light_blue", "yellow", "lime",
-                "pink", "gray", "light_gray", "cyan", "purple", "blue",
-                "brown", "green", "red", "black"};
-        for (String color : colors) {
-            defaults.add(new BlockMapping("block.minecraft." + color + "_concrete_powder", "EXCAVATING", 50));
-        }
-
-        // === FARMING MAPPINGS ===
-
-        // Farming: Crops
-        defaults.add(new BlockMapping("block.minecraft.wheat", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.carrots", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.potatoes", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.beetroots", "FARMING", 250));
-        defaults.add(new BlockMapping("block.minecraft.melon", "FARMING", 300));
-        defaults.add(new BlockMapping("block.minecraft.bamboo", "FARMING", 10));
-        defaults.add(new BlockMapping("block.minecraft.kelp", "FARMING", 10));
-        defaults.add(new BlockMapping("block.minecraft.nether_wart", "FARMING", 350));
-        defaults.add(new BlockMapping("block.minecraft.cocoa", "FARMING", 250));
 
         // Convert to JSON
         for (BlockMapping mapping : defaults) {
@@ -1091,29 +1039,29 @@ public class ConfigManager {
         JsonArray mappings = new JsonArray();
         record SmithingMapping(String action, float xp) {}
         SmithingMapping[] defaults = {
-                new SmithingMapping("repair:minecraft:oak_planks", 100f),
-                new SmithingMapping("repair:minecraft:spruce_planks", 100f),
-                new SmithingMapping("repair:minecraft:birch_planks", 100f),
-                new SmithingMapping("repair:minecraft:jungle_planks", 100f),
-                new SmithingMapping("repair:minecraft:acacia_planks", 100f),
-                new SmithingMapping("repair:minecraft:dark_oak_planks", 100f),
-                new SmithingMapping("repair:minecraft:mangrove_planks", 100f),
-                new SmithingMapping("repair:minecraft:cherry_planks", 100f),
-                new SmithingMapping("repair:minecraft:bamboo_planks", 100f),
-                new SmithingMapping("repair:minecraft:crimson_planks", 100f),
-                new SmithingMapping("repair:minecraft:warped_planks", 100f),
-                new SmithingMapping("repair:minecraft:pale_oak_planks", 100f),
-                new SmithingMapping("repair:minecraft:cobblestone", 100f),
-                new SmithingMapping("repair:minecraft:cobbled_deepslate", 100f),
-                new SmithingMapping("repair:minecraft:blackstone", 100f),
-                new SmithingMapping("repair:minecraft:leather", 100f),
-                new SmithingMapping("repair:minecraft:copper_ingot", 100f),
-                new SmithingMapping("repair:minecraft:gold_ingot", 100f),
-                new SmithingMapping("repair:minecraft:turtle_scute", 100f),
-                new SmithingMapping("repair:minecraft:iron_ingot", 100f),
-                new SmithingMapping("repair:minecraft:phantom_membrane", 100f),
-                new SmithingMapping("repair:minecraft:diamond", 100f),
-                new SmithingMapping("repair:minecraft:netherite_ingot", 100f)
+                new SmithingMapping("repair:minecraft:oak_planks", 50f),
+                new SmithingMapping("repair:minecraft:spruce_planks", 50f),
+                new SmithingMapping("repair:minecraft:birch_planks", 50f),
+                new SmithingMapping("repair:minecraft:jungle_planks", 50f),
+                new SmithingMapping("repair:minecraft:acacia_planks", 50f),
+                new SmithingMapping("repair:minecraft:dark_oak_planks", 50f),
+                new SmithingMapping("repair:minecraft:mangrove_planks", 50f),
+                new SmithingMapping("repair:minecraft:cherry_planks", 50f),
+                new SmithingMapping("repair:minecraft:bamboo_planks", 50f),
+                new SmithingMapping("repair:minecraft:crimson_planks", 50f),
+                new SmithingMapping("repair:minecraft:warped_planks", 50f),
+                new SmithingMapping("repair:minecraft:pale_oak_planks", 50f),
+                new SmithingMapping("repair:minecraft:cobblestone", 50f),
+                new SmithingMapping("repair:minecraft:cobbled_deepslate", 50f),
+                new SmithingMapping("repair:minecraft:blackstone", 50f),
+                new SmithingMapping("repair:minecraft:leather", 50f),
+                new SmithingMapping("repair:minecraft:copper_ingot", 50f),
+                new SmithingMapping("repair:minecraft:gold_ingot", 50f),
+                new SmithingMapping("repair:minecraft:turtle_scute", 50f),
+                new SmithingMapping("repair:minecraft:iron_ingot", 50f),
+                new SmithingMapping("repair:minecraft:phantom_membrane", 50f),
+                new SmithingMapping("repair:minecraft:diamond", 50f),
+                new SmithingMapping("repair:minecraft:netherite_ingot", 50f)
         };
         for (SmithingMapping mapping : defaults) {
             JsonObject entry = new JsonObject();
@@ -1490,13 +1438,17 @@ public class ConfigManager {
                 new ToolRequirement("minecraft:netherite_pickaxe", "MINING", 99),
                 new ToolRequirement("minecraft:netherite_axe", "WOODCUTTING", 99),
                 new ToolRequirement("minecraft:netherite_shovel", "EXCAVATING", 99),
-                new ToolRequirement("minecraft:netherite_hoe", "FARMING", 99)
+                new ToolRequirement("minecraft:netherite_hoe", "FARMING", 99),
+
+                // Shield
+                new ToolRequirement("minecraft:shield", "DEFENSE", 5)
         };
 
         for (ToolRequirement req : defaults) {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;
@@ -1560,6 +1512,7 @@ public class ConfigManager {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;
@@ -1576,37 +1529,44 @@ public class ConfigManager {
                 // Wooden Weapons
                 new WeaponRequirement("minecraft:wooden_sword", "SLAYING", 0),
                 new WeaponRequirement("minecraft:wooden_axe", "SLAYING", 0),
+                new WeaponRequirement("minecraft:wooden_spear", "SLAYING", 0),
 
                 // Golden Weapons
                 new WeaponRequirement("minecraft:golden_sword", "SLAYING", 5),
                 new WeaponRequirement("minecraft:golden_axe", "SLAYING", 5),
+                new WeaponRequirement("minecraft:golden_spear", "SLAYING", 5),
 
                 // Stone Weapons
                 new WeaponRequirement("minecraft:stone_sword", "SLAYING", 10),
                 new WeaponRequirement("minecraft:stone_axe", "SLAYING", 10),
+                new WeaponRequirement("minecraft:stone_spear", "SLAYING", 10),
 
                 // Copper Weapons
                 new WeaponRequirement("minecraft:copper_sword", "SLAYING", 25),
                 new WeaponRequirement("minecraft:copper_axe", "SLAYING", 25),
+                new WeaponRequirement("minecraft:copper_spear", "SLAYING", 25),
 
                 // Iron Weapons
                 new WeaponRequirement("minecraft:iron_sword", "SLAYING", 50),
                 new WeaponRequirement("minecraft:iron_axe", "SLAYING", 50),
+                new WeaponRequirement("minecraft:iron_spear", "SLAYING", 50),
 
                 // Diamond Weapons
                 new WeaponRequirement("minecraft:diamond_sword", "SLAYING", 75),
                 new WeaponRequirement("minecraft:diamond_axe", "SLAYING", 75),
+                new WeaponRequirement("minecraft:diamond_spear", "SLAYING", 75),
 
                 // Netherite Weapons
                 new WeaponRequirement("minecraft:netherite_sword", "SLAYING", 99),
                 new WeaponRequirement("minecraft:netherite_axe", "SLAYING", 99),
+                new WeaponRequirement("minecraft:netherite_spear", "SLAYING", 99),
 
                 // Unique / Misc Weapons
-                new WeaponRequirement("minecraft:mace", "SLAYING", 80),
+                new WeaponRequirement("minecraft:mace", "SLAYING", 50),
 
                 // Ranged Weapons (grouped separately)
                 new WeaponRequirement("minecraft:crossbow", "RANGED", 0),
-                new WeaponRequirement("minecraft:bow", "RANGED", 50),
+                new WeaponRequirement("minecraft:bow", "RANGED", 30),
                 new WeaponRequirement("minecraft:trident", "RANGED", 99)
         };
 
@@ -1614,9 +1574,111 @@ public class ConfigManager {
             JsonObject entry = new JsonObject();
             entry.addProperty("skill", req.skill);
             entry.addProperty("level", req.level);
+            entry.addProperty("prestige", 0);
             json.add(req.id, entry);
         }
         return json;
+    }
+
+    /**
+     * Loads farming XP mappings from farming_xp.json with enhanced crop configuration.
+     */
+    private static void loadFarmingXPConfig() {
+        Path filePath = CONFIG_DIR.resolve("farming_xp.json");
+        try {
+            JsonObject json = loadJsonFile(filePath, getDefaultFarmingXPConfig());
+            FARMING_ACTION_XP_MAP.clear();
+            CROP_CONFIGS.clear();
+
+            if (json.has("actions") && json.get("actions").isJsonObject()) {
+                JsonObject actions = json.getAsJsonObject("actions");
+                for (Map.Entry<String, JsonElement> entry : actions.entrySet()) {
+                    int xp = entry.getValue().getAsInt();
+                    if (xp >= 0) {
+                        FARMING_ACTION_XP_MAP.put(entry.getKey(), xp);
+                    }
+                }
+            }
+
+            if (json.has("blocks") && json.get("blocks").isJsonArray()) {
+                for (JsonElement element : json.getAsJsonArray("blocks")) {
+                    JsonObject mapping = element.getAsJsonObject();
+                    String block = mapping.get("block").getAsString();
+                    int xp = mapping.get("xp").getAsInt();
+
+                    // New fields for crop configuration
+                    String ageProperty = mapping.has("age_property") ? mapping.get("age_property").getAsString() : "NONE";
+                    int maturityAge = mapping.has("maturity_age") ? mapping.get("maturity_age").getAsInt() : -1;
+
+                    if (xp >= 0) {
+                        CROP_CONFIGS.put(block, new CropConfig(block, ageProperty, maturityAge, xp));
+                    }
+                }
+            }
+            Simpleskills.LOGGER.info("Loaded farming_xp.json with {} crop configurations", CROP_CONFIGS.size());
+        } catch (JsonSyntaxException e) {
+            Simpleskills.LOGGER.error("JSON syntax error in farming_xp.json: {}", e.getMessage());
+        } catch (IOException e) {
+            Simpleskills.LOGGER.error("Error loading farming_xp.json: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Represents a crop configuration with age property and maturity threshold.
+     */
+    public record CropConfig(
+            String block,
+            String ageProperty, // "AGE_7", "AGE_3", "AGE_2", or "NONE"
+            int maturityAge,
+            int xp
+    ) {}
+
+    /**
+     * Default farming XP configuration with age properties.
+     */
+    private static JsonObject getDefaultFarmingXPConfig() {
+        JsonObject json = new JsonObject();
+        JsonObject actions = new JsonObject();
+        actions.addProperty("animal_feed_breed", 250);
+        actions.addProperty("animal_feed_grow", 25);
+        actions.addProperty("shear_sheep", 150);
+        json.add("actions", actions);
+
+        JsonArray blocks = new JsonArray();
+        record FarmingBlock(String block, int xp, String ageProperty, int maturityAge) {}
+        FarmingBlock[] defaults = new FarmingBlock[] {
+                new FarmingBlock("block.minecraft.wheat", 275, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.carrots", 275, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.potatoes", 300, "AGE_7", 7),
+                new FarmingBlock("block.minecraft.beetroots", 250, "AGE_3", 3),
+                new FarmingBlock("block.minecraft.melon", 100, "NONE", -1),
+                new FarmingBlock("block.minecraft.nether_wart", 350, "AGE_3", 3),
+                new FarmingBlock("block.minecraft.cocoa", 250, "AGE_2", 2)
+        };
+        for (FarmingBlock fb : defaults) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("block", fb.block());
+            entry.addProperty("xp", fb.xp());
+            entry.addProperty("age_property", fb.ageProperty());
+            entry.addProperty("maturity_age", fb.maturityAge());
+            blocks.add(entry);
+        }
+        json.add("blocks", blocks);
+        return json;
+    }
+
+    /**
+     * Gets the crop configuration for a block translation key.
+     */
+    public static CropConfig getCropConfig(String blockTranslationKey) {
+        return CROP_CONFIGS.get(blockTranslationKey);
+    }
+
+    /**
+     * Checks if a block is configured as a crop.
+     */
+    public static boolean isCropBlock(String blockTranslationKey) {
+        return CROP_CONFIGS.containsKey(blockTranslationKey);
     }
     
     /**
@@ -1660,7 +1722,7 @@ public class ConfigManager {
 
     private static JsonObject getDefaultFishingXPConfig() {
         JsonObject json = new JsonObject();
-        json.addProperty("catch", 750);
+        json.addProperty("catch", 1250);
         return json;
     }
 
@@ -1698,25 +1760,65 @@ public class ConfigManager {
      */
     private static JsonObject getDefaultEnchantmentRequirements() {
         JsonObject json = new JsonObject();
-        record EnchantmentRequirement(String id, String skill, int level, int enchantmentLevel) {
-        }
-        EnchantmentRequirement[] defaults = {
-                new EnchantmentRequirement("minecraft:fortune", "ENCHANTING", 25, 3),
-                new EnchantmentRequirement("minecraft:protection", "ENCHANTING", 50, 4),
-                new EnchantmentRequirement("minecraft:efficiency", "ENCHANTING", 75, 5),
-                new EnchantmentRequirement("minecraft:mending", "ENCHANTING", 99, 1)
-        };
-        for (EnchantmentRequirement req : defaults) {
-            JsonObject entry = new JsonObject();
-            entry.addProperty("skill", req.skill);
-            entry.addProperty("level", req.level);
-            if (req.enchantmentLevel > 0) {
-                entry.addProperty("enchantmentLevel", req.enchantmentLevel);
-            }
-            json.add(req.id, entry);
-        }
+        json.addProperty("enchantment_xp_per_level_squared", 100);
+
+        JsonObject requirements = new JsonObject();
+
+        // Efficiency
+        JsonArray efficiencyReqs = new JsonArray();
+        JsonObject eff1 = new JsonObject();
+        eff1.addProperty("enchantmentLevel", 4);
+        eff1.addProperty("skill", "ENCHANTING");
+        eff1.addProperty("level", 15);
+        efficiencyReqs.add(eff1);
+
+        JsonObject eff5 = new JsonObject();
+        eff5.addProperty("enchantmentLevel", 5);
+        eff5.addProperty("skill", "ENCHANTING");
+        eff5.addProperty("level", 75);
+        efficiencyReqs.add(eff5);
+        requirements.add("minecraft:efficiency", efficiencyReqs);
+
+        // Fortune
+        JsonArray fortuneReqs = new JsonArray();
+        JsonObject fort3 = new JsonObject();
+        fort3.addProperty("enchantmentLevel", 3);
+        fort3.addProperty("skill", "ENCHANTING");
+        fort3.addProperty("level", 25);
+        fortuneReqs.add(fort3);
+        requirements.add("minecraft:fortune", fortuneReqs);
+
+        // Sharpness
+        JsonArray sharpReqs = new JsonArray();
+        JsonObject sharp5 = new JsonObject();
+        sharp5.addProperty("enchantmentLevel", 5);
+        sharp5.addProperty("skill", "ENCHANTING");
+        sharp5.addProperty("level", 50);
+        sharpReqs.add(sharp5);
+        requirements.add("minecraft:sharpness", sharpReqs);
+
+        // Power
+        JsonArray powerReqs = new JsonArray();
+        JsonObject pow5 = new JsonObject();
+        pow5.addProperty("enchantmentLevel", 5);
+        pow5.addProperty("skill", "ENCHANTING");
+        pow5.addProperty("level", 50);
+        powerReqs.add(pow5);
+        requirements.add("minecraft:power", powerReqs);
+
+        // Mending
+        JsonArray mendingReqs = new JsonArray();
+        JsonObject mend1 = new JsonObject();
+        mend1.addProperty("enchantmentLevel", 1);
+        mend1.addProperty("skill", "ENCHANTING");
+        mend1.addProperty("level", 99);
+        mendingReqs.add(mend1);
+        requirements.add("minecraft:mending", mendingReqs);
+
+        json.add("requirements", requirements);
         return json;
     }
+
     /**
      * Represents a prayer sacrifice configuration with effect level and ambient status.
      */
@@ -1773,26 +1875,26 @@ public class ConfigManager {
                                      String name, int effectLevel, boolean isAmbient) {
         }
         PrayerSacrificeConfig[] defaults = new PrayerSacrificeConfig[]{
-                // Tier 1: 2h (7200s = 144000 ticks), novice buffs
-                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 4000, 0, "minecraft:luck", 144000, "Prayer I: Luck", 1, true),
-                new PrayerSacrificeConfig("minecraft:blue_orchid", "PRAYER", 1000, 0, "minecraft:absorption", 144000, "Prayer I: Absorption", 3, true),
-                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 1000, 0, "minecraft:dolphins_grace", 144000, "Prayer I: Dolphin's Grace", 1, true),
-                // Tier 2: 4h (14400s = 288000 ticks), journeyman buffs
-                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 6000, 25, "minecraft:conduit_power", 288000, "Prayer II: Conduit Power", 1, true),
-                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 6000, 25, "minecraft:health_boost", 288000, "Prayer II: Health Boost", 1, true),
-                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 5000, 25, "minecraft:water_breathing", 288000, "Prayer II: Water Breathing", 1, true),
-                // Tier 3: 6h (21600s = 432000 ticks), expert buffs
-                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 7000, 50, "minecraft:slow_falling", 432000, "Prayer III: Slow Falling", 1, true),
-                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 6500, 50, "minecraft:speed", 432000, "Prayer II: Speed", 2, true),
-                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 8000, 50, "minecraft:jump_boost", 432000, "Prayer III: Jump Boost", 2, true),
-                // Tier 4: 8h (28800s = 576000 ticks), artisan buffs
-                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 9500, 75, "minecraft:strength", 576000, "Prayer IV: Strength", 2, true),
-                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 9500, 75, "minecraft:resistance", 576000, "Prayer IV: Resistance", 2, true),
-                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 9500, 75, "minecraft:fire_resistance", 576000, "Prayer IV: Fire Resistance", 1, true),
-                // Tier 5: 12h (43200 = 864000 ticks), grandmaster buffs
-                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 10000, 99, "minecraft:night_vision", 864000, "Prayer V: Night Vision", 1, true),
-                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 10000, 99, "minecraft:invisibility", 864000, "Prayer V: Invisibility", 1, true),
-                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 10000, 99, "minecraft:haste", 864000, "Prayer V: Haste 2", 2, true)
+                // Tier 1: 1h (72,000 ticks), novice buffs
+                new PrayerSacrificeConfig("minecraft:rabbit_foot", "PRAYER", 15000, 0, "minecraft:luck", 72000, "Prayer I: Luck", 1, true),
+                new PrayerSacrificeConfig("minecraft:spore_blossom", "PRAYER", 20000, 0, "minecraft:absorption", 72000, "Prayer I: Absorption", 3, true),
+                new PrayerSacrificeConfig("minecraft:glow_ink_sac", "PRAYER", 12000, 0, "minecraft:dolphins_grace", 72000, "Prayer I: Dolphin's Grace", 1, true),
+                // Tier 2: 2h (144000 ticks), journeyman buffs
+                new PrayerSacrificeConfig("minecraft:phantom_membrane", "PRAYER", 18000, 25, "minecraft:slow_falling", 216000, "Prayer III: Slow Falling", 1, true),
+                new PrayerSacrificeConfig("minecraft:golden_apple", "PRAYER", 22000, 25, "minecraft:health_boost", 144000, "Prayer II: Health Boost", 1, true),
+                new PrayerSacrificeConfig("minecraft:nautilus_shell", "PRAYER", 9000, 25, "minecraft:water_breathing", 144000, "Prayer II: Water Breathing", 1, true),
+                // Tier 3: 3h (216000 ticks), expert buffs
+                new PrayerSacrificeConfig("minecraft:heart_of_the_sea", "PRAYER", 30000, 50, "minecraft:conduit_power", 144000, "Prayer II: Conduit Power", 1, true),
+                new PrayerSacrificeConfig("minecraft:diamond", "PRAYER", 25000, 50, "minecraft:speed", 216000, "Prayer II: Speed II", 2, true),
+                new PrayerSacrificeConfig("minecraft:goat_horn", "PRAYER", 45000, 50, "minecraft:jump_boost", 216000, "Prayer III: Jump Boost II", 2, true),
+                // Tier 4: 4h (288000 ticks), artisan buffs
+                new PrayerSacrificeConfig("minecraft:pitcher_plant", "PRAYER", 40000, 75, "minecraft:strength", 288000, "Prayer IV: Strength II", 2, true),
+                new PrayerSacrificeConfig("minecraft:enchanted_golden_apple", "PRAYER", 85000, 75, "minecraft:hero_of_the_village", 288000, "Prayer IV: Hero of the Village", 1, true),
+                new PrayerSacrificeConfig("minecraft:wither_skeleton_skull", "PRAYER", 75000, 75, "minecraft:fire_resistance", 288000, "Prayer IV: Fire Resistance", 1, true),
+                // Tier 5: 8h (57,6000 ticks), grandmaster buffs
+                new PrayerSacrificeConfig("minecraft:torchflower", "PRAYER", 60000, 99, "minecraft:night_vision", 576000, "Prayer V: Night Vision", 1, true),
+                new PrayerSacrificeConfig("minecraft:totem_of_undying", "PRAYER", 95000, 99, "minecraft:invisibility", 576000, "Prayer V: Invisibility", 1, true),
+                new PrayerSacrificeConfig("minecraft:nether_star", "PRAYER", 170000, 99, "minecraft:haste", 576000, "Prayer V: Haste II", 2, true)
         };
         for (PrayerSacrificeConfig config : defaults) {
             JsonObject entry = new JsonObject();
@@ -1810,18 +1912,11 @@ public class ConfigManager {
     }
 
     /**
-     * Gets the prayer display name for a given status effect ID.
-     *
-     * @param effectId The ID of the status effect (e.g., "minecraft:luck").
-     * @return The custom prayer name, or null if not found.
+     * Gets the prayer sacrifice configuration for an item.
      */
-    public static String getPrayerName(String effectId) {
-        for (PrayerSacrifice sacrifice : PRAYER_SACRIFICES.values()) {
-            if (sacrifice.effect().equals(effectId)) {
-                return sacrifice.displayName();
-            }
-        }
-        return null;
+    public static int getFarmingActionXP(String actionKey, Skills skill) {
+        return FARMING_ACTION_XP_MAP.getOrDefault(actionKey, getBaseXP(skill));
+
     }
 
     /**
@@ -1853,6 +1948,15 @@ public class ConfigManager {
     }
 
     /**
+     * Returns the configured XP override for a specific block if present,
+     * otherwise null. Useful for allowing dynamic defaults (e.g., hardness-based)
+     * with explicit per-block overrides via block_mappings.json.
+     */
+    public static Integer getBlockXPOverride(String blockTranslationKey) {
+        return BLOCK_XP_MAP.containsKey(blockTranslationKey) ? BLOCK_XP_MAP.get(blockTranslationKey) : null;
+    }
+
+    /**
      * Gets the requirement for a tool.
      */
     public static SkillRequirement getToolRequirement(String id) {
@@ -1874,10 +1978,31 @@ public class ConfigManager {
     }
 
     /**
-     * Gets the requirement for an enchantment or related block.
+     * Gets the requirement for an enchantment at a specific level.
+     * Returns the requirement that matches the exact enchantment level, or null if none exists.
      */
-    public static SkillRequirement getEnchantmentRequirement(String id) {
-        return ENCHANTMENT_REQUIREMENTS.get(id);
+    public static SkillRequirement getEnchantmentRequirement(String enchantmentId, int enchantmentLevel) {
+        List<SkillRequirement> requirements = ENCHANTMENT_REQUIREMENTS.get(enchantmentId);
+        if (requirements == null || requirements.isEmpty()) {
+            return null;
+        }
+
+        // Look for an exact match first
+        for (SkillRequirement req : requirements) {
+            if (req.getEnchantmentLevel() != null && req.getEnchantmentLevel() == enchantmentLevel) {
+                return req;
+            }
+        }
+
+        // No exact match found - no requirement for this level
+        return null;
+    }
+
+    /**
+     * Add getter for XP multiplier:
+     */
+    public static int getEnchantmentXpPerLevelSquared() {
+        return enchantmentXpPerLevelSquared;
     }
 
     /**

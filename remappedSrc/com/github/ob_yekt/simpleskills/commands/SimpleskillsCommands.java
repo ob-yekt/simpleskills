@@ -13,6 +13,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandSource;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -24,6 +26,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.particle.ParticleTypes;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,7 +41,7 @@ public class SimpleskillsCommands {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(
                         CommandManager.literal("simpleskills")
-                                .requires(source -> source.hasPermissionLevel(0))
+                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.ALL)))
                                 .then(CommandManager.literal("togglehud")
                                         .executes(context -> {
                                             SkillTabMenu.toggleTabMenuVisibility(context.getSource());
@@ -48,12 +51,12 @@ public class SimpleskillsCommands {
                                         .then(CommandManager.literal("enable")
                                                 .executes(SimpleskillsCommands::enableIronman))
                                         .then(CommandManager.literal("disable")
-                                                .requires(source -> source.hasPermissionLevel(2))
+                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                                 .executes(SimpleskillsCommands::disableIronman)))
                                 .then(CommandManager.literal("prestige")
                                         .executes(SimpleskillsCommands::prestige))
                                 .then(CommandManager.literal("reload")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .executes(context -> {
                                             ConfigManager.initialize();
                                             XPManager.reloadConfig();
@@ -62,12 +65,12 @@ public class SimpleskillsCommands {
                                         }))
                                 .then(CommandManager.literal("reset")
                                         .then(CommandManager.argument("username", StringArgumentType.string())
-                                                .requires(source -> source.hasPermissionLevel(2))
+                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .executes(SimpleskillsCommands::resetSkillsForPlayer))
                                         .executes(SimpleskillsCommands::resetSkillsForPlayer))
                                 .then(CommandManager.literal("addxp")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .then(CommandManager.argument("skill", StringArgumentType.word())
@@ -75,13 +78,19 @@ public class SimpleskillsCommands {
                                                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                                                                 .executes(SimpleskillsCommands::addXP)))))
                                 .then(CommandManager.literal("setlevel")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .then(CommandManager.argument("skill", StringArgumentType.word())
                                                         .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                         .then(CommandManager.argument("level", IntegerArgumentType.integer(1, XPManager.getMaxLevel()))
                                                                 .executes(SimpleskillsCommands::setLevel)))))
+                                .then(CommandManager.literal("setprestige")
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
+                                        .then(CommandManager.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
+                                                .then(CommandManager.argument("value", IntegerArgumentType.integer(0))
+                                                        .executes(SimpleskillsCommands::setPrestige))))
                                 .then(CommandManager.literal("query")
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
@@ -175,19 +184,20 @@ public class SimpleskillsCommands {
 
     private static int disableIronman(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
+        ServerPlayerEntity player = source.getPlayer();
+
+        if (player == null) {
             source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
             return 0;
         }
 
-        if (!DatabaseManager.getInstance().isPlayerInIronmanMode(player.getUuidAsString())) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You are not in Ironman Mode.").formatted(Formatting.RED), false);
+        if (ConfigManager.isForceIronmanModeEnabled()) {
+            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Ironman Mode is enforced by the server and cannot be disabled.").formatted(Formatting.RED), false);
             return 0;
         }
 
         IronmanManager.disableIronmanMode(player);
-        player.sendMessage(Text.literal("§6[simpleskills]§f You have disabled Ironman Mode.").formatted(Formatting.YELLOW), false);
-        Simpleskills.LOGGER.info("Player {} disabled Ironman Mode.", player.getName().getString());
+        player.sendMessage(Text.literal("§6[simpleskills]§f Ironman Mode disabled."), false);
         return 1;
     }
 
@@ -220,23 +230,15 @@ public class SimpleskillsCommands {
         String skillName = StringArgumentType.getString(context, "skill");
         int amount = IntegerArgumentType.getInteger(context, "amount");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         XPManager.addXPWithNotification(targetPlayer, skill, amount);
         AttributeManager.refreshAllAttributes(targetPlayer);
@@ -254,23 +256,15 @@ public class SimpleskillsCommands {
         String skillName = StringArgumentType.getString(context, "skill");
         int newLevel = IntegerArgumentType.getInteger(context, "level");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         int newXP = XPManager.getExperienceForLevel(newLevel);
         db.savePlayerSkill(playerUuid, skill.getId(), newXP, newLevel);
@@ -283,28 +277,45 @@ public class SimpleskillsCommands {
         return 1;
     }
 
-    private static int querySkill(CommandContext<ServerCommandSource> context) {
+    private static int setPrestige(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
-        String skillName = StringArgumentType.getString(context, "skill");
+        int value = IntegerArgumentType.getInteger(context, "value");
 
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
         db.ensurePlayerInitialized(playerUuid);
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        db.setPrestige(playerUuid, value);
+
+        // Refresh UI/attributes/name decorations to reflect new prestige
+        AttributeManager.refreshAllAttributes(targetPlayer);
+        SkillTabMenu.updateTabMenu(targetPlayer);
+        com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(targetPlayer);
+
+        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Set prestige for " + playerName + " to §6★" + value + "§f."), true);
+        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your prestige is now §6★" + value + "§f."), false);
+        Simpleskills.LOGGER.info("Set prestige for {} to {}", playerName, value);
+        return 1;
+    }
+
+    private static int querySkill(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        String playerName = StringArgumentType.getString(context, "targets");
+        String skillName = StringArgumentType.getString(context, "skill");
+
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
+
+        DatabaseManager db = DatabaseManager.getInstance();
+        String playerUuid = targetPlayer.getUuidAsString();
+        db.ensurePlayerInitialized(playerUuid);
+
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         int level = XPManager.getSkillLevel(playerUuid, skill);
         source.sendFeedback(() -> Text.literal("§6[simpleskills]§f " + playerName + "'s '" + skill.getDisplayName() + "' level: " + level), false);
@@ -315,12 +326,8 @@ public class SimpleskillsCommands {
     private static int queryTotalLevel(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
-
-        if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
-            return 0;
-        }
+        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         String playerUuid = targetPlayer.getUuidAsString();
@@ -336,13 +343,8 @@ public class SimpleskillsCommands {
         ServerCommandSource source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getSkillLeaderboard(skill.getId(), 5);
@@ -402,13 +404,8 @@ public class SimpleskillsCommands {
         ServerCommandSource source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
-        Skills skill;
-        try {
-            skill = Skills.valueOf(skillName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
-            return 0;
-        }
+        Skills skill = parseSkillName(source, skillName);
+        if (skill == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getIronmanSkillLeaderboard(skill.getId(), 5);
@@ -470,5 +467,30 @@ public class SimpleskillsCommands {
         return Stream.of(Skills.values())
                 .map(Skills::getId)
                 .toList();
+    }
+
+    /**
+     * Helper method to get a player by name with error handling.
+     * @return The player if found, null otherwise (and sends error message)
+     */
+    private static ServerPlayerEntity getPlayerByName(ServerCommandSource source, String playerName) {
+        ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(playerName);
+        if (player == null) {
+            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
+        }
+        return player;
+    }
+
+    /**
+     * Helper method to parse a skill name with error handling.
+     * @return The skill if valid, null otherwise (and sends error message)
+     */
+    private static Skills parseSkillName(ServerCommandSource source, String skillName) {
+        try {
+            return Skills.valueOf(skillName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
+            return null;
+        }
     }
 }

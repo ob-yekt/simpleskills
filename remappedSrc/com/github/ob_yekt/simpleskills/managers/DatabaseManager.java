@@ -482,6 +482,28 @@ public class DatabaseManager {
         return 0;
     }
 
+    /**
+     * Gets all player UUIDs from the database.
+     * Used for migration and administrative purposes.
+     */
+    public List<String> getAllPlayerUuids() {
+        checkConnection();
+        String sql = "SELECT DISTINCT player_uuid FROM player_skills";
+        List<String> playerUuids = new ArrayList<>();
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    playerUuids.add(result.getString("player_uuid"));
+                }
+            }
+        } catch (SQLException e) {
+            Simpleskills.LOGGER.error("Failed to retrieve all player UUIDs: {}", e.getMessage());
+            throw new DatabaseException("Failed to retrieve all player UUIDs", e);
+        }
+        return playerUuids;
+    }
+
     public List<LeaderboardEntry> getSkillLeaderboard(String skillId, int limit) {
         checkConnection();
         String sql = """

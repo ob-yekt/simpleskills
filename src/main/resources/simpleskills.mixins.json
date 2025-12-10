@@ -9,6 +9,7 @@
     "EnchantingScreenHandlerMixin",
     "ServerPlayerEntityMixin",
     "ShovelItemMixin",
+    "SpearCancelMixin",
     "ToolMaterialMixin",
     "CRAFTING.AbstractCraftingScreenHandlerAccessor",
     "CRAFTING.CraftingResultSlotMixin",

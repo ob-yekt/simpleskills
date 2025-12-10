@@ -23,6 +23,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EquipmentSlot;
 
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -47,6 +48,8 @@ import net.minecraft.util.Identifier;
 
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
 import java.util.Objects;
 
@@ -60,6 +63,8 @@ public class EventHandlers {
         registerJoinLeaveHandlers();
         registerPrayerHandlers();
     }
+
+// Replace the farming-related methods in EventHandlers class:
 
     private static void registerBlockHandlers() {
         // BEFORE block break event
@@ -80,6 +85,7 @@ public class EventHandlers {
             if (requirement != null) {
                 Skills requiredSkill = requirement.getSkill();
                 int requiredLevel = requirement.getLevel();
+                int requiredPrestige = requirement.getRequiredPrestige();
 
                 int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), requiredSkill);
                 if (playerLevel < requiredLevel) {
@@ -89,89 +95,179 @@ public class EventHandlers {
                     )), true);
                     return false; // Block breaking canceled
                 }
+
+                // Prestige gate (optional)
+                if (requiredPrestige > 0) {
+                    int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                    if (playerPrestige < requiredPrestige) {
+                        serverPlayer.sendMessage(Text.literal(String.format(
+                                "§6[simpleskills]§f You need Prestige ★%d to use this tool!",
+                                requiredPrestige
+                        )), true);
+                        return false;
+                    }
+                }
             }
 
             // --- 2) Then check if block itself has a skill requirement ---
-            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
-            if (relevantSkill != null) {
-                if (isCrop(blockTranslationKey)) {
-                    return true; // Crops bypass tool requirement
-                }
-
-                // Optional: You could still keep block-specific restrictions here if needed
+            // Crops bypass tool requirement check
+            if (ConfigManager.isCropBlock(blockTranslationKey)) {
+                return true;
             }
 
             return true;
         });
 
-        // AFTER block break event (unchanged)
+        // AFTER block break event
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
             if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
                 return;
             }
 
             String blockTranslationKey = state.getBlock().getTranslationKey();
-            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
 
-            if (relevantSkill == null) {
+            // Check for Silk Touch on ores, melons (before doing anything else)
+            if ((blockTranslationKey.contains("_ore") || blockTranslationKey.contains("melon")) && hasSilkTouch(serverPlayer)) {
+                Simpleskills.LOGGER.debug("No XP granted for {} to player {} due to Silk Touch", blockTranslationKey, serverPlayer.getName().getString());
                 return;
             }
 
-            // Check for Silk Touch on ores, melons
-            if (blockTranslationKey.contains("_ore") || blockTranslationKey.contains("melon")) {
-                if (hasSilkTouch(serverPlayer)) {
-                    Simpleskills.LOGGER.debug("No XP granted for {} to player {} due to Silk Touch", blockTranslationKey, serverPlayer.getName().getString());
+            // Check if it's a configured farming block
+            if (ConfigManager.isCropBlock(blockTranslationKey)) {
+                grantFarmingXP((ServerWorld) world, serverPlayer, pos, state, blockTranslationKey);
+                return;
+            }
+
+            // Determine skill: prefer explicit config; otherwise infer by mineable tool tag
+            Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
+            Integer overrideXP = ConfigManager.getBlockXPOverride(blockTranslationKey);
+            if (relevantSkill == null) {
+                if (state.isIn(BlockTags.PICKAXE_MINEABLE)) {
+                    relevantSkill = Skills.MINING;
+                } else if (state.isIn(BlockTags.SHOVEL_MINEABLE)) {
+                    relevantSkill = Skills.EXCAVATING;
+                } else if (state.isIn(BlockTags.AXE_MINEABLE)) {
+                    relevantSkill = Skills.WOODCUTTING;
+                } else {
                     return;
                 }
             }
 
-            if (relevantSkill == Skills.FARMING) {
-                grantFarmingXP((ServerWorld) world, serverPlayer, state, blockTranslationKey);
-            } else {
-                int xp = ConfigManager.getBlockXP(blockTranslationKey, relevantSkill);
+            // Grant XP for non-farming skills
+            if (relevantSkill != Skills.FARMING) {
+                int xp;
+                if (overrideXP != null) {
+                    xp = overrideXP;
+                } else {
+                    // Hardness-based default: hardness 1.5 -> 100 XP
+                    float hardness = state.getHardness(world, pos);
+                    xp = Math.max(0, Math.round(hardness * (100.0f / 1.5f)));
+                }
                 XPManager.addXPWithNotification(serverPlayer, relevantSkill, xp);
             }
         });
     }
 
-    private static boolean isCrop(String blockTranslationKey) {
-        return blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") ||
-                blockTranslationKey.contains("potatoes") || blockTranslationKey.contains("beetroots") ||
-                blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("cocoa") ||
-                blockTranslationKey.contains("melon");
+    /**
+     * Grants farming XP for harvesting crops based on configuration.
+     * Now fully config-driven to support custom crops from other mods.
+     */
+    private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockPos pos, BlockState state, String blockTranslationKey) {
+        ConfigManager.CropConfig cropConfig = ConfigManager.getCropConfig(blockTranslationKey);
+        if (cropConfig == null) {
+            return;
+        }
+
+        boolean isMatured = false;
+
+        // Check maturity based on configured age property
+        switch (cropConfig.ageProperty()) {
+            case "AGE_7":
+                if (state.contains(Properties.AGE_7)) {
+                    int age = state.get(Properties.AGE_7);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_3":
+                if (state.contains(Properties.AGE_3)) {
+                    int age = state.get(Properties.AGE_3);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_2":
+                if (state.contains(Properties.AGE_2)) {
+                    int age = state.get(Properties.AGE_2);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_5":
+                if (state.contains(Properties.AGE_5)) {
+                    int age = state.get(Properties.AGE_5);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "AGE_25":
+                if (state.contains(Properties.AGE_25)) {
+                    int age = state.get(Properties.AGE_25);
+                    isMatured = (age >= cropConfig.maturityAge());
+                }
+                break;
+            case "NONE":
+                // No age property - always mature (e.g., melon blocks)
+                isMatured = true;
+                break;
+            default:
+                Simpleskills.LOGGER.warn("Unknown age property '{}' for crop {}", cropConfig.ageProperty(), blockTranslationKey);
+                return;
+        }
+
+        if (!isMatured) {
+            return;
+        }
+
+        int xp = cropConfig.xp();
+        XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
+        applyBonusDrops(world, serverPlayer, pos, state, blockTranslationKey);
+        Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
     }
 
-    private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockState state, String blockTranslationKey) {
-        if (isCrop(blockTranslationKey)) {
-            if (state.contains(Properties.AGE_7)) {
-                int age = state.get(Properties.AGE_7);
-                if (age == 7 && (blockTranslationKey.contains("wheat") || blockTranslationKey.contains("carrots") || blockTranslationKey.contains("potatoes"))) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (state.contains(Properties.AGE_3)) {
-                int age = state.get(Properties.AGE_3);
-                if (age == 3 && (blockTranslationKey.contains("nether_wart") || blockTranslationKey.contains("beetroots"))) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (state.contains(Properties.AGE_2)) {
-                int age = state.get(Properties.AGE_2);
-                if (age == 2 && blockTranslationKey.contains("cocoa")) {
-                    int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
-                    XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                    Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-                }
-            } else if (blockTranslationKey.contains("melon")) {
-                // Silk Touch check already handled in outer block break event
-                int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.FARMING);
-                XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
-                Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
-            }
+    private static void applyBonusDrops(ServerWorld world, ServerPlayerEntity player, BlockPos pos, BlockState state, String blockTranslationKey) {
+        // Calculate bonus drop chance: 1% per farming level, capped at 99%
+        int farmingLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.FARMING);
+        double dropChance = Math.min(farmingLevel, 99) / 100.0;
+
+        if (world.random.nextDouble() < dropChance) {
+            spawnBonusDrops(world, pos, state);
+            Simpleskills.LOGGER.debug("Granted bonus drops to {} for {} (farming level: {})",
+                    player.getName().getString(), blockTranslationKey, farmingLevel);
         }
     }
+
+    private static void spawnBonusDrops(ServerWorld world, BlockPos pos, BlockState state) {
+        // Get the drops that would normally be produced
+        java.util.List<ItemStack> drops = net.minecraft.block.Block.getDroppedStacks(state, world, pos, null);
+
+        Vec3d dropPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+
+        for (ItemStack drop : drops) {
+            if (drop.isEmpty()) {
+                continue;
+            }
+
+            ItemStack bonus = drop.copy();
+            ItemEntity itemEntity = new ItemEntity(world, dropPos.x, dropPos.y, dropPos.z, bonus);
+
+            // Add slight random velocity for visual effect
+            itemEntity.setVelocity(
+                    (world.random.nextDouble() - 0.5) * 0.1,
+                    world.random.nextDouble() * 0.1,
+                    (world.random.nextDouble() - 0.5) * 0.1
+            );
+
+            world.spawnEntity(itemEntity);
+        }
+    }
+
     private static void registerCombatHandlers() {
         // Prevent melee attacks if weapon requirement not met
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
@@ -179,7 +275,7 @@ public class EventHandlers {
                 return ActionResult.PASS;
             }
 
-            ItemStack weapon = serverPlayer.getMainHandStack();
+            ItemStack weapon = serverPlayer.getStackInHand(hand);
             if (weapon.isEmpty()) {
                 return ActionResult.PASS;
             }
@@ -196,6 +292,16 @@ public class EventHandlers {
                 serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
                 return ActionResult.FAIL;
+            }
+
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                            requiredPrestige)), true);
+                    return ActionResult.FAIL;
+                }
             }
 
             return ActionResult.PASS;
@@ -221,9 +327,19 @@ public class EventHandlers {
             Skills skill = requirement.getSkill();
             int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), skill);
             if (playerLevel < requirement.getLevel()) {
-                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this!",
+                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
                 return ActionResult.FAIL;
+            }
+
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                            requiredPrestige)), true);
+                    return ActionResult.FAIL;
+                }
             }
 
             return ActionResult.PASS;
@@ -388,7 +504,8 @@ public class EventHandlers {
                     db.ensurePlayerInitialized(playerUuid);
                     AttributeManager.clearSkillAttributes(newPlayer);
                     AttributeManager.clearIronmanAttributes(newPlayer);
-                    newPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.").formatted(Formatting.YELLOW), false);
+                    newPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.")
+                            .formatted(Formatting.YELLOW), false);
                     if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
                             ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
                         String prestigePart = prestige > 0 ? String.format(" at §6★%d§f", prestige) : "";

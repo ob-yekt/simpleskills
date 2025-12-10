@@ -2,10 +2,7 @@ package com.github.ob_yekt.simpleskills.events;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
-import com.github.ob_yekt.simpleskills.managers.ConfigManager;
-import com.github.ob_yekt.simpleskills.managers.XPManager;
-import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
-import com.github.ob_yekt.simpleskills.managers.AttributeManager;
+import com.github.ob_yekt.simpleskills.managers.*;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
 
@@ -275,7 +272,7 @@ public class EventHandlers {
                 return ActionResult.PASS;
             }
 
-            ItemStack weapon = serverPlayer.getMainHandStack();
+            ItemStack weapon = serverPlayer.getStackInHand(hand);
             if (weapon.isEmpty()) {
                 return ActionResult.PASS;
             }
@@ -460,16 +457,44 @@ public class EventHandlers {
                 Simpleskills.LOGGER.warn("Null player in join event.");
                 return;
             }
+
             String playerUuid = player.getUuidAsString();
             String playerName = player.getName().getString();
             DatabaseManager db = DatabaseManager.getInstance();
 
+            // Critical: ensure player exists in DB first
             db.ensurePlayerInitialized(playerUuid);
-            db.updatePlayerName(playerUuid, playerName); // Add this line
+            db.updatePlayerName(playerUuid, playerName);
+
+            boolean isForceIronman = ConfigManager.isForceIronmanModeEnabled();
+            boolean isCurrentlyIronman = db.isPlayerInIronmanMode(playerUuid);
+
+            // FORCE IRONMAN MODE: Make sure it's enabled in DB and applied
+            if (isForceIronman) {
+                if (!isCurrentlyIronman) {
+                    db.setIronmanMode(playerUuid, true);
+                    Simpleskills.LOGGER.info("Force-enabled Ironman Mode for {} due to server config.", playerName);
+                }
+                IronmanManager.applyIronmanMode(player); // This applies attributes, prefix, etc.
+            }
+            // Normal behavior: only apply if player already has Ironman flag
+            else if (isCurrentlyIronman) {
+                IronmanManager.applyIronmanMode(player);
+            }
+
+            // Always refresh everything (safe even if not Ironman)
             AttributeManager.refreshAllAttributes(player);
             SkillTabMenu.updateTabMenu(player);
             com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(player);
-            Simpleskills.LOGGER.debug("Processed join for player: {}", playerName);
+
+            // Optional: Welcome message for forced Ironman servers
+            if (isForceIronman) {
+                player.sendMessage(Text.literal("§6[simpleskills]§f §cThis server is running in permanent Ironman Mode.")
+                        .formatted(Formatting.RED), false);
+            }
+
+            Simpleskills.LOGGER.debug("Player joined and initialized: {} (Ironman: {}, Forced: {})",
+                    playerName, isCurrentlyIronman || isForceIronman, isForceIronman);
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -478,50 +503,16 @@ public class EventHandlers {
                 Simpleskills.LOGGER.warn("Null player in disconnect event.");
                 return;
             }
+
+            String playerName = player.getName().getString();
             String playerUuid = player.getUuidAsString();
+
+            // Clear temporary attributes and tab menu state
             AttributeManager.clearSkillAttributes(player);
             AttributeManager.clearIronmanAttributes(player);
             SkillTabMenu.clearPlayerVisibility(player.getUuid());
-            Simpleskills.LOGGER.debug("Processed disconnect for player: {}", player.getName().getString());
-        });
 
-        ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-            if (newPlayer == null) {
-                Simpleskills.LOGGER.warn("Null newPlayer in respawn event.");
-                return;
-            }
-            String playerUuid = newPlayer.getUuidAsString();
-            DatabaseManager db = DatabaseManager.getInstance();
-
-            if (!alive) {
-                if (db.isPlayerInIronmanMode(playerUuid)) {
-                    int totalLevels = db.getAllSkills(playerUuid).values().stream()
-                            .mapToInt(DatabaseManager.SkillData::level)
-                            .sum();
-                    int prestige = db.getPrestige(playerUuid);
-                    db.setIronmanMode(playerUuid, false);
-                    db.resetPlayerSkills(playerUuid);
-                    db.ensurePlayerInitialized(playerUuid);
-                    AttributeManager.clearSkillAttributes(newPlayer);
-                    AttributeManager.clearIronmanAttributes(newPlayer);
-                    newPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all skill levels. Ironman mode has been disabled.").formatted(Formatting.YELLOW), false);
-                    if (ConfigManager.getFeatureConfig().get("broadcast_ironman_death") != null &&
-                            ConfigManager.getFeatureConfig().get("broadcast_ironman_death").getAsBoolean()) {
-                        String prestigePart = prestige > 0 ? String.format(" at §6★%d§f", prestige) : "";
-                        Objects.requireNonNull(newPlayer.getEntityWorld().getServer()).getPlayerManager().broadcast(
-                                Text.literal(String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f%s.",
-                                        newPlayer.getName().getString(), totalLevels, prestigePart)), false);
-                    }
-                    Simpleskills.LOGGER.debug("Disabled Ironman mode and reset skills for player: {}", newPlayer.getName().getString());
-                } else {
-                    AttributeManager.clearSkillAttributes(newPlayer);
-                    AttributeManager.clearIronmanAttributes(newPlayer);
-                }
-            }
-            AttributeManager.refreshAllAttributes(newPlayer);
-            SkillTabMenu.updateTabMenu(newPlayer);
-            com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(newPlayer);
-            Simpleskills.LOGGER.debug("Processed respawn for player: {}, alive: {}", newPlayer.getName().getString(), alive);
+            Simpleskills.LOGGER.debug("Player disconnected: {}", playerName);
         });
     }
 

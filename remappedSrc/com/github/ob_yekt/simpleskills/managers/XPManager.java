@@ -15,6 +15,7 @@ import net.minecraft.util.Formatting;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.IntUnaryOperator;
 
 public class XPManager {
     private static final int MAX_LEVEL = 99;
@@ -28,13 +29,7 @@ public class XPManager {
     private static boolean LEVEL_UP_NOTIFICATIONS_ENABLED;
 
     static {
-        JsonObject config = ConfigManager.getFeatureConfig();
-        STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
-        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
-        XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
-        XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
-        LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);
-        LEVEL_UP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "level_up_notifications_enabled", true);
+        loadConfig();
     }
 
     // Provide access to MAX_LEVEL
@@ -63,26 +58,59 @@ public class XPManager {
         return 1;
     }
 
-    /// XP-SYSTEM
+    /// IMPROVED XP-SYSTEM
 
-    // Curve parameters
-    private static final double EXPONENT_P = 2.45;
-    private static final double SCALING_A  = 300.0;
-    private static final double FLOOR_B    = 500.0;
+// Curve parameters tuned for ~45 min to level 25 (wood+stone) and exactly 20.4 hours to level 99
+    private static final double SCALING_A  = 50.751;
+    private static final double EXPONENT_P = 2.672;
+    private static final double OFFSET_K   = 0.295;
 
     public static int getExperienceForLevel(int level) {
         if (level <= 1) return 0;
-        double L = level - 1;
-        return (int) Math.floor(SCALING_A * Math.pow(L, EXPONENT_P) + FLOOR_B * L);
+        double base = Math.pow(1.0 + OFFSET_K, EXPONENT_P);
+        return (int) Math.floor(SCALING_A * (Math.pow((double) level + OFFSET_K, EXPONENT_P) - base));
     }
 
     public static int getLevelForExperience(int experience) {
+        return calculateLevelForExperience(experience, XPManager::getExperienceForLevel);
+    }
+
+    /// OLD XP-SYSTEM (for migration purposes only)
+
+    // Old curve parameters
+    private static final double OLD_EXPONENT_P = 2.45;
+    private static final double OLD_SCALING_A  = 300.0;
+    private static final double OLD_FLOOR_B    = 500.0;
+
+    /**
+     * Old XP calculation function - used only for migration.
+     * Calculates the experience required for a given level in the old system.
+     */
+    public static int getExperienceForLevelOld(int level) {
+        if (level <= 1) return 0;
+        double L = level - 1;
+        return (int) Math.floor(OLD_SCALING_A * Math.pow(L, OLD_EXPONENT_P) + OLD_FLOOR_B * L);
+    }
+
+    /**
+     * Old level calculation function - used only for migration.
+     * Calculates the level for a given experience amount in the old system.
+     */
+    public static int getLevelForExperienceOld(int experience) {
+        return calculateLevelForExperience(experience, XPManager::getExperienceForLevelOld);
+    }
+
+    /**
+     * Generic binary search helper to calculate level from experience.
+     * Uses the provided XP calculation function to determine the level.
+     */
+    private static int calculateLevelForExperience(int experience, IntUnaryOperator xpCalculator) {
         if (experience <= 0) return 1;
         int low = 1;
         int high = MAX_LEVEL;
         while (low < high) {
             int mid = (low + high + 1) >>> 1; // bias upward
-            int xpForMid = getExperienceForLevel(mid);
+            int xpForMid = xpCalculator.applyAsInt(mid);
             if (xpForMid <= experience) {
                 low = mid;
             } else {
@@ -222,14 +250,18 @@ public class XPManager {
 
     // Config helper methods
 
-    public static void reloadConfig() {
+    private static void loadConfig() {
         JsonObject config = ConfigManager.getFeatureConfig();
         STANDARD_XP_MULTIPLIER = getConfigDouble(config, "standard_xp_multiplier", 1.0);
-        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.2);
+        IRONMAN_XP_MULTIPLIER = getConfigDouble(config, "ironman_xp_multiplier", 0.5);
         XP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "xp_notifications_enabled", true);
         XP_NOTIFICATION_THRESHOLD = getConfigInt(config, "xp_notification_threshold", 10);
         LEVEL_UP_EFFECTS_ENABLED = getConfigBoolean(config, "level_up_effects_enabled", true);
         LEVEL_UP_NOTIFICATIONS_ENABLED = getConfigBoolean(config, "level_up_notifications_enabled", true);
+    }
+
+    public static void reloadConfig() {
+        loadConfig();
         Simpleskills.LOGGER.info("Reloaded XPManager config values.");
     }
 

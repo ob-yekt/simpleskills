@@ -13,6 +13,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandSource;
+import net.minecraft.command.permission.Permission;
+import net.minecraft.command.permission.PermissionLevel;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -39,7 +41,7 @@ public class SimpleskillsCommands {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(
                         CommandManager.literal("simpleskills")
-                                .requires(source -> source.hasPermissionLevel(0))
+                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.ALL)))
                                 .then(CommandManager.literal("togglehud")
                                         .executes(context -> {
                                             SkillTabMenu.toggleTabMenuVisibility(context.getSource());
@@ -49,12 +51,12 @@ public class SimpleskillsCommands {
                                         .then(CommandManager.literal("enable")
                                                 .executes(SimpleskillsCommands::enableIronman))
                                         .then(CommandManager.literal("disable")
-                                                .requires(source -> source.hasPermissionLevel(2))
+                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                                 .executes(SimpleskillsCommands::disableIronman)))
                                 .then(CommandManager.literal("prestige")
                                         .executes(SimpleskillsCommands::prestige))
                                 .then(CommandManager.literal("reload")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .executes(context -> {
                                             ConfigManager.initialize();
                                             XPManager.reloadConfig();
@@ -63,12 +65,12 @@ public class SimpleskillsCommands {
                                         }))
                                 .then(CommandManager.literal("reset")
                                         .then(CommandManager.argument("username", StringArgumentType.string())
-                                                .requires(source -> source.hasPermissionLevel(2))
+                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .executes(SimpleskillsCommands::resetSkillsForPlayer))
                                         .executes(SimpleskillsCommands::resetSkillsForPlayer))
                                 .then(CommandManager.literal("addxp")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .then(CommandManager.argument("skill", StringArgumentType.word())
@@ -76,7 +78,7 @@ public class SimpleskillsCommands {
                                                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                                                                 .executes(SimpleskillsCommands::addXP)))))
                                 .then(CommandManager.literal("setlevel")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .then(CommandManager.argument("skill", StringArgumentType.word())
@@ -84,7 +86,7 @@ public class SimpleskillsCommands {
                                                         .then(CommandManager.argument("level", IntegerArgumentType.integer(1, XPManager.getMaxLevel()))
                                                                 .executes(SimpleskillsCommands::setLevel)))))
                                 .then(CommandManager.literal("setprestige")
-                                        .requires(source -> source.hasPermissionLevel(2))
+                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
                                         .then(CommandManager.argument("targets", StringArgumentType.string())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
                                                 .then(CommandManager.argument("value", IntegerArgumentType.integer(0))
@@ -109,9 +111,6 @@ public class SimpleskillsCommands {
                                         .then(CommandManager.argument("skill", StringArgumentType.word())
                                                 .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
                                                 .executes(SimpleskillsCommands::showIronmanSkillLeaderboard)))
-                                .then(CommandManager.literal("migratexp")
-                                        .requires(source -> source.hasPermissionLevel(2))
-                                        .executes(SimpleskillsCommands::migrateXP))
                 ));
     }
 
@@ -185,19 +184,20 @@ public class SimpleskillsCommands {
 
     private static int disableIronman(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
+        ServerPlayerEntity player = source.getPlayer();
+
+        if (player == null) {
             source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
             return 0;
         }
 
-        if (!DatabaseManager.getInstance().isPlayerInIronmanMode(player.getUuidAsString())) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You are not in Ironman Mode.").formatted(Formatting.RED), false);
+        if (ConfigManager.isForceIronmanModeEnabled()) {
+            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Ironman Mode is enforced by the server and cannot be disabled.").formatted(Formatting.RED), false);
             return 0;
         }
 
         IronmanManager.disableIronmanMode(player);
-        player.sendMessage(Text.literal("§6[simpleskills]§f You have disabled Ironman Mode.").formatted(Formatting.YELLOW), false);
-        Simpleskills.LOGGER.info("Player {} disabled Ironman Mode.", player.getName().getString());
+        player.sendMessage(Text.literal("§6[simpleskills]§f Ironman Mode disabled."), false);
         return 1;
     }
 
@@ -491,75 +491,6 @@ public class SimpleskillsCommands {
         } catch (IllegalArgumentException e) {
             source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
             return null;
-        }
-    }
-
-    /**
-     * Migration command to recalculate XP for all players based on the old XP system.
-     * This ensures players maintain their level from the old system in the new system.
-     * Should only be run once after updating the XP calculation formula.
-     */
-    private static int migrateXP(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        DatabaseManager db = DatabaseManager.getInstance();
-
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Starting XP migration... This may take a moment."), false);
-        Simpleskills.LOGGER.info("Starting XP migration for all players...");
-
-        try {
-            List<String> allPlayerUuids = db.getAllPlayerUuids();
-            int processedPlayers = 0;
-            int totalSkillsUpdated = 0;
-
-            for (String playerUuid : allPlayerUuids) {
-                Map<String, DatabaseManager.SkillData> skills = db.getAllSkills(playerUuid);
-                int skillsUpdatedForPlayer = 0;
-
-                for (Map.Entry<String, DatabaseManager.SkillData> entry : skills.entrySet()) {
-                    String skillId = entry.getKey();
-                    DatabaseManager.SkillData skillData = entry.getValue();
-                    int currentXP = skillData.xp();
-
-                    // Skip if player has no XP
-                    if (currentXP <= 0) {
-                        continue;
-                    }
-
-                    // Calculate what level this XP would give in the OLD system
-                    int oldLevel = XPManager.getLevelForExperienceOld(currentXP);
-
-                    // Calculate what XP is needed for that level in the NEW system
-                    // The new XP will give the same level, so we can use oldLevel directly
-                    int newXP = XPManager.getExperienceForLevel(oldLevel);
-
-                    // Update database with new XP and preserved level
-                    db.savePlayerSkill(playerUuid, skillId, newXP, oldLevel);
-                    skillsUpdatedForPlayer++;
-                    totalSkillsUpdated++;
-                }
-
-                if (skillsUpdatedForPlayer > 0) {
-                    processedPlayers++;
-                    Simpleskills.LOGGER.debug("Migrated {} skills for player UUID: {}", skillsUpdatedForPlayer, playerUuid);
-                }
-            }
-
-            // Clear caches to ensure fresh data
-            // Note: We can't directly clear the cache, but the database is updated
-            // Players will get fresh data on next login or when their data is accessed
-
-            String message = String.format("§6[simpleskills]§f Migration complete! Processed %d players, updated %d skill entries.", 
-                    processedPlayers, totalSkillsUpdated);
-            source.sendFeedback(() -> Text.literal(message), true);
-            Simpleskills.LOGGER.info("XP migration complete. Processed {} players, updated {} skill entries.", 
-                    processedPlayers, totalSkillsUpdated);
-
-            return 1;
-        } catch (Exception e) {
-            String errorMsg = "§6[simpleskills]§c Migration failed: " + e.getMessage();
-            source.sendFeedback(() -> Text.literal(errorMsg).formatted(Formatting.RED), false);
-            Simpleskills.LOGGER.error("XP migration failed", e);
-            return 0;
         }
     }
 }

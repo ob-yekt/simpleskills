@@ -163,6 +163,7 @@ public class ConfigManager {
         json.addProperty("ironman_xp_multiplier", 0.5);
         json.addProperty("ironman_health_reduction", -6.0);
         json.addProperty("broadcast_ironman_death", true);
+        json.addProperty("force_ironman_mode", false);
         json.addProperty("level_up_effects_enabled", true);
         json.addProperty("level_up_notifications_enabled", true);
         json.addProperty("item_requirements_in_tooltips_enabled", true);
@@ -170,6 +171,13 @@ public class ConfigManager {
         json.addProperty("custom_fishing_loot_enabled", true);
         json.addProperty("fishing_speed_bonus_enabled", true);
         return json;
+    }
+
+    /**
+     * Get force_ironman_mode setting.
+     */
+    public static boolean isForceIronmanModeEnabled() {
+        return featureConfig.get("force_ironman_mode").getAsBoolean();
     }
 
     /**
@@ -583,6 +591,7 @@ public class ConfigManager {
         CraftingMapping[] defaults = {
         // Wood (Base XP: 100 per plank)
         new CraftingMapping("minecraft:wood_shovel", 100),     // 1 plank
+                new CraftingMapping("minecraft:wood_spear", 100),     // 1 plank
                 new CraftingMapping("minecraft:wood_hoe", 200),        // 2 planks
                 new CraftingMapping("minecraft:wood_sword", 200),      // 2 planks
                 new CraftingMapping("minecraft:wood_pickaxe", 300),    // 3 planks
@@ -596,6 +605,7 @@ public class ConfigManager {
 
                 // Stone (Base XP: 150 per cobblestone)
                 new CraftingMapping("minecraft:stone_shovel", 150),    // 1 cobblestone
+                new CraftingMapping("minecraft:stone_spear", 150),    // 1 cobblestone
                 new CraftingMapping("minecraft:stone_hoe", 300),       // 2 cobblestone
                 new CraftingMapping("minecraft:stone_sword", 300),     // 2 cobblestone
                 new CraftingMapping("minecraft:stone_pickaxe", 450),   // 3 cobblestone
@@ -607,6 +617,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:golden_leggings", 5600),    // 7 gold ingots
                 new CraftingMapping("minecraft:golden_boots", 3200),       // 4 gold ingots
                 new CraftingMapping("minecraft:golden_shovel", 800),       // 1 gold ingot
+                new CraftingMapping("minecraft:golden_spear", 800),       // 1 gold ingot
                 new CraftingMapping("minecraft:golden_hoe", 1600),         // 2 gold ingots
                 new CraftingMapping("minecraft:golden_sword", 1600),       // 2 gold ingots
                 new CraftingMapping("minecraft:golden_pickaxe", 2400),     // 3 gold ingots
@@ -618,6 +629,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:copper_leggings", 2450),    // 7 copper ingots
                 new CraftingMapping("minecraft:copper_boots", 1400),       // 4 copper ingots
                 new CraftingMapping("minecraft:copper_shovel", 350),       // 1 copper ingot
+                new CraftingMapping("minecraft:copper_spear", 350),       // 1 copper ingot
                 new CraftingMapping("minecraft:copper_hoe", 700),          // 2 copper ingots
                 new CraftingMapping("minecraft:copper_sword", 700),        // 2 copper ingots
                 new CraftingMapping("minecraft:copper_pickaxe", 1050),     // 3 copper ingots
@@ -629,6 +641,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:iron_leggings", 4900),      // 7 iron ingots
                 new CraftingMapping("minecraft:iron_boots", 2800),         // 4 iron ingots
                 new CraftingMapping("minecraft:iron_shovel", 700),         // 1 iron ingot
+                new CraftingMapping("minecraft:iron_spear", 700),         // 1 iron ingot
                 new CraftingMapping("minecraft:iron_hoe", 1400),           // 2 iron ingots
                 new CraftingMapping("minecraft:iron_sword", 1400),         // 2 iron ingots
                 new CraftingMapping("minecraft:iron_pickaxe", 2100),       // 3 iron ingots
@@ -640,6 +653,7 @@ public class ConfigManager {
                 new CraftingMapping("minecraft:diamond_leggings", 10500),   // 7 diamonds
                 new CraftingMapping("minecraft:diamond_boots", 6000),      // 4 diamonds
                 new CraftingMapping("minecraft:diamond_shovel", 1500),     // 1 diamond
+                new CraftingMapping("minecraft:diamond_spear", 1500),     // 1 diamond
                 new CraftingMapping("minecraft:diamond_hoe", 3000),        // 2 diamonds
                 new CraftingMapping("minecraft:diamond_sword", 3000),      // 2 diamonds
                 new CraftingMapping("minecraft:diamond_pickaxe", 4500),    // 3 diamonds
@@ -1515,30 +1529,37 @@ public class ConfigManager {
                 // Wooden Weapons
                 new WeaponRequirement("minecraft:wooden_sword", "SLAYING", 0),
                 new WeaponRequirement("minecraft:wooden_axe", "SLAYING", 0),
+                new WeaponRequirement("minecraft:wooden_spear", "SLAYING", 0),
 
                 // Golden Weapons
                 new WeaponRequirement("minecraft:golden_sword", "SLAYING", 5),
                 new WeaponRequirement("minecraft:golden_axe", "SLAYING", 5),
+                new WeaponRequirement("minecraft:golden_spear", "SLAYING", 5),
 
                 // Stone Weapons
                 new WeaponRequirement("minecraft:stone_sword", "SLAYING", 10),
                 new WeaponRequirement("minecraft:stone_axe", "SLAYING", 10),
+                new WeaponRequirement("minecraft:stone_spear", "SLAYING", 10),
 
                 // Copper Weapons
                 new WeaponRequirement("minecraft:copper_sword", "SLAYING", 25),
                 new WeaponRequirement("minecraft:copper_axe", "SLAYING", 25),
+                new WeaponRequirement("minecraft:copper_spear", "SLAYING", 25),
 
                 // Iron Weapons
                 new WeaponRequirement("minecraft:iron_sword", "SLAYING", 50),
                 new WeaponRequirement("minecraft:iron_axe", "SLAYING", 50),
+                new WeaponRequirement("minecraft:iron_spear", "SLAYING", 50),
 
                 // Diamond Weapons
                 new WeaponRequirement("minecraft:diamond_sword", "SLAYING", 75),
                 new WeaponRequirement("minecraft:diamond_axe", "SLAYING", 75),
+                new WeaponRequirement("minecraft:diamond_spear", "SLAYING", 75),
 
                 // Netherite Weapons
                 new WeaponRequirement("minecraft:netherite_sword", "SLAYING", 99),
                 new WeaponRequirement("minecraft:netherite_axe", "SLAYING", 99),
+                new WeaponRequirement("minecraft:netherite_spear", "SLAYING", 99),
 
                 // Unique / Misc Weapons
                 new WeaponRequirement("minecraft:mace", "SLAYING", 50),

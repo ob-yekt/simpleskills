@@ -75,6 +75,7 @@ Think you’ve got what it takes to be a legend? **Ironman Mode** makes the game
 - **Admin-customizable Hardcore Tweaks**: Reduced HP (-50%) and XP gain (0.2x)
 - **Bragging Rights**: Red skull icon shows everyone you’re embarking on an Ironman journey.
 - **Death Announcements**: Notify the server of your total level if you fall.
+- **Enforced Mode**: Forces all players on the server to stay in Ironman Mode.
 
 Perfect for players who crave a brutal, rewarding challenge or want to stand out in their community.
 
@@ -235,7 +236,7 @@ Brew potions with boosted durations, defaulted to:
 * Farming unlocks the ability to use higher tiers of Hoe tools.
 * Players also gain 1% per level of farming to grant an **extra drop** when harvesting crops, to a max of 99% at level 99.
 
-**Animals:** 
+**Animals:**
 - Breeding animals: **250 XP**
 - Feeding baby animals: **25 XP** (per food item)
 - Shearing sheep: **150 XP**
@@ -267,7 +268,7 @@ Tools and armor crafted by players enjoy boosts to durability based on Crafting 
 ---
 
 ### Smithing
-Tools and armor are repaired at higher rates. All upgraded Netherite items are signed by the player and their rank, signifying the extent of the durability increase. 
+Tools and armor are repaired at higher rates. All upgraded Netherite items are signed by the player and their rank, signifying the extent of the durability increase.
 
 Anvils no longer takes damage from repairing.
 

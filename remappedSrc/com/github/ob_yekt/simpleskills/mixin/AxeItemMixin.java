@@ -3,6 +3,7 @@ package com.github.ob_yekt.simpleskills.mixin;
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
+import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import net.minecraft.item.AxeItem;
@@ -43,6 +44,20 @@ public class AxeItemMixin {
                 cir.cancel();
                 Simpleskills.LOGGER.debug("Prevented player {} from using axe {} due to insufficient Woodcutting level (required: {}, actual: {})",
                         player.getName().getString(), toolName, requirement.getLevel(), playerLevel);
+                return;
+            }
+
+            int requiredPrestige = requirement.getRequiredPrestige();
+            if (requiredPrestige > 0) {
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                if (playerPrestige < requiredPrestige) {
+                    player.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this tool!",
+                            requiredPrestige)), true);
+                    cir.setReturnValue(ActionResult.FAIL);
+                    cir.cancel();
+                    Simpleskills.LOGGER.debug("Prevented player {} from using axe {} due to insufficient Prestige (required: ★{}, actual: ★{})",
+                            player.getName().getString(), toolName, requiredPrestige, playerPrestige);
+                }
             }
         }
     }
