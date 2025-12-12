@@ -39,17 +39,17 @@ public final class CraftingCommon {
     public static void grantCraftingXP(ServerPlayerEntity player, ItemStack stack) {
         if (!isValidStack(stack) || !isCraftableItem(stack)) return;
 
+        // Prevent durability bonus on "cosmetic re-crafting" (dyeing armor, applying banner to shield, etc.)
+        if (stack.contains(DataComponentTypes.DYED_COLOR) || stack.contains(DataComponentTypes.BANNER_PATTERNS)) {
+            return;
+        }
+
         Identifier itemId = Registries.ITEM.getId(stack.getItem());
         int xpPerItem = ConfigManager.getCraftingXP(itemId.toString(), Skills.CRAFTING);
         if (xpPerItem <= 0) return;
 
         int totalXP = xpPerItem * stack.getCount();
         XPManager.addXPWithNotification(player, Skills.CRAFTING, totalXP);
-
-//        Simpleskills.LOGGER.debug(
-//                "Granted {} Crafting XP for {}x {} to player {}",
-//                totalXP, stack.getCount(), itemId, player.getName().getString()
-//        );
     }
 
     public static void grantCookingXP(ServerPlayerEntity player, ItemStack stack) {
@@ -61,11 +61,6 @@ public final class CraftingCommon {
 
         int totalXP = xpPerItem * stack.getCount();
         XPManager.addXPWithNotification(player, Skills.COOKING, totalXP);
-
-//        Simpleskills.LOGGER.debug(
-//                "Granted {} Cooking XP for {}x {} to player {}",
-//                totalXP, stack.getCount(), itemKey, player.getName().getString()
-//        );
     }
 
     public static void applyCraftingLore(ItemStack stack, ServerPlayerEntity player) {
@@ -73,6 +68,11 @@ public final class CraftingCommon {
 
         // Check if crafting lore should be displayed in tooltips
         if (!isCraftingLoreInTooltipsEnabled()) return;
+
+        // Prevent durability bonus on "cosmetic re-crafting" (dyeing armor, applying banner to shield, etc.)
+        if (stack.contains(DataComponentTypes.DYED_COLOR) || stack.contains(DataComponentTypes.BANNER_PATTERNS)) {
+            return;
+        }
 
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
@@ -111,6 +111,11 @@ public final class CraftingCommon {
     public static void applyCraftingScaling(ItemStack stack, ServerPlayerEntity player) {
         if (!isValidStack(stack) || !isCraftableItem(stack)) return;
 
+        // Prevent durability bonus on "cosmetic re-crafting" (dyeing armor, applying banner to shield, etc.)
+        if (stack.contains(DataComponentTypes.DYED_COLOR) || stack.contains(DataComponentTypes.BANNER_PATTERNS)) {
+            return;
+        }
+
         int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.CRAFTING);
         float multiplier = ConfigManager.getCraftingDurabilityMultiplier(level);
 
@@ -119,14 +124,6 @@ public final class CraftingCommon {
 
         int newDurability = Math.max(1, Math.round(originalDurability * multiplier));
         stack.set(DataComponentTypes.MAX_DAMAGE, newDurability);
-
-//        Simpleskills.LOGGER.debug(
-//                "Scaled durability for {} from {} -> {} for player {} (lvl {}, multiplier {})",
-//                Registries.ITEM.getId(stack.getItem()),
-//                originalDurability, newDurability,
-//                player.getName().getString(),
-//                level, multiplier
-//        );
     }
 
     public static void applyCookingScaling(ItemStack stack, ServerPlayerEntity player) {
