@@ -5,20 +5,6 @@ import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.LoreManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.screen.ForgingScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.screen.SmithingScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,34 +13,48 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ItemCombinerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
 
-@Mixin(SmithingScreenHandler.class)
-public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
+@Mixin(SmithingMenu.class)
+public abstract class SmithingScreenHandlerMixin extends ItemCombinerMenu {
 
-    protected SmithingScreenHandlerMixin(ScreenHandlerType<?> type, int syncId, PlayerEntity player) {
+    protected SmithingScreenHandlerMixin(MenuType<?> type, int syncId, Player player) {
         super(type, syncId, player.getInventory(), null, null);
     }
 
-    @Inject(method = "updateResult", at = @At("TAIL"))
+    @Inject(method = "createResult", at = @At("TAIL"))
     private void onUpdateResult(CallbackInfo ci) {
-        if (!(this.player instanceof ServerPlayerEntity serverPlayer)) return;
+        if (!(this.player instanceof ServerPlayer serverPlayer)) return;
 
         Simpleskills.LOGGER.debug("SmithingScreenHandlerMixin: updateResult triggered for player {}", serverPlayer.getName().getString());
 
-        SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
-        ItemStack outputStack = handler.getSlot(3).getStack(); // Output slot (index 3)
+        SmithingMenu handler = (SmithingMenu) (Object) this;
+        ItemStack outputStack = handler.getSlot(3).getItem(); // Output slot (index 3)
 
         if (isNetheriteToolUpgrade(outputStack)) {
             ItemStack newStack = applySmithingDurabilityScaling(outputStack, serverPlayer);
-            handler.getSlot(3).setStack(newStack);
+            handler.getSlot(3).setByPlayer(newStack);
         } else {
             Simpleskills.LOGGER.debug("updateResult: Not a netherite tool or armor upgrade for output: {}", outputStack.getItem());
         }
     }
 
-    @Inject(method = "onTakeOutput", at = @At("HEAD"))
-    private void onTakeOutput(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) return;
+    @Inject(method = "onTake", at = @At("HEAD"))
+    private void onTakeOutput(Player player, ItemStack stack, CallbackInfo ci) {
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
 
         Simpleskills.LOGGER.debug(
                 "SmithingScreenHandlerMixin: onTakeOutput triggered for player {}, output: {}",
@@ -65,7 +65,7 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
     }
 
     @Unique
-    private void processSmithingOperation(ServerPlayerEntity serverPlayer, ItemStack stack) {
+    private void processSmithingOperation(ServerPlayer serverPlayer, ItemStack stack) {
         if (!isNetheriteToolUpgrade(stack)) {
             Simpleskills.LOGGER.debug("processSmithingOperation: Not a netherite upgrade, skipping");
             return;
@@ -81,23 +81,23 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         applySmithingLore(stack, serverPlayer);
 
         ItemStack newStack = applySmithingDurabilityScaling(stack, serverPlayer);
-        SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
-        handler.getSlot(3).setStack(newStack);
+        SmithingMenu handler = (SmithingMenu) (Object) this;
+        handler.getSlot(3).setByPlayer(newStack);
 
         if (stack != newStack) {
-            stack.set(DataComponentTypes.MAX_DAMAGE, newStack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null));
-            stack.set(DataComponentTypes.LORE, newStack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of())));
+            stack.set(DataComponents.MAX_DAMAGE, newStack.getOrDefault(DataComponents.MAX_DAMAGE, null));
+            stack.set(DataComponents.LORE, newStack.getOrDefault(DataComponents.LORE, new ItemLore(List.of())));
         }
     }
 
     @Unique
     private boolean isNetheriteToolUpgrade(ItemStack outputStack) {
-        SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
+        SmithingMenu handler = (SmithingMenu) (Object) this;
         Slot templateSlot = handler.getSlot(0); // Template slot (index 0)
         Slot materialSlot = handler.getSlot(2); // Material slot (index 2)
 
-        Item templateItem = templateSlot.getStack().getItem();
-        Item materialItem = materialSlot.getStack().getItem();
+        Item templateItem = templateSlot.getItem().getItem();
+        Item materialItem = materialSlot.getItem().getItem();
 
         // Check if it's specifically a netherite upgrade (not trims or other smithing operations)
         boolean isUpgrade = templateItem == Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE
@@ -115,11 +115,11 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
     private boolean hasSmithingLore(ItemStack stack) {
         if (stack.isEmpty()) return false;
 
-        LoreComponent loreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
-        List<Text> loreLines = loreComponent.lines();
+        ItemLore loreComponent = stack.getOrDefault(DataComponents.LORE, new ItemLore(List.of()));
+        List<Component> loreLines = loreComponent.lines();
 
         // Check if any lore line contains "Upgraded by" to detect existing smithing lore
-        for (Text line : loreLines) {
+        for (Component line : loreLines) {
             String loreText = line.getString();
             if (loreText.contains("Upgraded by") && loreText.contains("Smith)")) {
                 return true;
@@ -130,8 +130,8 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
     }
 
     @Unique
-    private ItemStack applySmithingDurabilityScaling(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty() || stack.get(DataComponentTypes.MAX_DAMAGE) == null) {
+    private ItemStack applySmithingDurabilityScaling(ItemStack stack, ServerPlayer player) {
+        if (stack.isEmpty() || stack.get(DataComponents.MAX_DAMAGE) == null) {
             Simpleskills.LOGGER.debug("applySmithingDurabilityScaling: Empty stack or no MAX_DAMAGE for {}", stack.getItem());
             return stack;
         }
@@ -156,7 +156,7 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         }
 
         int craftingBonus = inputDurability - vanillaDiamondDurability;
-        int smithingLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.SMITHING);
+        int smithingLevel = XPManager.getSkillLevel(player.getStringUUID(), Skills.SMITHING);
         float smithingMultiplier = ConfigManager.getSmithingMultiplier(smithingLevel);
 
         int newMax = Math.max(1, Math.round((vanillaNetheriteDurability + craftingBonus) * smithingMultiplier));
@@ -164,25 +164,25 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
         Simpleskills.LOGGER.debug(
                 "applySmithingDurabilityScaling: Input durability={}, Vanilla diamond durability={}, Crafting bonus={}, Vanilla Netherite durability={}, Final durability={} for {} (player={}, smithing lvl={}, smithing multiplier={})",
                 inputDurability, vanillaDiamondDurability, craftingBonus, vanillaNetheriteDurability, newMax,
-                Registries.ITEM.getId(stack.getItem()).toString(), player.getName().getString(), smithingLevel, smithingMultiplier
+                BuiltInRegistries.ITEM.getKey(stack.getItem()).toString(), player.getName().getString(), smithingLevel, smithingMultiplier
         );
 
         ItemStack newStack = stack.copy();
-        newStack.set(DataComponentTypes.MAX_DAMAGE, newMax);
+        newStack.set(DataComponents.MAX_DAMAGE, newMax);
         return newStack;
     }
 
     @Unique
     private Integer getInputDurability() {
-        SmithingScreenHandler handler = (SmithingScreenHandler) (Object) this;
-        ItemStack inputStack = handler.getSlot(1).getStack();
-        return inputStack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null);
+        SmithingMenu handler = (SmithingMenu) (Object) this;
+        ItemStack inputStack = handler.getSlot(1).getItem();
+        return inputStack.getOrDefault(DataComponents.MAX_DAMAGE, null);
     }
 
     @Unique
     private int getVanillaDurability(Item item) {
         ItemStack tempStack = new ItemStack(item);
-        Integer durability = tempStack.getOrDefault(DataComponentTypes.MAX_DAMAGE, null);
+        Integer durability = tempStack.getOrDefault(DataComponents.MAX_DAMAGE, null);
         return durability != null ? durability : 0;
     }
 
@@ -201,20 +201,20 @@ public abstract class SmithingScreenHandlerMixin extends ForgingScreenHandler {
     }
 
     @Unique
-    private void applySmithingLore(ItemStack stack, ServerPlayerEntity player) {
-        if (stack.isEmpty() || stack.get(DataComponentTypes.MAX_DAMAGE) == null) return;
+    private void applySmithingLore(ItemStack stack, ServerPlayer player) {
+        if (stack.isEmpty() || stack.get(DataComponents.MAX_DAMAGE) == null) return;
 
-        int level = XPManager.getSkillLevel(player.getUuidAsString(), Skills.SMITHING);
+        int level = XPManager.getSkillLevel(player.getStringUUID(), Skills.SMITHING);
         LoreManager.TierInfo tierInfo = LoreManager.getTierName(level);
 
-        LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
-        List<Text> currentLore = new ArrayList<>(currentLoreComponent.lines());
+        ItemLore currentLoreComponent = stack.getOrDefault(DataComponents.LORE, new ItemLore(List.of()));
+        List<Component> currentLore = new ArrayList<>(currentLoreComponent.lines());
 
-        Text smithingLore = Text.literal("Upgraded by " + player.getName().getString() +
+        Component smithingLore = Component.literal("Upgraded by " + player.getName().getString() +
                         " (" + tierInfo.name() + " Smith)")
                 .setStyle(Style.EMPTY.withItalic(false).withColor(tierInfo.color()));
 
         currentLore.addFirst(smithingLore);
-        stack.set(DataComponentTypes.LORE, new LoreComponent(currentLore));
+        stack.set(DataComponents.LORE, new ItemLore(currentLore));
     }
 }

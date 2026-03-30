@@ -4,15 +4,14 @@ import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.server.command.ServerCommandSource;
-
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
 public class SkillTabMenu {
     private static final Map<UUID, Boolean> playerTabMenuVisibility = new HashMap<>();
@@ -30,37 +29,37 @@ public class SkillTabMenu {
         return maxLength;
     }
 
-    public static void toggleTabMenuVisibility(ServerCommandSource source) {
-        ServerPlayerEntity player = source.getPlayer();
+    public static void toggleTabMenuVisibility(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
         if (player == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f This command can only be used by players."));
+            source.sendFailure(Component.literal("§6[simpleskills]§f This command can only be used by players."));
             return;
         }
 
-        UUID playerUuid = player.getUuid();
+        UUID playerUuid = player.getUUID();
         boolean isVisible = playerTabMenuVisibility.getOrDefault(playerUuid, DatabaseManager.getInstance().isTabMenuVisible(playerUuid.toString()));
         playerTabMenuVisibility.put(playerUuid, !isVisible);
         DatabaseManager.getInstance().setTabMenuVisibility(playerUuid.toString(), !isVisible);
 
         if (!isVisible) {
             updateTabMenu(player);
-            player.sendMessage(Text.literal("§6[simpleskills]§f Skill HUD enabled."), false);
+            player.sendSystemMessage(Component.literal("§6[simpleskills]§f Skill HUD enabled."), false);
         } else {
-            player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.PlayerListHeaderS2CPacket(
-                    Text.of(""),
-                    Text.of("")
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundTabListPacket(
+                    Component.nullToEmpty(""),
+                    Component.nullToEmpty("")
             ));
-            player.sendMessage(Text.literal("§6[simpleskills]§f Skill HUD disabled."), false);
+            player.sendSystemMessage(Component.literal("§6[simpleskills]§f Skill HUD disabled."), false);
         }
     }
 
-    public static void updateTabMenu(ServerPlayerEntity player) {
-        UUID playerUuid = player.getUuid();
+    public static void updateTabMenu(ServerPlayer player) {
+        UUID playerUuid = player.getUUID();
         boolean isVisible = playerTabMenuVisibility.getOrDefault(playerUuid, DatabaseManager.getInstance().isTabMenuVisible(playerUuid.toString()));
         if (!isVisible) {
-            player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.PlayerListHeaderS2CPacket(
-                    Text.of(""),
-                    Text.of("")
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundTabListPacket(
+                    Component.nullToEmpty(""),
+                    Component.nullToEmpty("")
             ));
             return;
         }
@@ -107,13 +106,13 @@ public class SkillTabMenu {
                     .append(String.format("§b§lTotal Level: §a%d\n", totalLevels))
                     .append("§6§m=======================================");
 
-            player.networkHandler.sendPacket(new net.minecraft.network.packet.s2c.play.PlayerListHeaderS2CPacket(
-                    Text.of(skillInfo.toString()),
-                    Text.of("")
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundTabListPacket(
+                    Component.nullToEmpty(skillInfo.toString()),
+                    Component.nullToEmpty("")
             ));
         } catch (Exception e) {
             Simpleskills.LOGGER.error("Failed to update tab menu for player {}: {}", player.getName().getString(), e.getMessage());
-            player.sendMessage(Text.literal("§6[simpleskills]§f Error: Failed to load skill data."), false);
+            player.sendSystemMessage(Component.literal("§6[simpleskills]§f Error: Failed to load skill data."), false);
         }
     }
 

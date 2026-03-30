@@ -12,19 +12,18 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.permission.Permission;
-import net.minecraft.command.permission.PermissionLevel;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.particle.ParticleTypes;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,88 +39,88 @@ public class SimpleskillsCommands {
     public static void registerCommands() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(
-                        CommandManager.literal("simpleskills")
-                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.ALL)))
-                                .then(CommandManager.literal("togglehud")
+                        Commands.literal("simpleskills")
+                                .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.ALL)))
+                                .then(Commands.literal("togglehud")
                                         .executes(context -> {
                                             SkillTabMenu.toggleTabMenuVisibility(context.getSource());
                                             return 1;
                                         }))
-                                .then(CommandManager.literal("ironman")
-                                        .then(CommandManager.literal("enable")
+                                .then(Commands.literal("ironman")
+                                        .then(Commands.literal("enable")
                                                 .executes(SimpleskillsCommands::enableIronman))
-                                        .then(CommandManager.literal("disable")
-                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
+                                        .then(Commands.literal("disable")
+                                                .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
                                                 .executes(SimpleskillsCommands::disableIronman)))
-                                .then(CommandManager.literal("prestige")
+                                .then(Commands.literal("prestige")
                                         .executes(SimpleskillsCommands::prestige))
-                                .then(CommandManager.literal("reload")
-                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
+                                .then(Commands.literal("reload")
+                                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
                                         .executes(context -> {
                                             ConfigManager.initialize();
                                             XPManager.reloadConfig();
-                                            context.getSource().sendFeedback(() -> Text.literal("§6[simpleskills]§f Configs reloaded."), true);
+                                            context.getSource().sendSuccess(() -> Component.literal("§6[simpleskills]§f Configs reloaded."), true);
                                             return 1;
                                         }))
-                                .then(CommandManager.literal("reset")
-                                        .then(CommandManager.argument("username", StringArgumentType.string())
-                                                .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
+                                .then(Commands.literal("reset")
+                                        .then(Commands.argument("username", StringArgumentType.string())
+                                                .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getOnlinePlayerNames(context), builder))
                                                 .executes(SimpleskillsCommands::resetSkillsForPlayer))
                                         .executes(SimpleskillsCommands::resetSkillsForPlayer))
-                                .then(CommandManager.literal("addxp")
-                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
-                                        .then(CommandManager.argument("targets", StringArgumentType.string())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
-                                                .then(CommandManager.argument("skill", StringArgumentType.word())
-                                                        .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
-                                                        .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                                .then(Commands.literal("addxp")
+                                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
+                                        .then(Commands.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getOnlinePlayerNames(context), builder))
+                                                .then(Commands.argument("skill", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(getValidSkills(), builder))
+                                                        .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                                 .executes(SimpleskillsCommands::addXP)))))
-                                .then(CommandManager.literal("setlevel")
-                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
-                                        .then(CommandManager.argument("targets", StringArgumentType.string())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
-                                                .then(CommandManager.argument("skill", StringArgumentType.word())
-                                                        .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
-                                                        .then(CommandManager.argument("level", IntegerArgumentType.integer(1, XPManager.getMaxLevel()))
+                                .then(Commands.literal("setlevel")
+                                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
+                                        .then(Commands.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getOnlinePlayerNames(context), builder))
+                                                .then(Commands.argument("skill", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(getValidSkills(), builder))
+                                                        .then(Commands.argument("level", IntegerArgumentType.integer(1, XPManager.getMaxLevel()))
                                                                 .executes(SimpleskillsCommands::setLevel)))))
-                                .then(CommandManager.literal("setprestige")
-                                        .requires(source -> source.getPermissions().hasPermission(new Permission.Level(PermissionLevel.MODERATORS)))
-                                        .then(CommandManager.argument("targets", StringArgumentType.string())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
-                                                .then(CommandManager.argument("value", IntegerArgumentType.integer(0))
+                                .then(Commands.literal("setprestige")
+                                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.MODERATORS)))
+                                        .then(Commands.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getOnlinePlayerNames(context), builder))
+                                                .then(Commands.argument("value", IntegerArgumentType.integer(0))
                                                         .executes(SimpleskillsCommands::setPrestige))))
-                                .then(CommandManager.literal("query")
-                                        .then(CommandManager.argument("targets", StringArgumentType.string())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getOnlinePlayerNames(context), builder))
-                                                .then(CommandManager.literal("TOTAL")
+                                .then(Commands.literal("query")
+                                        .then(Commands.argument("targets", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getOnlinePlayerNames(context), builder))
+                                                .then(Commands.literal("TOTAL")
                                                         .executes(SimpleskillsCommands::queryTotalLevel))
-                                                .then(CommandManager.argument("skill", StringArgumentType.word())
-                                                        .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
+                                                .then(Commands.argument("skill", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(getValidSkills(), builder))
                                                         .executes(SimpleskillsCommands::querySkill))))
-                                .then(CommandManager.literal("leaderboard")
-                                        .then(CommandManager.literal("TOTAL")
+                                .then(Commands.literal("leaderboard")
+                                        .then(Commands.literal("TOTAL")
                                                 .executes(SimpleskillsCommands::showTotalLevelLeaderboard))
-                                        .then(CommandManager.argument("skill", StringArgumentType.word())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
+                                        .then(Commands.argument("skill", StringArgumentType.word())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getValidSkills(), builder))
                                                 .executes(SimpleskillsCommands::showSkillLeaderboard)))
-                                .then(CommandManager.literal("leaderboardironman")
-                                        .then(CommandManager.literal("TOTAL")
+                                .then(Commands.literal("leaderboardironman")
+                                        .then(Commands.literal("TOTAL")
                                                 .executes(SimpleskillsCommands::showIronmanTotalLevelLeaderboard))
-                                        .then(CommandManager.argument("skill", StringArgumentType.word())
-                                                .suggests((context, builder) -> CommandSource.suggestMatching(getValidSkills(), builder))
+                                        .then(Commands.argument("skill", StringArgumentType.word())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(getValidSkills(), builder))
                                                 .executes(SimpleskillsCommands::showIronmanSkillLeaderboard)))
                 ));
     }
 
-    private static int prestige(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
+    private static int prestige(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f This command can only be used by players.").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
-        String playerUuid = player.getUuidAsString();
+        String playerUuid = player.getStringUUID();
         DatabaseManager db = DatabaseManager.getInstance();
         db.ensurePlayerInitialized(playerUuid);
 
@@ -129,7 +128,7 @@ public class SimpleskillsCommands {
         boolean allMaxed = db.getAllSkills(playerUuid).values().stream()
                 .allMatch(s -> s.level() >= XPManager.getMaxLevel());
         if (!allMaxed) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You must reach level " + XPManager.getMaxLevel() + " in all skills to prestige."), false);
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f You must reach level " + XPManager.getMaxLevel() + " in all skills to prestige."), false);
             return 0;
         }
 
@@ -142,99 +141,99 @@ public class SimpleskillsCommands {
         com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(player);
 
         int newPrestige = db.getPrestige(playerUuid);
-        player.sendMessage(Text.literal("§6[simpleskills]§f You prestiged to §6★" + newPrestige + "§f! Skills reset to 1."), false);
+        player.sendSystemMessage(Component.literal("§6[simpleskills]§f You prestiged to §6★" + newPrestige + "§f! Skills reset to 1."), false);
         Simpleskills.LOGGER.info("Player {} prestiged to {}", player.getName().getString(), newPrestige);
         return 1;
     }
 
-    private static int enableIronman(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        if (!(source.getEntity() instanceof ServerPlayerEntity player)) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
+    private static int enableIronman(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f This command can only be used by players.").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
-        String playerUuid = player.getUuidAsString();
+        String playerUuid = player.getStringUUID();
         DatabaseManager db = DatabaseManager.getInstance();
         db.ensurePlayerInitialized(playerUuid);
 
         int totalLevels = db.getTotalSkillLevel(playerUuid);
         int expectedTotalLevels = Skills.values().length;
         if (totalLevels > expectedTotalLevels || DatabaseManager.getInstance().getPrestige(playerUuid) > 0) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You must reset your skills using /simpleskills reset before enabling Ironman Mode.").formatted(Formatting.RED), false);
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f You must reset your skills using /simpleskills reset before enabling Ironman Mode.").withStyle(ChatFormatting.RED), false);
             Simpleskills.LOGGER.debug("Player {} attempted to enable Ironman Mode but has {} total levels (expected {}).", player.getName().getString(), totalLevels, expectedTotalLevels);
             return 0;
         }
 
         if (db.isPlayerInIronmanMode(playerUuid)) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f You have already enabled Ironman Mode.").formatted(Formatting.RED), false);
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f You have already enabled Ironman Mode.").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
         db.setIronmanMode(playerUuid, true);
         IronmanManager.applyIronmanMode(player);
-        player.sendMessage(Text.literal("§6[simpleskills]§f You have enabled Ironman Mode!").formatted(Formatting.YELLOW), false);
+        player.sendSystemMessage(Component.literal("§6[simpleskills]§f You have enabled Ironman Mode!").withStyle(ChatFormatting.YELLOW), false);
 
-        ServerWorld world = player.getEntityWorld();
-        world.spawnParticles(ParticleTypes.TOTEM_OF_UNDYING, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 0.5, 0.5, 0.1);
-        world.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.PLAYERS, 0.7f, 1.3f);
+        ServerLevel world = player.level();
+        world.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, player.getX(), player.getY() + 1.0, player.getZ(), 50, 0.5, 0.5, 0.5, 0.1);
+        world.playSound(null, player.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.7f, 1.3f);
         Simpleskills.LOGGER.info("Player {} enabled Ironman Mode.", player.getName().getString());
         return 1;
     }
 
-    private static int disableIronman(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+    private static int disableIronman(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayer();
 
         if (player == null) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f This command can only be used by players.").formatted(Formatting.RED), false);
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f This command can only be used by players.").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
         if (ConfigManager.isForceIronmanModeEnabled()) {
-            source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Ironman Mode is enforced by the server and cannot be disabled.").formatted(Formatting.RED), false);
+            source.sendSuccess(() -> Component.literal("§6[simpleskills]§f Ironman Mode is enforced by the server and cannot be disabled.").withStyle(ChatFormatting.RED), false);
             return 0;
         }
 
         IronmanManager.disableIronmanMode(player);
-        player.sendMessage(Text.literal("§6[simpleskills]§f Ironman Mode disabled."), false);
+        player.sendSystemMessage(Component.literal("§6[simpleskills]§f Ironman Mode disabled."), false);
         return 1;
     }
 
-    private static int resetSkillsForPlayer(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        String playerName = source.getEntity() instanceof ServerPlayerEntity ? Objects.requireNonNull(source.getPlayer()).getGameProfile().name() : StringArgumentType.getString(context, "username");
-        ServerPlayerEntity targetPlayer = source.getServer().getPlayerManager().getPlayer(playerName);
+    private static int resetSkillsForPlayer(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        String playerName = source.getEntity() instanceof ServerPlayer ? Objects.requireNonNull(source.getPlayer()).getGameProfile().name() : StringArgumentType.getString(context, "username");
+        ServerPlayer targetPlayer = source.getServer().getPlayerList().getPlayerByName(playerName);
         if (targetPlayer == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
+            source.sendFailure(Component.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
             return 0;
         }
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.resetPlayerSkills(playerUuid);
         db.setPrestige(playerUuid, 0);
         AttributeManager.refreshAllAttributes(targetPlayer);
         SkillTabMenu.updateTabMenu(targetPlayer);
         com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(targetPlayer);
 
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Reset skills and prestige for " + playerName + "."), true);
-        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your skills and prestige have been reset!"), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f Reset skills and prestige for " + playerName + "."), true);
+        targetPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f Your skills and prestige have been reset!"), false);
         Simpleskills.LOGGER.debug("Reset skills for player {}", playerName);
         return 1;
     }
 
-    private static int addXP(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int addXP(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
         String skillName = StringArgumentType.getString(context, "skill");
         int amount = IntegerArgumentType.getInteger(context, "amount");
 
-        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        ServerPlayer targetPlayer = getPlayerByName(source, playerName);
         if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.ensurePlayerInitialized(playerUuid);
 
         Skills skill = parseSkillName(source, skillName);
@@ -244,23 +243,23 @@ public class SimpleskillsCommands {
         AttributeManager.refreshAllAttributes(targetPlayer);
         SkillTabMenu.updateTabMenu(targetPlayer);
 
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Added " + amount + " XP to " + playerName + "'s '" + skill.getDisplayName() + "'."), true);
-        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f You gained " + amount + " XP in " + skill.getDisplayName() + "!"), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f Added " + amount + " XP to " + playerName + "'s '" + skill.getDisplayName() + "'."), true);
+        targetPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f You gained " + amount + " XP in " + skill.getDisplayName() + "!"), false);
         Simpleskills.LOGGER.debug("Added {} XP to skill {} for player {}", amount, skill.getDisplayName(), playerName);
         return 1;
     }
 
-    private static int setLevel(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int setLevel(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
         String skillName = StringArgumentType.getString(context, "skill");
         int newLevel = IntegerArgumentType.getInteger(context, "level");
 
-        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        ServerPlayer targetPlayer = getPlayerByName(source, playerName);
         if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.ensurePlayerInitialized(playerUuid);
 
         Skills skill = parseSkillName(source, skillName);
@@ -271,22 +270,22 @@ public class SimpleskillsCommands {
         AttributeManager.refreshAllAttributes(targetPlayer);
         SkillTabMenu.updateTabMenu(targetPlayer);
 
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Set " + playerName + "'s '" + skill.getDisplayName() + "' to level " + newLevel + "."), true);
-        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your skill '" + skill.getDisplayName() + "' is now level " + newLevel + "!"), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f Set " + playerName + "'s '" + skill.getDisplayName() + "' to level " + newLevel + "."), true);
+        targetPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f Your skill '" + skill.getDisplayName() + "' is now level " + newLevel + "!"), false);
         Simpleskills.LOGGER.debug("Set skill {} to level {} for player {}", skill.getDisplayName(), newLevel, playerName);
         return 1;
     }
 
-    private static int setPrestige(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int setPrestige(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
         int value = IntegerArgumentType.getInteger(context, "value");
 
-        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        ServerPlayer targetPlayer = getPlayerByName(source, playerName);
         if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.ensurePlayerInitialized(playerUuid);
 
         db.setPrestige(playerUuid, value);
@@ -296,51 +295,51 @@ public class SimpleskillsCommands {
         SkillTabMenu.updateTabMenu(targetPlayer);
         com.github.ob_yekt.simpleskills.managers.NamePrefixManager.updatePlayerNameDecorations(targetPlayer);
 
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f Set prestige for " + playerName + " to §6★" + value + "§f."), true);
-        targetPlayer.sendMessage(Text.literal("§6[simpleskills]§f Your prestige is now §6★" + value + "§f."), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f Set prestige for " + playerName + " to §6★" + value + "§f."), true);
+        targetPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f Your prestige is now §6★" + value + "§f."), false);
         Simpleskills.LOGGER.info("Set prestige for {} to {}", playerName, value);
         return 1;
     }
 
-    private static int querySkill(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int querySkill(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
         String skillName = StringArgumentType.getString(context, "skill");
 
-        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        ServerPlayer targetPlayer = getPlayerByName(source, playerName);
         if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.ensurePlayerInitialized(playerUuid);
 
         Skills skill = parseSkillName(source, skillName);
         if (skill == null) return 0;
 
         int level = XPManager.getSkillLevel(playerUuid, skill);
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f " + playerName + "'s '" + skill.getDisplayName() + "' level: " + level), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f " + playerName + "'s '" + skill.getDisplayName() + "' level: " + level), false);
         Simpleskills.LOGGER.debug("Queried skill {} for player {}: level {}", skill.getDisplayName(), playerName, level);
         return 1;
     }
 
-    private static int queryTotalLevel(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int queryTotalLevel(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String playerName = StringArgumentType.getString(context, "targets");
-        ServerPlayerEntity targetPlayer = getPlayerByName(source, playerName);
+        ServerPlayer targetPlayer = getPlayerByName(source, playerName);
         if (targetPlayer == null) return 0;
 
         DatabaseManager db = DatabaseManager.getInstance();
-        String playerUuid = targetPlayer.getUuidAsString();
+        String playerUuid = targetPlayer.getStringUUID();
         db.ensurePlayerInitialized(playerUuid);
 
         int totalLevel = db.getTotalSkillLevel(playerUuid);
-        source.sendFeedback(() -> Text.literal("§6[simpleskills]§f " + playerName + "'s total skill level: " + totalLevel), false);
+        source.sendSuccess(() -> Component.literal("§6[simpleskills]§f " + playerName + "'s total skill level: " + totalLevel), false);
         Simpleskills.LOGGER.debug("Queried total level for player {}: {}", playerName, totalLevel);
         return 1;
     }
 
-    private static int showSkillLeaderboard(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int showSkillLeaderboard(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
         Skills skill = parseSkillName(source, skillName);
@@ -367,13 +366,13 @@ public class SimpleskillsCommands {
         }
 
         message.append("§8§m---------------------------------------");
-        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        source.sendSuccess(() -> Component.literal(message.toString()), false);
         Simpleskills.LOGGER.debug("Displayed leaderboard for skill {}", skill.getDisplayName());
         return 1;
     }
 
-    private static int showTotalLevelLeaderboard(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int showTotalLevelLeaderboard(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getTotalLevelLeaderboard(5);
 
@@ -395,13 +394,13 @@ public class SimpleskillsCommands {
         }
 
         message.append("§8§m---------------------------------------");
-        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        source.sendSuccess(() -> Component.literal(message.toString()), false);
         Simpleskills.LOGGER.debug("Displayed total level leaderboard");
         return 1;
     }
 
-    private static int showIronmanSkillLeaderboard(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int showIronmanSkillLeaderboard(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         String skillName = StringArgumentType.getString(context, "skill");
 
         Skills skill = parseSkillName(source, skillName);
@@ -426,13 +425,13 @@ public class SimpleskillsCommands {
         }
 
         message.append("§8§m---------------------------------------");
-        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        source.sendSuccess(() -> Component.literal(message.toString()), false);
         Simpleskills.LOGGER.debug("Displayed Ironman leaderboard for skill {}", skill.getDisplayName());
         return 1;
     }
 
-    private static int showIronmanTotalLevelLeaderboard(CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
+    private static int showIronmanTotalLevelLeaderboard(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
         DatabaseManager db = DatabaseManager.getInstance();
         List<DatabaseManager.LeaderboardEntry> leaderboard = db.getIronmanTotalLevelLeaderboard(5);
 
@@ -452,13 +451,13 @@ public class SimpleskillsCommands {
         }
 
         message.append("§8§m---------------------------------------");
-        source.sendFeedback(() -> Text.literal(message.toString()), false);
+        source.sendSuccess(() -> Component.literal(message.toString()), false);
         Simpleskills.LOGGER.debug("Displayed Ironman total level leaderboard");
         return 1;
     }
 
-    private static List<String> getOnlinePlayerNames(CommandContext<ServerCommandSource> context) {
-        return context.getSource().getServer().getPlayerManager().getPlayerList().stream()
+    private static List<String> getOnlinePlayerNames(CommandContext<CommandSourceStack> context) {
+        return context.getSource().getServer().getPlayerList().getPlayers().stream()
                 .map(player -> player.getGameProfile().name())
                 .collect(Collectors.toList());
     }
@@ -473,10 +472,10 @@ public class SimpleskillsCommands {
      * Helper method to get a player by name with error handling.
      * @return The player if found, null otherwise (and sends error message)
      */
-    private static ServerPlayerEntity getPlayerByName(ServerCommandSource source, String playerName) {
-        ServerPlayerEntity player = source.getServer().getPlayerManager().getPlayer(playerName);
+    private static ServerPlayer getPlayerByName(CommandSourceStack source, String playerName) {
+        ServerPlayer player = source.getServer().getPlayerList().getPlayerByName(playerName);
         if (player == null) {
-            source.sendError(Text.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
+            source.sendFailure(Component.literal("§6[simpleskills]§f Player '" + playerName + "' not found."));
         }
         return player;
     }
@@ -485,11 +484,11 @@ public class SimpleskillsCommands {
      * Helper method to parse a skill name with error handling.
      * @return The skill if valid, null otherwise (and sends error message)
      */
-    private static Skills parseSkillName(ServerCommandSource source, String skillName) {
+    private static Skills parseSkillName(CommandSourceStack source, String skillName) {
         try {
             return Skills.valueOf(skillName.toUpperCase());
         } catch (IllegalArgumentException e) {
-            source.sendError(Text.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
+            source.sendFailure(Component.literal("§6[simpleskills]§f Invalid skill '" + skillName + "'."));
             return null;
         }
     }

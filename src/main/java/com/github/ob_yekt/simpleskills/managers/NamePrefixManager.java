@@ -1,13 +1,12 @@
 package com.github.ob_yekt.simpleskills.managers;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
-import net.minecraft.scoreboard.ServerScoreboard;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
 import java.util.Objects;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.ServerScoreboard;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.scores.PlayerTeam;
 
 /**
  * Maintains per-player scoreboard team to show chat/nametag/tab-list prefix: "★X [username]" and skull for Ironman.
@@ -15,9 +14,9 @@ import java.util.Objects;
 public class NamePrefixManager {
     private static final String TEAM_PREFIX = "simpleskills_prefix_";
 
-    public static void updatePlayerNameDecorations(ServerPlayerEntity player) {
+    public static void updatePlayerNameDecorations(ServerPlayer player) {
         if (player == null) return;
-        String playerUuid = player.getUuidAsString();
+        String playerUuid = player.getStringUUID();
         DatabaseManager db = DatabaseManager.getInstance();
         boolean isIronman = db.isPlayerInIronmanMode(playerUuid);
         int prestige = db.getPrestige(playerUuid);
@@ -27,20 +26,20 @@ public class NamePrefixManager {
 
         String prefix = skullPart + starPart;
 
-        ServerScoreboard scoreboard = Objects.requireNonNull(player.getEntityWorld().getServer()).getScoreboard();
-        String teamName = TEAM_PREFIX + player.getUuid().toString().substring(0, 16);
-        Team team = scoreboard.getTeam(teamName);
+        ServerScoreboard scoreboard = Objects.requireNonNull(player.level().getServer()).getScoreboard();
+        String teamName = TEAM_PREFIX + player.getUUID().toString().substring(0, 16);
+        PlayerTeam team = scoreboard.getPlayerTeam(teamName);
         if (team == null) {
-            team = scoreboard.addTeam(teamName);
-            team.setFriendlyFireAllowed(false);
-            team.setShowFriendlyInvisibles(true);
+            team = scoreboard.addPlayerTeam(teamName);
+            team.setAllowFriendlyFire(false);
+            team.setSeeFriendlyInvisibles(true);
         }
 
-        team.setPrefix(Text.literal(prefix));
-        team.setColor(Formatting.WHITE);
+        team.setPlayerPrefix(Component.literal(prefix));
+        team.setColor(ChatFormatting.WHITE);
 
         // Ensure membership
-        scoreboard.addScoreHolderToTeam(player.getNameForScoreboard(), team);
+        scoreboard.addPlayerToTeam(player.getScoreboardName(), team);
 
         Simpleskills.LOGGER.debug("Updated name decorations for {}: {}", player.getName().getString(), prefix.replace("§", ""));
     }

@@ -5,9 +5,8 @@ import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
 import com.google.gson.*;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -205,8 +204,8 @@ public class ConfigManager {
                     // Handle pattern-based blocks (e.g., block.minecraft.*_planks)
                     if (block.contains("*")) {
                         String regex = block.replace("*", ".*");
-                        for (var blockEntry : Registries.BLOCK.getEntrySet()) {
-                            String translationKey = blockEntry.getValue().getTranslationKey();
+                        for (var blockEntry : BuiltInRegistries.BLOCK.entrySet()) {
+                            String translationKey = blockEntry.getValue().getDescriptionId();
                             if (translationKey.matches(regex)) {
                                 BLOCK_SKILL_MAP.put(translationKey, skill);
                                 BLOCK_XP_MAP.put(translationKey, xp);
@@ -1734,7 +1733,7 @@ public class ConfigManager {
                 String range = entry.getKey();
                 String lootTableStr = entry.getValue().getAsString();
                 try {
-                    Identifier id = Identifier.of(lootTableStr);
+                    Identifier id = Identifier.parse(lootTableStr);
                     FISHING_LOOT_TABLES.put(range, id);
                 } catch (Exception e) {
                     Simpleskills.LOGGER.warn("Invalid loot table ID {} for range {} in fishing_loot.json", lootTableStr, range);
@@ -2024,15 +2023,15 @@ public class ConfigManager {
      */
     public static Identifier getFishingLootTable(int fishingLevel) {
         if (fishingLevel >= 99) {
-            return FISHING_LOOT_TABLES.getOrDefault("99-99", Identifier.of("simpleskills", "fishing/simpleskills_fishing_grandmaster"));
+            return FISHING_LOOT_TABLES.getOrDefault("99-99", Identifier.fromNamespaceAndPath("simpleskills", "fishing/simpleskills_fishing_grandmaster"));
         } else if (fishingLevel >= 75) {
-            return FISHING_LOOT_TABLES.getOrDefault("75-98", Identifier.of("simpleskills", "fishing/simpleskills_fishing_expert"));
+            return FISHING_LOOT_TABLES.getOrDefault("75-98", Identifier.fromNamespaceAndPath("simpleskills", "fishing/simpleskills_fishing_expert"));
         } else if (fishingLevel >= 50) {
-            return FISHING_LOOT_TABLES.getOrDefault("50-74", Identifier.of("simpleskills", "fishing/simpleskills_fishing_artisan"));
+            return FISHING_LOOT_TABLES.getOrDefault("50-74", Identifier.fromNamespaceAndPath("simpleskills", "fishing/simpleskills_fishing_artisan"));
         } else if (fishingLevel >= 25) {
-            return FISHING_LOOT_TABLES.getOrDefault("25-49", Identifier.of("simpleskills", "fishing/simpleskills_fishing_journeyman"));
+            return FISHING_LOOT_TABLES.getOrDefault("25-49", Identifier.fromNamespaceAndPath("simpleskills", "fishing/simpleskills_fishing_journeyman"));
         } else {
-            return FISHING_LOOT_TABLES.getOrDefault("1-24", Identifier.of("simpleskills", "fishing/simpleskills_fishing_novice"));
+            return FISHING_LOOT_TABLES.getOrDefault("1-24", Identifier.fromNamespaceAndPath("simpleskills", "fishing/simpleskills_fishing_novice"));
         }
     }
 

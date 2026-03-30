@@ -6,28 +6,28 @@ import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.AttributeManager;
 import com.github.ob_yekt.simpleskills.managers.IronmanManager;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Objects;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 
 /**
  * Mixin for ServerPlayerEntity to handle Ironman mode death penalties.
  * Respects force_ironman_mode config — never disables Ironman if enforced.
  */
-@Mixin(ServerPlayerEntity.class)
+@Mixin(ServerPlayer.class)
 public class ServerPlayerEntityMixin {
 
-    @Inject(method = "onDeath", at = @At("HEAD"))
+    @Inject(method = "die", at = @At("HEAD"))
     private void onDeath(DamageSource source, CallbackInfo ci) {
-        ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
-        String playerUuid = player.getUuidAsString();
+        ServerPlayer player = (ServerPlayer) (Object) this;
+        String playerUuid = player.getStringUUID();
         DatabaseManager db = DatabaseManager.getInstance();
         boolean isForceIronman = ConfigManager.isForceIronmanModeEnabled();
 
@@ -44,8 +44,8 @@ public class ServerPlayerEntityMixin {
         // === PLAYER IS IN IRONMAN MODE ===
 
         // Always apply hardcore death penalties
-        player.getInventory().clear();
-        player.setExperienceLevel(0);
+        player.getInventory().clearContent();
+        player.setExperienceLevels(0);
         player.setExperiencePoints(0);
 
         int totalLevels = db.getAllSkills(playerUuid).values().stream()
@@ -65,19 +65,19 @@ public class ServerPlayerEntityMixin {
             String message = String.format("§6[simpleskills]§f %s has died in Ironman mode with a total level of §6%d§f%s.",
                     player.getName().getString(), totalLevels, prestigePart);
 
-            Objects.requireNonNull(player.getEntityWorld().getServer()).getPlayerManager().broadcast(
-                    Text.literal(message), false);
+            Objects.requireNonNull(player.level().getServer()).getPlayerList().broadcastSystemMessage(
+                    Component.literal(message), false);
         }
 
         // === ONLY disable Ironman if NOT forced by server ===
         if (!isForceIronman) {
             IronmanManager.disableIronmanMode(player);
-            player.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all your levels and items. Ironman mode has been disabled.")
-                    .formatted(Formatting.YELLOW), false);
+            player.sendSystemMessage(Component.literal("§6[simpleskills]§f Your deal with death has cost you all your levels and items. Ironman mode has been disabled.")
+                    .withStyle(ChatFormatting.YELLOW), false);
         } else {
             // Force Ironman: keep mode active, just re-apply visuals/attributes
-            player.sendMessage(Text.literal("§6[simpleskills]§f Your deal with death has cost you all your levels and items.")
-                    .formatted(Formatting.YELLOW), false);
+            player.sendSystemMessage(Component.literal("§6[simpleskills]§f Your deal with death has cost you all your levels and items.")
+                    .withStyle(ChatFormatting.YELLOW), false);
 
             // Re-apply Ironman attributes since inventory was cleared
             AttributeManager.applyIronmanAttributes(player);

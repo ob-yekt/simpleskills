@@ -5,22 +5,22 @@ import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public class SpearCancelMixin {
 
-    @Inject(method = "pierce", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "stabAttack", at = @At("HEAD"), cancellable = true)
     private void onPierce(
             EquipmentSlot slot,
             Entity target,
@@ -30,30 +30,32 @@ public class SpearCancelMixin {
             boolean dismount,
             CallbackInfoReturnable<Boolean> cir
     ) {
-        PlayerEntity player = (PlayerEntity) (Object) this;
+        Player player = (Player) (Object) this;
 
-        if (player.getEntityWorld().isClient()) return;
+        if (player.level().isClientSide()) return;
         if (!(target instanceof LivingEntity)) return;
 
-        ItemStack weapon = player.getEquippedStack(slot);
+        ItemStack weapon = player.getItemBySlot(slot);
         if (weapon.isEmpty()) return;
 
-        SkillRequirement req = ConfigManager.getWeaponRequirement(Registries.ITEM.getId(weapon.getItem()).toString());
+        SkillRequirement req = ConfigManager.getWeaponRequirement(BuiltInRegistries.ITEM.getKey(weapon.getItem()).toString());
         if (req == null) return;
 
-        int level = XPManager.getSkillLevel(player.getUuidAsString(), req.getSkill());
-        int prestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+        int level = XPManager.getSkillLevel(player.getStringUUID(), req.getSkill());
+        int prestige = DatabaseManager.getInstance().getPrestige(player.getStringUUID());
 
         if (level < req.getLevel() || (req.getRequiredPrestige() > 0 && prestige < req.getRequiredPrestige())) {
-            player.sendMessage(
-                    Text.literal(String.format(
-                            "§6[simpleskills]§f You need %s level %d to use this weapon!",
-                            req.getSkill().getDisplayName(),
-                            req.getLevel()
-                    )),
-                    true
-            );
-            cir.setReturnValue(false); // cancels the pierce attack
+            if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(
+                        Component.literal(String.format(
+                                "§6[simpleskills]§f You need %s level %d to use this weapon!",
+                                req.getSkill().getDisplayName(),
+                                req.getLevel()
+                        )),
+                        true
+                );
+            }
+            cir.setReturnValue(false);
         }
     }
 }

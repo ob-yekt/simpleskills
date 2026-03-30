@@ -4,44 +4,42 @@ import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.Skills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
-
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.FishingBobberEntity;
-import net.minecraft.loot.LootTable;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.ReloadableRegistries;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.ReloadableServerRegistries;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.level.storage.loot.LootTable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(FishingBobberEntity.class)
+@Mixin(FishingHook.class)
 public abstract class FishingBobberLootMixin {
 
     // 3) Swap the loot table per-player (fix: owner + signature are ReloadableRegistries$Lookup)
     @Redirect(
-            method = "use",
+            method = "retrieve",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/registry/ReloadableRegistries$Lookup;getLootTable(Lnet/minecraft/registry/RegistryKey;)Lnet/minecraft/loot/LootTable;"
+                    target = "Lnet/minecraft/server/ReloadableServerRegistries$Holder;getLootTable(Lnet/minecraft/resources/ResourceKey;)Lnet/minecraft/world/level/storage/loot/LootTable;"
             )
     )
     private LootTable simpleskills$redirectGetLootTable(
-            ReloadableRegistries.Lookup lookup,
-            RegistryKey<LootTable> original
+            ReloadableServerRegistries.Holder lookup,
+            ResourceKey<LootTable> original
     ) {
-        FishingBobberEntity self = (FishingBobberEntity) (Object) this;
-        PlayerEntity player = self.getPlayerOwner();
+        FishingHook self = (FishingHook) (Object) this;
+        Player player = self.getPlayerOwner();
 
-        if (player instanceof ServerPlayerEntity sp) {
-            int level = XPManager.getSkillLevel(sp.getUuidAsString(), Skills.FISHING);
+        if (player instanceof ServerPlayer sp) {
+            int level = XPManager.getSkillLevel(sp.getStringUUID(), Skills.FISHING);
             Identifier customId = ConfigManager.getFishingLootTable(level);
 
             if (customId != null) {
-                RegistryKey<LootTable> key = RegistryKey.of(RegistryKeys.LOOT_TABLE, customId);
+                ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE, customId);
                 Simpleskills.LOGGER.debug("Attempting custom loot table: {}", customId);
                 LootTable lootTable = lookup.getLootTable(key);
 

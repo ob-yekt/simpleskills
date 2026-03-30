@@ -12,42 +12,36 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-
-import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.EquipmentSlot;
-
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.ItemStack;
-
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.property.Properties;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-
-import net.minecraft.util.Identifier;
-
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.Objects;
 
 /**
@@ -66,15 +60,15 @@ public class EventHandlers {
     private static void registerBlockHandlers() {
         // BEFORE block break event
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
-            if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
                 return true;
             }
 
-            String blockTranslationKey = state.getBlock().getTranslationKey();
+            String blockTranslationKey = state.getBlock().getDescriptionId();
             String toolId = "minecraft:air"; // Default if empty hand
-            ItemStack mainHandStack = serverPlayer.getMainHandStack();
+            ItemStack mainHandStack = serverPlayer.getMainHandItem();
             if (!mainHandStack.isEmpty()) {
-                toolId = Registries.ITEM.getId(mainHandStack.getItem()).toString();
+                toolId = BuiltInRegistries.ITEM.getKey(mainHandStack.getItem()).toString();
             }
 
             // --- 1) Check tool requirement first ---
@@ -84,9 +78,9 @@ public class EventHandlers {
                 int requiredLevel = requirement.getLevel();
                 int requiredPrestige = requirement.getRequiredPrestige();
 
-                int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), requiredSkill);
+                int playerLevel = XPManager.getSkillLevel(serverPlayer.getStringUUID(), requiredSkill);
                 if (playerLevel < requiredLevel) {
-                    serverPlayer.sendMessage(Text.literal(String.format(
+                    serverPlayer.sendSystemMessage(Component.literal(String.format(
                             "§6[simpleskills]§f You need %s level %d to use this tool!",
                             requiredSkill.getDisplayName(), requiredLevel
                     )), true);
@@ -95,9 +89,9 @@ public class EventHandlers {
 
                 // Prestige gate (optional)
                 if (requiredPrestige > 0) {
-                    int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                    int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getStringUUID());
                     if (playerPrestige < requiredPrestige) {
-                        serverPlayer.sendMessage(Text.literal(String.format(
+                        serverPlayer.sendSystemMessage(Component.literal(String.format(
                                 "§6[simpleskills]§f You need Prestige ★%d to use this tool!",
                                 requiredPrestige
                         )), true);
@@ -117,11 +111,11 @@ public class EventHandlers {
 
         // AFTER block break event
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
                 return;
             }
 
-            String blockTranslationKey = state.getBlock().getTranslationKey();
+            String blockTranslationKey = state.getBlock().getDescriptionId();
 
             // Check for Silk Touch on ores, melons (before doing anything else)
             if ((blockTranslationKey.contains("_ore") || blockTranslationKey.contains("melon")) && hasSilkTouch(serverPlayer)) {
@@ -131,7 +125,7 @@ public class EventHandlers {
 
             // Check if it's a configured farming block
             if (ConfigManager.isCropBlock(blockTranslationKey)) {
-                grantFarmingXP((ServerWorld) world, serverPlayer, pos, state, blockTranslationKey);
+                grantFarmingXP((ServerLevel) world, serverPlayer, pos, state, blockTranslationKey);
                 return;
             }
 
@@ -139,11 +133,11 @@ public class EventHandlers {
             Skills relevantSkill = ConfigManager.getBlockSkill(blockTranslationKey);
             Integer overrideXP = ConfigManager.getBlockXPOverride(blockTranslationKey);
             if (relevantSkill == null) {
-                if (state.isIn(BlockTags.PICKAXE_MINEABLE)) {
+                if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) {
                     relevantSkill = Skills.MINING;
-                } else if (state.isIn(BlockTags.SHOVEL_MINEABLE)) {
+                } else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) {
                     relevantSkill = Skills.EXCAVATING;
-                } else if (state.isIn(BlockTags.AXE_MINEABLE)) {
+                } else if (state.is(BlockTags.MINEABLE_WITH_AXE)) {
                     relevantSkill = Skills.WOODCUTTING;
                 } else {
                     return;
@@ -157,7 +151,7 @@ public class EventHandlers {
                     xp = overrideXP;
                 } else {
                     // Hardness-based default: hardness 1.5 -> 100 XP
-                    float hardness = state.getHardness(world, pos);
+                    float hardness = state.getDestroySpeed(world, pos);
                     xp = Math.max(0, Math.round(hardness * (100.0f / 1.5f)));
                 }
                 XPManager.addXPWithNotification(serverPlayer, relevantSkill, xp);
@@ -169,7 +163,7 @@ public class EventHandlers {
      * Grants farming XP for harvesting crops based on configuration.
      * Now fully config-driven to support custom crops from other mods.
      */
-    private static void grantFarmingXP(ServerWorld world, ServerPlayerEntity serverPlayer, BlockPos pos, BlockState state, String blockTranslationKey) {
+    private static void grantFarmingXP(ServerLevel world, ServerPlayer serverPlayer, BlockPos pos, BlockState state, String blockTranslationKey) {
         ConfigManager.CropConfig cropConfig = ConfigManager.getCropConfig(blockTranslationKey);
         if (cropConfig == null) {
             return;
@@ -180,32 +174,32 @@ public class EventHandlers {
         // Check maturity based on configured age property
         switch (cropConfig.ageProperty()) {
             case "AGE_7":
-                if (state.contains(Properties.AGE_7)) {
-                    int age = state.get(Properties.AGE_7);
+                if (state.hasProperty(BlockStateProperties.AGE_7)) {
+                    int age = state.getValue(BlockStateProperties.AGE_7);
                     isMatured = (age >= cropConfig.maturityAge());
                 }
                 break;
             case "AGE_3":
-                if (state.contains(Properties.AGE_3)) {
-                    int age = state.get(Properties.AGE_3);
+                if (state.hasProperty(BlockStateProperties.AGE_3)) {
+                    int age = state.getValue(BlockStateProperties.AGE_3);
                     isMatured = (age >= cropConfig.maturityAge());
                 }
                 break;
             case "AGE_2":
-                if (state.contains(Properties.AGE_2)) {
-                    int age = state.get(Properties.AGE_2);
+                if (state.hasProperty(BlockStateProperties.AGE_2)) {
+                    int age = state.getValue(BlockStateProperties.AGE_2);
                     isMatured = (age >= cropConfig.maturityAge());
                 }
                 break;
             case "AGE_5":
-                if (state.contains(Properties.AGE_5)) {
-                    int age = state.get(Properties.AGE_5);
+                if (state.hasProperty(BlockStateProperties.AGE_5)) {
+                    int age = state.getValue(BlockStateProperties.AGE_5);
                     isMatured = (age >= cropConfig.maturityAge());
                 }
                 break;
             case "AGE_25":
-                if (state.contains(Properties.AGE_25)) {
-                    int age = state.get(Properties.AGE_25);
+                if (state.hasProperty(BlockStateProperties.AGE_25)) {
+                    int age = state.getValue(BlockStateProperties.AGE_25);
                     isMatured = (age >= cropConfig.maturityAge());
                 }
                 break;
@@ -228,23 +222,23 @@ public class EventHandlers {
         Simpleskills.LOGGER.debug("Granted {} XP for harvesting {} to player {}", xp, blockTranslationKey, serverPlayer.getName().getString());
     }
 
-    private static void applyBonusDrops(ServerWorld world, ServerPlayerEntity player, BlockPos pos, BlockState state, String blockTranslationKey) {
+    private static void applyBonusDrops(ServerLevel world, ServerPlayer player, BlockPos pos, BlockState state, String blockTranslationKey) {
         // Calculate bonus drop chance: 1% per farming level, capped at 99%
-        int farmingLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.FARMING);
+        int farmingLevel = XPManager.getSkillLevel(player.getStringUUID(), Skills.FARMING);
         double dropChance = Math.min(farmingLevel, 99) / 100.0;
 
-        if (world.random.nextDouble() < dropChance) {
+        if (world.getRandom().nextDouble() < dropChance) {
             spawnBonusDrops(world, pos, state);
             Simpleskills.LOGGER.debug("Granted bonus drops to {} for {} (farming level: {})",
                     player.getName().getString(), blockTranslationKey, farmingLevel);
         }
     }
 
-    private static void spawnBonusDrops(ServerWorld world, BlockPos pos, BlockState state) {
+    private static void spawnBonusDrops(ServerLevel world, BlockPos pos, BlockState state) {
         // Get the drops that would normally be produced
-        java.util.List<ItemStack> drops = net.minecraft.block.Block.getDroppedStacks(state, world, pos, null);
+        java.util.List<ItemStack> drops = net.minecraft.world.level.block.Block.getDrops(state, world, pos, null);
 
-        Vec3d dropPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        Vec3 dropPos = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
         for (ItemStack drop : drops) {
             if (drop.isEmpty()) {
@@ -255,102 +249,102 @@ public class EventHandlers {
             ItemEntity itemEntity = new ItemEntity(world, dropPos.x, dropPos.y, dropPos.z, bonus);
 
             // Add slight random velocity for visual effect
-            itemEntity.setVelocity(
-                    (world.random.nextDouble() - 0.5) * 0.1,
-                    world.random.nextDouble() * 0.1,
-                    (world.random.nextDouble() - 0.5) * 0.1
+            itemEntity.setDeltaMovement(
+                    (world.getRandom().nextDouble() - 0.5) * 0.1,
+                    world.getRandom().nextDouble() * 0.1,
+                    (world.getRandom().nextDouble() - 0.5) * 0.1
             );
 
-            world.spawnEntity(itemEntity);
+            world.addFreshEntity(itemEntity);
         }
     }
 
     private static void registerCombatHandlers() {
         // Prevent melee attacks if weapon requirement not met
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
-            if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer) || !(entity instanceof LivingEntity)) {
-                return ActionResult.PASS;
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer) || !(entity instanceof LivingEntity)) {
+                return InteractionResult.PASS;
             }
 
-            ItemStack weapon = serverPlayer.getStackInHand(hand);
+            ItemStack weapon = serverPlayer.getItemInHand(hand);
             if (weapon.isEmpty()) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            String weaponId = Registries.ITEM.getId(weapon.getItem()).toString();
+            String weaponId = BuiltInRegistries.ITEM.getKey(weapon.getItem()).toString();
             SkillRequirement requirement = ConfigManager.getWeaponRequirement(weaponId);
             if (requirement == null) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             Skills skill = requirement.getSkill();
-            int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), skill);
+            int playerLevel = XPManager.getSkillLevel(serverPlayer.getStringUUID(), skill);
             if (playerLevel < requirement.getLevel()) {
-                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
+                serverPlayer.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
             int requiredPrestige = requirement.getRequiredPrestige();
             if (requiredPrestige > 0) {
-                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getStringUUID());
                 if (playerPrestige < requiredPrestige) {
-                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                    serverPlayer.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
                             requiredPrestige)), true);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         // Prevent ranged weapon use (bow/crossbow/trident throw) if requirement not met
         UseItemCallback.EVENT.register((player, world, hand) -> {
-            if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
-            ItemStack stack = player.getStackInHand(hand);
+            ItemStack stack = player.getItemInHand(hand);
             if (stack.isEmpty()) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
-            String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+            String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
             SkillRequirement requirement = ConfigManager.getWeaponRequirement(itemId);
             if (requirement == null) {
-                return ActionResult.PASS;
+                return InteractionResult.PASS;
             }
 
             Skills skill = requirement.getSkill();
-            int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), skill);
+            int playerLevel = XPManager.getSkillLevel(serverPlayer.getStringUUID(), skill);
             if (playerLevel < requirement.getLevel()) {
-                serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
+                serverPlayer.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need %s level %d to use this weapon!",
                         skill.getDisplayName(), requirement.getLevel())), true);
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
 
             int requiredPrestige = requirement.getRequiredPrestige();
             if (requiredPrestige > 0) {
-                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getStringUUID());
                 if (playerPrestige < requiredPrestige) {
-                    serverPlayer.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
+                    serverPlayer.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this weapon!",
                             requiredPrestige)), true);
-                    return ActionResult.FAIL;
+                    return InteractionResult.FAIL;
                 }
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
 
         // Grant XP on successful damage for Slaying, Ranged, and Defense
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (entity.getEntityWorld().isClient() || amount <= 0) {
+            if (entity.level().isClientSide() || amount <= 0) {
                 return true;
             }
 
             // Exclude explosion damage
-            if (source.isOf(net.minecraft.entity.damage.DamageTypes.EXPLOSION) ||
-                    source.isOf(net.minecraft.entity.damage.DamageTypes.PLAYER_EXPLOSION)) {
+            if (source.is(net.minecraft.world.damagesource.DamageTypes.EXPLOSION) ||
+                    source.is(net.minecraft.world.damagesource.DamageTypes.PLAYER_EXPLOSION)) {
                 return true;
             }
 
@@ -361,18 +355,18 @@ public class EventHandlers {
             float minDamageRanged = config.get("ranged_min_damage_threshold") != null ? config.get("ranged_min_damage_threshold").getAsFloat() : 2.0f;
 
             // Slaying/Ranged: Player dealing damage to non-player mob
-            if (entity instanceof LivingEntity target && !(target instanceof PlayerEntity) && !(entity instanceof net.minecraft.entity.decoration.ArmorStandEntity)) {
-                ServerPlayerEntity attacker = null;
+            if (entity instanceof LivingEntity target && !(target instanceof Player) && !(entity instanceof net.minecraft.world.entity.decoration.ArmorStand)) {
+                ServerPlayer attacker = null;
                 Skills skill = null;
                 float xpMultiplier = 0.0f;
                 float minDamage = 0.0f;
                 int xp = 0;
 
                 // Melee (Slaying) attack
-                if (source.getAttacker() instanceof ServerPlayerEntity) {
-                    attacker = (ServerPlayerEntity) source.getAttacker();
-                    ItemStack weapon = attacker.getMainHandStack();
-                    String weaponId = weapon.isEmpty() ? "minecraft:empty" : Registries.ITEM.getId(weapon.getItem()).toString();
+                if (source.getEntity() instanceof ServerPlayer) {
+                    attacker = (ServerPlayer) source.getEntity();
+                    ItemStack weapon = attacker.getMainHandItem();
+                    String weaponId = weapon.isEmpty() ? "minecraft:empty" : BuiltInRegistries.ITEM.getKey(weapon.getItem()).toString();
                     SkillRequirement requirement = ConfigManager.getWeaponRequirement(weaponId);
                     skill = (requirement != null && requirement.getSkill() == Skills.RANGED) ? Skills.RANGED : Skills.SLAYING;
                     xpMultiplier = (skill == Skills.RANGED) ? xpPerDamageRanged : xpPerDamageSlaying;
@@ -380,8 +374,8 @@ public class EventHandlers {
                     xp = (int) (amount * xpMultiplier);
                 }
                 // Ranged attack
-                else if (source.getSource() instanceof ProjectileEntity projectile && projectile.getOwner() instanceof ServerPlayerEntity) {
-                    attacker = (ServerPlayerEntity) projectile.getOwner();
+                else if (source.getDirectEntity() instanceof Projectile projectile && projectile.getOwner() instanceof ServerPlayer) {
+                    attacker = (ServerPlayer) projectile.getOwner();
                     skill = Skills.RANGED;
                     xpMultiplier = xpPerDamageRanged;
                     minDamage = minDamageRanged;
@@ -399,18 +393,18 @@ public class EventHandlers {
 
         // Defense XP: Handle after damage is processed to detect actual blocking/armor absorption
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, originalAmount, actualAmount, blocked) -> {
-            if (entity.getEntityWorld().isClient()) {
+            if (entity.level().isClientSide()) {
                 return;
             }
 
             // Exclude explosion damage
-            if (source.isOf(net.minecraft.entity.damage.DamageTypes.EXPLOSION) ||
-                    source.isOf(net.minecraft.entity.damage.DamageTypes.PLAYER_EXPLOSION)) {
+            if (source.is(net.minecraft.world.damagesource.DamageTypes.EXPLOSION) ||
+                    source.is(net.minecraft.world.damagesource.DamageTypes.PLAYER_EXPLOSION)) {
                 return;
             }
 
             // Defense: Player taking damage from non-player mob
-            if (entity instanceof ServerPlayerEntity defender && source.getAttacker() instanceof LivingEntity attacker && !(attacker instanceof PlayerEntity)) {
+            if (entity instanceof ServerPlayer defender && source.getEntity() instanceof LivingEntity attacker && !(attacker instanceof Player)) {
                 JsonObject config = ConfigManager.getCombatConfig();
                 float xpPerDamageDefense = config.get("defense_xp_per_damage") != null ? config.get("defense_xp_per_damage").getAsFloat() : 100.0f;
                 float minDamageDefense = config.get("defense_min_damage_threshold") != null ? config.get("defense_min_damage_threshold").getAsFloat() : 2.0f;
@@ -420,7 +414,7 @@ public class EventHandlers {
                 if (originalAmount >= minDamageDefense) {
                     // Check if damage was blocked (shield blocking)
                     boolean wasBlocked = blocked || (originalAmount > actualAmount && defender.isBlocking() &&
-                            defender.getActiveItem().getItem() == net.minecraft.item.Items.SHIELD);
+                            defender.getUseItem().getItem() == net.minecraft.world.item.Items.SHIELD);
 
                     if (wasBlocked) {
                         // Shield blocking XP - based on original damage amount
@@ -432,7 +426,7 @@ public class EventHandlers {
                         // Armor absorption XP - check for armor pieces
                         int armorCount = 0;
                         for (EquipmentSlot slot : EquipmentSlot.values()) {
-                            if (slot.isArmorSlot() && !defender.getEquippedStack(slot).isEmpty()) {
+                            if (slot.isArmor() && !defender.getItemBySlot(slot).isEmpty()) {
                                 armorCount++;
                             }
                         }
@@ -452,13 +446,13 @@ public class EventHandlers {
 
     private static void registerJoinLeaveHandlers() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
+            ServerPlayer player = handler.getPlayer();
             if (player == null) {
                 Simpleskills.LOGGER.warn("Null player in join event.");
                 return;
             }
 
-            String playerUuid = player.getUuidAsString();
+            String playerUuid = player.getStringUUID();
             String playerName = player.getName().getString();
             DatabaseManager db = DatabaseManager.getInstance();
 
@@ -489,8 +483,8 @@ public class EventHandlers {
 
             // Optional: Welcome message for forced Ironman servers
             if (isForceIronman) {
-                player.sendMessage(Text.literal("§6[simpleskills]§f §cThis server is running in permanent Ironman Mode.")
-                        .formatted(Formatting.RED), false);
+                player.sendSystemMessage(Component.literal("§6[simpleskills]§f §cThis server is running in permanent Ironman Mode.")
+                        .withStyle(ChatFormatting.RED), false);
             }
 
             Simpleskills.LOGGER.debug("Player joined and initialized: {} (Ironman: {}, Forced: {})",
@@ -498,19 +492,19 @@ public class EventHandlers {
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
+            ServerPlayer player = handler.getPlayer();
             if (player == null) {
                 Simpleskills.LOGGER.warn("Null player in disconnect event.");
                 return;
             }
 
             String playerName = player.getName().getString();
-            String playerUuid = player.getUuidAsString();
+            String playerUuid = player.getStringUUID();
 
             // Clear temporary attributes and tab menu state
             AttributeManager.clearSkillAttributes(player);
             AttributeManager.clearIronmanAttributes(player);
-            SkillTabMenu.clearPlayerVisibility(player.getUuid());
+            SkillTabMenu.clearPlayerVisibility(player.getUUID());
 
             Simpleskills.LOGGER.debug("Player disconnected: {}", playerName);
         });
@@ -518,64 +512,64 @@ public class EventHandlers {
 
     private static void registerPrayerHandlers() {
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            if (world.isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
-                return ActionResult.PASS;
+            if (world.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
+                return InteractionResult.PASS;
             }
 
             BlockState state = world.getBlockState(hitResult.getBlockPos());
-            if (state.isIn(BlockTags.CANDLES) && state.get(Properties.LIT)) {
-                ItemStack stack = serverPlayer.getStackInHand(hand);
-                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+            if (state.is(BlockTags.CANDLES) && state.getValue(BlockStateProperties.LIT)) {
+                ItemStack stack = serverPlayer.getItemInHand(hand);
+                String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
                 ConfigManager.PrayerSacrifice sacrifice = ConfigManager.getPrayerSacrifice(itemId);
 
                 if (sacrifice == null) {
-                    return ActionResult.PASS;
+                    return InteractionResult.PASS;
                 }
 
                 SkillRequirement requirement = sacrifice.requirement();
-                int playerLevel = XPManager.getSkillLevel(serverPlayer.getUuidAsString(), Skills.PRAYER);
+                int playerLevel = XPManager.getSkillLevel(serverPlayer.getStringUUID(), Skills.PRAYER);
                 if (playerLevel < requirement.getLevel()) {
-                    serverPlayer.sendMessage(Text.literal("§6[simpleskills]§f You need Prayer level " + requirement.getLevel() + " to offer this sacrifice!"), true);
-                    return ActionResult.FAIL;
+                    serverPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f You need Prayer level " + requirement.getLevel() + " to offer this sacrifice!"), true);
+                    return InteractionResult.FAIL;
                 }
 
                 // Remove all existing Prayer-related status effects
                 for (ConfigManager.PrayerSacrifice existingSacrifice : ConfigManager.PRAYER_SACRIFICES.values()) {
-                    Registries.STATUS_EFFECT.getEntry(Identifier.of(existingSacrifice.effect())).ifPresent(serverPlayer::removeStatusEffect);
+                    BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(existingSacrifice.effect())).ifPresent(serverPlayer::removeEffect);
                 }
 
                 // Consume item
-                stack.decrement(1);
+                stack.shrink(1);
 
                 // Grant XP
                 XPManager.addXPWithNotification(serverPlayer, Skills.PRAYER, sacrifice.xp());
 
                 // Apply status effect
-                RegistryEntry<StatusEffect> effectEntry = Registries.STATUS_EFFECT.getEntry(Identifier.of(sacrifice.effect())).orElse(null);
+                Holder<MobEffect> effectEntry = BuiltInRegistries.MOB_EFFECT.get(Identifier.parse(sacrifice.effect())).orElse(null);
                 if (effectEntry != null) {
-                    serverPlayer.addStatusEffect(new StatusEffectInstance(
+                    serverPlayer.addEffect(new MobEffectInstance(
                             effectEntry,
                             sacrifice.durationTicks(),
                             sacrifice.effectLevel() - 1, // Use effectLevel, subtract 1 for 0-based amplifier
                             sacrifice.isAmbient(),      // Use isAmbient for particle visibility
                             true                       // showIcon
                     ));
-                    serverPlayer.sendMessage(Text.literal("§6[simpleskills]§f You offer a sacrifice and gain " + sacrifice.displayName() + "!"), false);
+                    serverPlayer.sendSystemMessage(Component.literal("§6[simpleskills]§f You offer a sacrifice and gain " + sacrifice.displayName() + "!"), false);
                 } else {
                     Simpleskills.LOGGER.warn("Invalid status effect {} for item {} in prayer_sacrifices.json", sacrifice.effect(), itemId);
                 }
 
                 // Visual feedback
-                ServerWorld serverWorld = (ServerWorld) world;
-                serverWorld.spawnParticles(
-                        net.minecraft.particle.ParticleTypes.SOUL_FIRE_FLAME,
+                ServerLevel serverWorld = (ServerLevel) world;
+                serverWorld.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
                         hitResult.getBlockPos().getX() + 0.4,
                         hitResult.getBlockPos().getY() + 1.0,
                         hitResult.getBlockPos().getZ() + 0.5,
                         20, 0.2, 0.2, 0.2, 0.05
                 );
-                serverWorld.spawnParticles(
-                        net.minecraft.particle.ParticleTypes.COPPER_FIRE_FLAME,
+                serverWorld.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.COPPER_FIRE_FLAME,
                         hitResult.getBlockPos().getX() + 0.5,
                         hitResult.getBlockPos().getY() + 1.0,
                         hitResult.getBlockPos().getZ() + 0.4,
@@ -584,8 +578,8 @@ public class EventHandlers {
                 serverWorld.playSound(
                         null,
                         hitResult.getBlockPos(),
-                        SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
-                        SoundCategory.BLOCKS,
+                        SoundEvents.AMETHYST_BLOCK_CHIME,
+                        SoundSource.BLOCKS,
                         1.0f,
                         1.0f
                 );
@@ -593,20 +587,20 @@ public class EventHandlers {
                 Simpleskills.LOGGER.debug("Player {} offered {} for {} XP and {} effect (level {}, ambient {})",
                         serverPlayer.getName().getString(), itemId, sacrifice.xp(), sacrifice.displayName(),
                         sacrifice.effectLevel(), sacrifice.isAmbient());
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
-    private static boolean hasSilkTouch(ServerPlayerEntity player) {
-        ItemStack toolStack = player.getEquippedStack(EquipmentSlot.MAINHAND);
-        var enchantmentRegistry = Objects.requireNonNull(player.getEntityWorld().getServer())
-                .getRegistryManager()
-                .getOrThrow(RegistryKeys.ENCHANTMENT);
-        RegistryEntry<Enchantment> silkTouchEntry = enchantmentRegistry
-                .getOptional(Enchantments.SILK_TOUCH)
+    private static boolean hasSilkTouch(ServerPlayer player) {
+        ItemStack toolStack = player.getItemBySlot(EquipmentSlot.MAINHAND);
+        var enchantmentRegistry = Objects.requireNonNull(player.level().getServer())
+                .registryAccess()
+                .lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> silkTouchEntry = enchantmentRegistry
+                .get(Enchantments.SILK_TOUCH)
                 .orElse(null);
 
         if (silkTouchEntry == null) {
@@ -614,6 +608,6 @@ public class EventHandlers {
             return false;
         }
 
-        return EnchantmentHelper.getLevel(silkTouchEntry, toolStack) > 0;
+        return EnchantmentHelper.getItemEnchantmentLevel(silkTouchEntry, toolStack) > 0;
     }
 }

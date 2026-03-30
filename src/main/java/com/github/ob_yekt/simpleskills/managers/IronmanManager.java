@@ -2,10 +2,8 @@ package com.github.ob_yekt.simpleskills.managers;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Manages Ironman mode functionality
@@ -15,8 +13,8 @@ public class IronmanManager {
 
     public static void init() {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-            ServerPlayerEntity player = handler.getPlayer();
-            String uuid = player.getUuidAsString();
+            ServerPlayer player = handler.getPlayer();
+            String uuid = player.getStringUUID();
             DatabaseManager db = DatabaseManager.getInstance();
 
             boolean isCurrentlyIronman = db.isPlayerInIronmanMode(uuid);
@@ -39,7 +37,7 @@ public class IronmanManager {
         });
     }
 
-    public static void applyIronmanMode(ServerPlayerEntity player) {
+    public static void applyIronmanMode(ServerPlayer player) {
         if (player == null) return;
         AttributeManager.applyIronmanAttributes(player);
         SkillTabMenu.updateTabMenu(player);
@@ -47,7 +45,7 @@ public class IronmanManager {
         Simpleskills.LOGGER.debug("Applied Ironman mode for player: {}", player.getName().getString());
     }
 
-    public static void disableIronmanMode(ServerPlayerEntity player) {
+    public static void disableIronmanMode(ServerPlayer player) {
         if (player == null) return;
 
         if (ConfigManager.isForceIronmanModeEnabled()) {
@@ -55,7 +53,7 @@ public class IronmanManager {
             return;
         }
 
-        DatabaseManager.getInstance().setIronmanMode(player.getUuidAsString(), false);
+        DatabaseManager.getInstance().setIronmanMode(player.getStringUUID(), false);
         AttributeManager.clearIronmanAttributes(player);
         SkillTabMenu.updateTabMenu(player);
         NamePrefixManager.updatePlayerNameDecorations(player);

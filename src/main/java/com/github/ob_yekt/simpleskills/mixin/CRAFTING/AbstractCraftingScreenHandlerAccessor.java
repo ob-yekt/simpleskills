@@ -1,12 +1,12 @@
 package com.github.ob_yekt.simpleskills.mixin.CRAFTING;
 
-import net.minecraft.inventory.RecipeInputInventory;
-import net.minecraft.screen.AbstractCraftingScreenHandler;
+import net.minecraft.world.inventory.AbstractCraftingMenu;
+import net.minecraft.world.inventory.CraftingContainer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(AbstractCraftingScreenHandler.class)
+@Mixin(AbstractCraftingMenu.class)
 public interface AbstractCraftingScreenHandlerAccessor {
-    @Accessor("craftingInventory")
-    RecipeInputInventory getCraftingInventory();
+    @Accessor("craftSlots")
+    CraftingContainer getCraftingInventory();
 }

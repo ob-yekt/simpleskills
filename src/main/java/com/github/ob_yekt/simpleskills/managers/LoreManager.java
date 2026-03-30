@@ -2,15 +2,15 @@ package com.github.ob_yekt.simpleskills.managers;
 
 import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.LoreComponent;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemLore;
 
 /**
  * Manages lore application for items, including requirements for tools, armor, weapons, and prayer sacrifices.
@@ -47,8 +47,8 @@ public class LoreManager {
             return;
         }
 
-        String itemId = Registries.ITEM.getId(stack.getItem()).toString();
-        List<Text> newLore = new ArrayList<>();
+        String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        List<Component> newLore = new ArrayList<>();
 
         // Handle item requirements (tools, armor, weapons, sacrifices)
         SkillRequirement requirement = getItemRequirement(itemId);
@@ -62,24 +62,24 @@ public class LoreManager {
             String loreText = String.format("Requires %d %s%s%s", requirement.getLevel(), skillName, prestigePart, action);
 
             // Check existing lore to avoid duplicates
-            LoreComponent currentLoreComponent = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of()));
+            ItemLore currentLoreComponent = stack.getOrDefault(DataComponents.LORE, new ItemLore(List.of()));
             boolean loreExists = currentLoreComponent.lines().stream()
                     .anyMatch(text -> text.getString().equals(loreText));
             if (loreExists) {
                 return;
             }
 
-            newLore.add(Text.literal(loreText).formatted(Formatting.GRAY));
+            newLore.add(Component.literal(loreText).withStyle(ChatFormatting.GRAY));
         }
 
         if (!newLore.isEmpty()) {
-            List<Text> currentLore = stack.getOrDefault(DataComponentTypes.LORE, new LoreComponent(List.of())).lines();
-            List<Text> filteredLore = currentLore.stream()
+            List<Component> currentLore = stack.getOrDefault(DataComponents.LORE, new ItemLore(List.of())).lines();
+            List<Component> filteredLore = currentLore.stream()
                     .filter(text -> !text.getString().contains(LORE_PREFIX))
                     .toList();
             newLore.addAll(0, filteredLore);
 
-            stack.set(DataComponentTypes.LORE, new LoreComponent(newLore));
+            stack.set(DataComponents.LORE, new ItemLore(newLore));
             Simpleskills.LOGGER.debug("Applied lore to item: {}", itemId);
         }
     }
@@ -87,12 +87,12 @@ public class LoreManager {
     /**
      * Applies lore to all stacks in the given inventory.
      */
-    public static void applyLoreToInventory(Inventory inventory) {
+    public static void applyLoreToInventory(Container inventory) {
         if (inventory == null) {
             return;
         }
-        for (int i = 0; i < inventory.size(); i++) {
-            ItemStack stack = inventory.getStack(i);
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
             applyLoreToStack(stack);
         }
     }

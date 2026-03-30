@@ -6,12 +6,6 @@ import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +13,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Objects;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 
 /**
  * Mixin to check skill requirements and grant Woodcutting XP when using an axe to strip logs.
@@ -26,21 +26,21 @@ import java.util.Objects;
 @Mixin(AxeItem.class)
 public class AxeItemMixin {
 
-    @Inject(method = "useOnBlock", at = @At("HEAD"), cancellable = true)
-    private void checkToolAndSkillRequirement(ItemUsageContext context, CallbackInfoReturnable<ActionResult> cir) {
-        World world = context.getWorld();
-        if (world.isClient() || !(context.getPlayer() instanceof ServerPlayerEntity player)) {
+    @Inject(method = "useOn", at = @At("HEAD"), cancellable = true)
+    private void checkToolAndSkillRequirement(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        Level world = context.getLevel();
+        if (world.isClientSide() || !(context.getPlayer() instanceof ServerPlayer player)) {
             return;
         }
 
-        String toolName = context.getStack().getItem().toString();
+        String toolName = context.getItemInHand().getItem().toString();
         SkillRequirement requirement = ConfigManager.getToolRequirement(toolName);
         if (requirement != null && requirement.getSkill() == Skills.WOODCUTTING) {
-            int playerLevel = XPManager.getSkillLevel(player.getUuidAsString(), Skills.WOODCUTTING);
+            int playerLevel = XPManager.getSkillLevel(player.getStringUUID(), Skills.WOODCUTTING);
             if (playerLevel < requirement.getLevel()) {
-                player.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need %s level %d to use this tool!",
+                player.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need %s level %d to use this tool!",
                         Skills.WOODCUTTING.getDisplayName(), requirement.getLevel())), true);
-                cir.setReturnValue(ActionResult.FAIL);
+                cir.setReturnValue(InteractionResult.FAIL);
                 cir.cancel();
                 Simpleskills.LOGGER.debug("Prevented player {} from using axe {} due to insufficient Woodcutting level (required: {}, actual: {})",
                         player.getName().getString(), toolName, requirement.getLevel(), playerLevel);
@@ -49,11 +49,11 @@ public class AxeItemMixin {
 
             int requiredPrestige = requirement.getRequiredPrestige();
             if (requiredPrestige > 0) {
-                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getUuidAsString());
+                int playerPrestige = DatabaseManager.getInstance().getPrestige(player.getStringUUID());
                 if (playerPrestige < requiredPrestige) {
-                    player.sendMessage(Text.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this tool!",
+                    player.sendSystemMessage(Component.literal(String.format("§6[simpleskills]§f You need Prestige ★%d to use this tool!",
                             requiredPrestige)), true);
-                    cir.setReturnValue(ActionResult.FAIL);
+                    cir.setReturnValue(InteractionResult.FAIL);
                     cir.cancel();
                     Simpleskills.LOGGER.debug("Prevented player {} from using axe {} due to insufficient Prestige (required: ★{}, actual: ★{})",
                             player.getName().getString(), toolName, requiredPrestige, playerPrestige);
@@ -62,18 +62,18 @@ public class AxeItemMixin {
         }
     }
 
-    @Inject(method = "useOnBlock", at = @At("RETURN"))
-    private void grantWoodcuttingXPOnStripLog(ItemUsageContext context, CallbackInfoReturnable<ActionResult> cir) {
-        World world = context.getWorld();
-        if (world.isClient() || !(context.getPlayer() instanceof ServerPlayerEntity player) || cir.getReturnValue() != ActionResult.SUCCESS) {
+    @Inject(method = "useOn", at = @At("RETURN"))
+    private void grantWoodcuttingXPOnStripLog(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
+        Level world = context.getLevel();
+        if (world.isClientSide() || !(context.getPlayer() instanceof ServerPlayer player) || cir.getReturnValue() != InteractionResult.SUCCESS) {
             return;
         }
 
-        String blockTranslationKey = world.getBlockState(context.getBlockPos()).getBlock().getTranslationKey();
+        String blockTranslationKey = world.getBlockState(context.getClickedPos()).getBlock().getDescriptionId();
         if (isStrippableLog(blockTranslationKey)) {
             Objects.requireNonNull(world.getServer()).execute(() -> {
                 // Check if the block was actually stripped (i.e., is now a stripped log)
-                String newBlockTranslationKey = world.getBlockState(context.getBlockPos()).getBlock().getTranslationKey();
+                String newBlockTranslationKey = world.getBlockState(context.getClickedPos()).getBlock().getDescriptionId();
                 if (newBlockTranslationKey.contains("stripped_")) {
                     int xp = ConfigManager.getBlockXP(blockTranslationKey, Skills.WOODCUTTING);
                     XPManager.addXPWithNotification(player, Skills.WOODCUTTING, xp/6);

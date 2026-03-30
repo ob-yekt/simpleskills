@@ -1,17 +1,17 @@
 package com.github.ob_yekt.simpleskills.mixin.FISHING;
 
-import net.minecraft.entity.projectile.FishingBobberEntity;
+import net.minecraft.world.entity.projectile.FishingHook;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(FishingBobberEntity.class)
+@Mixin(FishingHook.class)
 public interface FishingBobberEntityAccessor {
-    @Accessor("waitCountdown")
+    @Accessor("timeUntilLured")
     int getWaitCountdown();
 
-    @Accessor("waitCountdown")
+    @Accessor("timeUntilLured")
     void setWaitCountdown(int waitCountdown);
 
-    @Accessor("luckBonus")
+    @Accessor("luck")
     int getLuckBonus();
 }

@@ -4,22 +4,21 @@ import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.ui.SkillTabMenu;
 import com.github.ob_yekt.simpleskills.Skills;
 import com.google.gson.JsonObject;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.IntUnaryOperator;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public class XPManager {
     private static final int MAX_LEVEL = 99;
-    private static BiConsumer<ServerPlayerEntity, Skills> onXPChangeListener;
+    private static BiConsumer<ServerPlayer, Skills> onXPChangeListener;
 
     private static double STANDARD_XP_MULTIPLIER;
     private static double IRONMAN_XP_MULTIPLIER;
@@ -38,7 +37,7 @@ public class XPManager {
     }
 
     // Set an optional listener for XP and level changes
-    public static void setOnXPChangeListener(BiConsumer<ServerPlayerEntity, Skills> listener) {
+    public static void setOnXPChangeListener(BiConsumer<ServerPlayer, Skills> listener) {
         onXPChangeListener = listener;
     }
 
@@ -121,27 +120,27 @@ public class XPManager {
     }
 
     // Add XP to a player's skill silently (no notifications or level-up effects)
-    public static void addXPSilent(ServerPlayerEntity player, Skills skill, int xpToAdd) {
+    public static void addXPSilent(ServerPlayer player, Skills skill, int xpToAdd) {
         updatePlayerSkill(player, skill, xpToAdd, false, false);
     }
 
     // Add XP to a player's skill with notifications
-    public static void addXPWithNotification(ServerPlayerEntity player, Skills skill, int xpToAdd) {
+    public static void addXPWithNotification(ServerPlayer player, Skills skill, int xpToAdd) {
         updatePlayerSkill(player, skill, xpToAdd, true, true);
     }
 
     // Shared logic for updating player skill
-    private static void updatePlayerSkill(ServerPlayerEntity player, Skills skill, int xpToAdd, boolean notifyXP, boolean notifyLevelUp) {
+    private static void updatePlayerSkill(ServerPlayer player, Skills skill, int xpToAdd, boolean notifyXP, boolean notifyLevelUp) {
         if (player == null || skill == null) {
             Simpleskills.LOGGER.error("Invalid input: player or skill is null");
             return;
         }
         if (xpToAdd <= 0) {
-            Simpleskills.LOGGER.warn("Invalid xpToAdd: {} for player UUID: {}, skill: {}", xpToAdd, player.getUuidAsString(), skill.getId());
+            Simpleskills.LOGGER.warn("Invalid xpToAdd: {} for player UUID: {}, skill: {}", xpToAdd, player.getStringUUID(), skill.getId());
             return;
         }
 
-        String playerUuid = player.getUuidAsString();
+        String playerUuid = player.getStringUUID();
         DatabaseManager db = DatabaseManager.getInstance();
 
         // Apply multiplier with fallback
@@ -168,8 +167,8 @@ public class XPManager {
         // Send XP gain notification if enabled
         if (notifyXP) {
             if (XP_NOTIFICATIONS_ENABLED && xpToAdd >= XP_NOTIFICATION_THRESHOLD) {
-                player.sendMessage(Text.literal(String.format("Gained %d XP in %s!", xpToAdd, skill.getDisplayName()))
-                        .formatted(Formatting.GOLD), true);
+                player.sendSystemMessage(Component.literal(String.format("Gained %d XP in %s!", xpToAdd, skill.getDisplayName()))
+                        .withStyle(ChatFormatting.GOLD), true);
             }
         }
 
@@ -189,27 +188,27 @@ public class XPManager {
     }
 
     // Handle level-up effects
-    private static void triggerLevelUpEffects(ServerPlayerEntity player, Skills skill, int newLevel) {
-        ServerWorld serverWorld = player.getEntityWorld();
+    private static void triggerLevelUpEffects(ServerPlayer player, Skills skill, int newLevel) {
+        ServerLevel serverWorld = player.level();
         String levelUpMessage;
         boolean isMaxLevel = newLevel == MAX_LEVEL;
         if (isMaxLevel) {
             levelUpMessage = String.format("Congratulations! You have reached max level in %s!", skill.getDisplayName());
             if (LEVEL_UP_NOTIFICATIONS_ENABLED) {
-                player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
+                player.sendSystemMessage(Component.literal(levelUpMessage).withStyle(ChatFormatting.GOLD), false);
             }
             if (LEVEL_UP_EFFECTS_ENABLED) {
-                serverWorld.playSound(null, player.getBlockPos(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
-                        SoundCategory.PLAYERS, 0.9f, 1.2f);
+                serverWorld.playSound(null, player.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
+                        SoundSource.PLAYERS, 0.9f, 1.2f);
             }
         } else {
             levelUpMessage = String.format("You leveled up in %s! New level: %d", skill.getDisplayName(), newLevel);
             if (LEVEL_UP_NOTIFICATIONS_ENABLED) {
-                player.sendMessage(Text.literal(levelUpMessage).formatted(Formatting.GOLD), false);
+                player.sendSystemMessage(Component.literal(levelUpMessage).withStyle(ChatFormatting.GOLD), false);
             }
             if (LEVEL_UP_EFFECTS_ENABLED) {
-                serverWorld.playSound(null, player.getBlockPos(), SoundEvents.ENTITY_PLAYER_LEVELUP,
-                        SoundCategory.PLAYERS, 0.7f, 1.3f);
+                serverWorld.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP,
+                        SoundSource.PLAYERS, 0.7f, 1.3f);
             }
         }
         if (LEVEL_UP_EFFECTS_ENABLED) {
@@ -218,8 +217,8 @@ public class XPManager {
     }
 
     // Spawn confetti particles with hardcoded values
-    private static void spawnConfettiParticles(ServerWorld serverWorld, double x, double y, double z, boolean isMaxLevel) {
-        ParticleEffect[] particles = new ParticleEffect[]{
+    private static void spawnConfettiParticles(ServerLevel serverWorld, double x, double y, double z, boolean isMaxLevel) {
+        ParticleOptions[] particles = new ParticleOptions[]{
                 ParticleTypes.HAPPY_VILLAGER,
                 ParticleTypes.ENCHANTED_HIT,
                 ParticleTypes.FIREWORK,
@@ -228,8 +227,8 @@ public class XPManager {
         int count = isMaxLevel ? 200 : 75;
         double spread = isMaxLevel ? 2.0 : 1.0;
 
-        for (ParticleEffect particle : particles) {
-            serverWorld.spawnParticles(
+        for (ParticleOptions particle : particles) {
+            serverWorld.sendParticles(
                     particle,
                     x, y + 1.5, z,
                     count / particles.length,
@@ -238,7 +237,7 @@ public class XPManager {
             );
         }
         if (isMaxLevel) {
-            serverWorld.spawnParticles(
+            serverWorld.sendParticles(
                     ParticleTypes.FIREWORK,
                     x, y + 1.5, z,
                     50,

@@ -54,7 +54,7 @@ public class DatabaseManager {
     }
 
     public void initializeDatabase(MinecraftServer server) {
-        Path worldDirectory = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve("data");
+        Path worldDirectory = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data");
         Path newDatabasePath = worldDirectory.resolve(DATABASE_NAME);
 
         if (currentDatabasePath != null && currentDatabasePath.equals(newDatabasePath) && isConnectionValid()) {
