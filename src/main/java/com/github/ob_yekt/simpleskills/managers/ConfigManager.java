@@ -43,7 +43,7 @@ public class ConfigManager {
     private static final Map<String, Float> ALCHEMY_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> AGILITY_XP_MAP = new HashMap<>();
     private static final Map<String, Float> SMITHING_XP_MAP = new HashMap<>();
-	private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
+    private static final Map<String, Integer> FARMING_ACTION_XP_MAP = new HashMap<>();
     private static final Map<String, CropConfig> CROP_CONFIGS = new HashMap<>();
     private static final Map<String, Float> SMITHING_MULTIPLIER_MAP = new HashMap<>();
     private static final Map<String, Integer> FISHING_XP_MAP = new HashMap<>();
@@ -78,7 +78,7 @@ public class ConfigManager {
             loadSmithingMultiplierConfig();
             loadFishingXPConfig();
             loadFishingLootConfig();
-			loadFarmingXPConfig();
+            loadFarmingXPConfig();
             loadCombatConfig();
             Simpleskills.LOGGER.info("All configurations initialized successfully.");
         } catch (IOException e) {
@@ -588,8 +588,8 @@ public class ConfigManager {
         record CraftingMapping(String item, int xp) {
         }
         CraftingMapping[] defaults = {
-        // Wood (Base XP: 100 per plank)
-        new CraftingMapping("minecraft:wood_shovel", 100),     // 1 plank
+                // Wood (Base XP: 100 per plank)
+                new CraftingMapping("minecraft:wood_shovel", 100),     // 1 plank
                 new CraftingMapping("minecraft:wood_spear", 100),     // 1 plank
                 new CraftingMapping("minecraft:wood_hoe", 200),        // 2 planks
                 new CraftingMapping("minecraft:wood_sword", 200),      // 2 planks
@@ -842,6 +842,48 @@ public class ConfigManager {
                 "minecraft:ice",
                 "minecraft:packed_ice",
                 "minecraft:blue_ice",
+                // Container / "transform" items: these can carry stored items or other
+                // nested data (e.g. DataComponents.CONTAINER, BUNDLE_CONTENTS). Refunding
+                // a "recovered" copy of these would duplicate their entire contents, so
+                // they are blacklisted by default. The mixins also enforce this in code
+                // via isUnsafeForRecovery() regardless of this list, but keeping them here
+                // too makes the protection visible/extendable via config.
+                "minecraft:shulker_box",
+                "minecraft:white_shulker_box",
+                "minecraft:orange_shulker_box",
+                "minecraft:magenta_shulker_box",
+                "minecraft:light_blue_shulker_box",
+                "minecraft:yellow_shulker_box",
+                "minecraft:lime_shulker_box",
+                "minecraft:pink_shulker_box",
+                "minecraft:gray_shulker_box",
+                "minecraft:light_gray_shulker_box",
+                "minecraft:cyan_shulker_box",
+                "minecraft:purple_shulker_box",
+                "minecraft:blue_shulker_box",
+                "minecraft:brown_shulker_box",
+                "minecraft:green_shulker_box",
+                "minecraft:red_shulker_box",
+                "minecraft:black_shulker_box",
+                "minecraft:bundle",
+                "minecraft:white_bundle",
+                "minecraft:orange_bundle",
+                "minecraft:magenta_bundle",
+                "minecraft:light_blue_bundle",
+                "minecraft:yellow_bundle",
+                "minecraft:lime_bundle",
+                "minecraft:pink_bundle",
+                "minecraft:gray_bundle",
+                "minecraft:light_gray_bundle",
+                "minecraft:cyan_bundle",
+                "minecraft:purple_bundle",
+                "minecraft:blue_bundle",
+                "minecraft:brown_bundle",
+                "minecraft:green_bundle",
+                "minecraft:red_bundle",
+                "minecraft:black_bundle",
+                "minecraft:written_book",
+                "minecraft:crossbow",
         };
         for (String item : blacklistedItems) {
             blacklist.add(item);
@@ -1350,7 +1392,7 @@ public class ConfigManager {
                 new AlchemyMapping("lingering_potion.minecraft.weaving", 2750),
                 new AlchemyMapping("lingering_potion.minecraft.slow_falling", 2600),
                 new AlchemyMapping("lingering_potion.minecraft.long_slow_falling", 2750),
-                               new AlchemyMapping("lingering_potion.minecraft.invisibility", 2500),
+                new AlchemyMapping("lingering_potion.minecraft.invisibility", 2500),
                 new AlchemyMapping("lingering_potion.minecraft.long_invisibility", 2600),
                 new AlchemyMapping("lingering_potion.minecraft.regeneration", 2400),
                 new AlchemyMapping("lingering_potion.minecraft.long_regeneration", 2500),
@@ -1679,7 +1721,7 @@ public class ConfigManager {
     public static boolean isCropBlock(String blockTranslationKey) {
         return CROP_CONFIGS.containsKey(blockTranslationKey);
     }
-    
+
     /**
      * Checks if the fishing speed bonus is enabled.
      */

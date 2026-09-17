@@ -4,6 +4,7 @@ import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
+import net.minecraft.util.Prediction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -64,7 +65,7 @@ public abstract class ArmorRestrictionMixin {
             String preventReason = String.format("§6[simpleskills]§f You need %s level %d to equip this item!",
                     requirement.getSkill().getDisplayName(), requiredLevel);
             player.sendSystemMessage(Component.literal(preventReason), true);
-            player.drop(stack.copy(), false);
+            player.drop(stack.copy(), false, Prediction.SERVER_ONLY);
             ci.cancel();
             Simpleskills.LOGGER.info("Prevented player {} from equipping {} due to insufficient {} level (required: {}, actual: {})",
                     player.getName().getString(), itemId, requirement.getSkill().getDisplayName(), requiredLevel, playerLevel);
@@ -77,7 +78,7 @@ public abstract class ArmorRestrictionMixin {
             if (playerPrestige < requiredPrestige) {
                 String preventReason = String.format("§6[simpleskills]§f You need Prestige ★%d to equip this item!", requiredPrestige);
                 player.sendSystemMessage(Component.literal(preventReason), true);
-                player.drop(stack.copy(), false);
+                player.drop(stack.copy(), false, Prediction.SERVER_ONLY);
                 ci.cancel();
                 Simpleskills.LOGGER.info("Prevented player {} from equipping {} due to insufficient prestige (required: ★{}, actual: ★{})",
                         player.getName().getString(), itemId, requiredPrestige, playerPrestige);

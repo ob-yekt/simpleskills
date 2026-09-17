@@ -13,11 +13,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Objects;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.Compostable;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ComposterBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * Mixin to check skill requirements and grant Farming XP when using a compostable item in a composter.
- * XP is based on the item's levelIncreaseChance from ComposterBlock.ITEM_TO_LEVEL_INCREASE_CHANCE.
+ * XP is based on the item's compostable component (the vanilla level increase chance).
  */
 @Mixin(ComposterBlock.class)
 public class ComposterBlockMixin {
@@ -41,9 +44,10 @@ public class ComposterBlockMixin {
         if (cir.getReturnValue() != InteractionResult.SUCCESS) return;
 
         // Check if the item is compostable
-        if (ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
+        Compostable compostable = stack.get(DataComponents.COMPOSTABLE);
+        if (compostable != null) {
+            float levelIncreaseChance = getLevelIncreaseChance(compostable);
             Objects.requireNonNull(world.getServer()).execute(() -> {
-                float levelIncreaseChance = ComposterBlock.COMPOSTABLES.getFloat(stack.getItem());
                 // Scale XP: base XP of 100 multiplied by levelIncreaseChance
                 int xp = Math.round(10.0F * levelIncreaseChance);
                 XPManager.addXPWithNotification(serverPlayer, Skills.FARMING, xp);
@@ -55,4 +59,24 @@ public class ComposterBlockMixin {
 
     @Unique
     private String lastItemKey;
+
+    /**
+     * Maps the compostable component's context_int_provider to the vanilla level increase chance.
+     */
+    @Unique
+    private static float getLevelIncreaseChance(Compostable compostable) {
+        if (compostable.layers() instanceof ResolvableInt.Constant constant) {
+            return Math.min(1.0F, constant.value());
+        }
+        if (compostable.layers() instanceof ResolvableInt.Reference reference) {
+            return switch (reference.key().identifier().getPath()) {
+                case "compostable/low" -> 0.3F;
+                case "compostable/low_medium" -> 0.5F;
+                case "compostable/medium" -> 0.65F;
+                case "compostable/medium_high" -> 0.85F;
+                default -> 1.0F;
+            };
+        }
+        return 1.0F;
+    }
 }

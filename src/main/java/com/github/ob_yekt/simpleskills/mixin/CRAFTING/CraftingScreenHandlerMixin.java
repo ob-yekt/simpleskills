@@ -7,6 +7,8 @@ import com.github.ob_yekt.simpleskills.managers.XPManager;
 import com.github.ob_yekt.simpleskills.utils.CraftingCommon;
 
 import com.llamalad7.mixinextras.sugar.Local;
+import net.minecraft.util.Prediction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -126,16 +128,36 @@ public abstract class CraftingScreenHandlerMixin extends AbstractCraftingMenu {
             ItemStack original = originalInputs[i];
             ItemStack current = craftSlots.getItem(i);
 
-            if (!original.isEmpty() && current.getCount() < original.getCount()) {
+            if (!original.isEmpty() && current.getCount() < original.getCount()
+                    && !isUnsafeForRecovery(original)) {
                 if (player.getRandom().nextFloat() < recoveryChance) {
                     ItemStack recovered = original.copy();
                     recovered.setCount(1);
 
                     if (!player.getInventory().add(recovered)) {
-                        player.drop(recovered, false);
+                        player.drop(recovered, false, Prediction.SERVER_ONLY);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if this stack carries nested item/container data that would be
+     * unsafe to "recover" via copy() — e.g. a loaded Shulker Box, a Bundle, a written
+     * book, or a charged crossbow. Recovering these would duplicate their entire
+     * stored contents rather than just refunding a plain material, so they must never
+     * be eligible for the crafting material-recovery perk regardless of blacklist config.
+     */
+    @Unique
+    private static boolean isUnsafeForRecovery(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return stack.has(DataComponents.CONTAINER)
+                || stack.has(DataComponents.BUNDLE_CONTENTS)
+                || stack.has(DataComponents.BLOCK_ENTITY_DATA)
+                || stack.has(DataComponents.CHARGED_PROJECTILES)
+                || stack.has(DataComponents.WRITTEN_BOOK_CONTENT)
+                || stack.has(DataComponents.WRITABLE_BOOK_CONTENT)
+                || stack.has(DataComponents.CONTAINER_LOOT);
     }
 }

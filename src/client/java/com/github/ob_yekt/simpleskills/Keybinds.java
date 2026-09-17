@@ -5,22 +5,21 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 public class Keybinds {
     public static final String KEY_CATEGORY = "key.categories.misc";
 
     public static final KeyMapping TOGGLE_HUD_KEY = new KeyMapping(
             "key.simpleskills.toggle_hud",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_H,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_H,
             KeyMapping.Category.MISC
     );
 
     public static final KeyMapping CYCLE_HUD_POSITION_KEY = new KeyMapping(
             "key.simpleskills.cycle_hud_position",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_J,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_J,
             KeyMapping.Category.MISC
     );
 

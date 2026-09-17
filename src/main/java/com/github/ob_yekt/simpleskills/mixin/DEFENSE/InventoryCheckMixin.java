@@ -4,6 +4,7 @@ import com.github.ob_yekt.simpleskills.Simpleskills;
 import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.DatabaseManager;
 import com.github.ob_yekt.simpleskills.requirements.SkillRequirement;
+import net.minecraft.util.Prediction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -57,7 +58,7 @@ public abstract class InventoryCheckMixin {
                 boolean addedToInventory = serverPlayer.getInventory().add(armorToMove);
 
                 if (!addedToInventory) {
-                    serverPlayer.drop(armorToMove, false);
+                    serverPlayer.drop(armorToMove, false, Prediction.SERVER_ONLY);
                 }
 
                 Simpleskills.LOGGER.debug("Removed armor {} from player {} due to insufficient {} level (required: {}, actual: {})",
@@ -78,7 +79,7 @@ public abstract class InventoryCheckMixin {
                     boolean addedToInventory = serverPlayer.getInventory().add(armorToMove);
 
                     if (!addedToInventory) {
-                        serverPlayer.drop(armorToMove, false);
+                        serverPlayer.drop(armorToMove, false, Prediction.SERVER_ONLY);
                     }
 
                     Simpleskills.LOGGER.debug("Removed armor {} from player {} due to insufficient prestige (required: ★{}, actual: ★{})",

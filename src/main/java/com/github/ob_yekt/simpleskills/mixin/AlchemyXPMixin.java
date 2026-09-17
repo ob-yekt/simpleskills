@@ -6,6 +6,7 @@ import com.github.ob_yekt.simpleskills.managers.ConfigManager;
 import com.github.ob_yekt.simpleskills.managers.LoreManager;
 import com.github.ob_yekt.simpleskills.managers.XPManager;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,6 +22,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Inventory;
@@ -30,13 +32,15 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.ItemLore;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 
 @Mixin(BrewingStandBlockEntity.class)
 public abstract class AlchemyXPMixin {
     @Unique
     private ServerPlayer lastPlayer;
+
+    @Shadow
+    protected abstract NonNullList<ItemStack> getItems();
 
     // Track last interacting player
     @Inject(method = "createMenu", at = @At("RETURN"))
@@ -50,11 +54,8 @@ public abstract class AlchemyXPMixin {
 
     // Trigger when brewing finishes
     @Inject(method = "doBrew", at = @At("TAIL"))
-    private static void onCraft(Level world, BlockPos pos, NonNullList<ItemStack> slots, CallbackInfo ci) {
-        if (world.isClientSide()) return;
-
-        BrewingStandBlockEntity blockEntity = (BrewingStandBlockEntity) world.getBlockEntity(pos);
-        if (blockEntity == null) return;
+    private static void onCraft(ServerLevel world, BlockPos pos, BrewingStandBlockEntity blockEntity, CallbackInfo ci) {
+        NonNullList<ItemStack> slots = ((AlchemyXPMixin)(Object)blockEntity).getItems();
 
         ServerPlayer player = ((AlchemyXPMixin)(Object)blockEntity).lastPlayer;
         if (player == null) {
