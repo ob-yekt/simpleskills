@@ -1,12 +1,11 @@
 package com.github.ob_yekt.simpleskills;
 
 import com.github.ob_yekt.simpleskills.commands.SimpleskillsCommands;
-import com.github.ob_yekt.simpleskills.managers.*;
 import com.github.ob_yekt.simpleskills.events.EventHandlers;
-
+import com.github.ob_yekt.simpleskills.managers.*;
+import com.github.ob_yekt.simpleskills.placeholders.PlaceholderManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,7 @@ public class Simpleskills implements ModInitializer {
 		LoreManager.initialize();
 		ConfigManager.initialize();
 		EventHandlers.registerAll();
+		PlaceholderManager.init();
 
 		// Initialize database and setup server lifecycle hooks
 		DatabaseManager db = DatabaseManager.getInstance();
